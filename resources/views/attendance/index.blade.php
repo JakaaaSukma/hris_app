@@ -762,8 +762,8 @@
                     <img :src="photoPreviewUrl" 
                          alt="Face Snapshot" 
                          class="w-full h-full object-cover"
-                         @error="$el.classList.add('hidden'); $refs.imgFallback.classList.remove('hidden')"
-                         @load="$el.classList.remove('hidden'); $refs.imgFallback.classList.add('hidden')"/>
+                         x-on:error="$el.classList.add('hidden'); $refs.imgFallback.classList.remove('hidden')"
+                         x-on:load="$el.classList.remove('hidden'); $refs.imgFallback.classList.add('hidden')"/>
                     <div x-ref="imgFallback" class="hidden flex flex-col items-center justify-center p-6 text-center text-slate-400">
                         <span class="material-symbols-outlined text-4xl text-rose-400 mb-1">broken_image</span>
                         <span class="text-xs font-mono text-slate-300">Foto belum dapat dimuat dari server</span>
