@@ -4,7 +4,7 @@
      @open-face-modal.window="openModal($event.detail)"
      x-cloak 
      x-show="showModal" 
-     class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 overflow-y-auto"
+     class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 overflow-y-auto"
      x-transition:enter="transition ease-out duration-150"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
@@ -16,7 +16,7 @@
          @click.away="if(!isProcessing) closeModal()">
 
         <!-- Header Modal -->
-        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
+        <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
             <div class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-slate-950 shadow-md">
                     <span class="material-symbols-outlined text-xl">face_retouching_natural</span>
@@ -26,7 +26,7 @@
                         <span>Presensi Biometrik Wajah</span>
                         <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono uppercase tracking-wider font-semibold">Face ID + GPS</span>
                     </h3>
-                    <p class="font-mono text-[11px] text-slate-400">Verifikasi wajah langsung & lokasi GPS terkini</p>
+                    <p class="font-mono text-[11px] text-slate-400">Verifikasi kamera wajah & titik koordinat GPS</p>
                 </div>
             </div>
             <button type="button" @click="closeModal()" :disabled="isProcessing" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
@@ -35,12 +35,12 @@
         </div>
 
         <!-- Body Modal -->
-        <div class="p-5 space-y-4">
+        <div class="p-4 sm:p-5 space-y-3.5">
 
             <!-- Tampilan SUKSES VERIFIKASI -->
             <template x-if="verificationSuccess">
                 <div class="py-6 flex flex-col items-center text-center space-y-4">
-                    <div class="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce">
+                    <div class="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce shadow-lg shadow-emerald-500/30">
                         <span class="material-symbols-outlined text-4xl">check_circle</span>
                     </div>
 
@@ -52,7 +52,7 @@
                     </div>
 
                     <!-- Ringkasan Hasil Presensi -->
-                    <div class="w-full bg-slate-900/80 rounded-xl p-3.5 border border-slate-800 space-y-2 font-mono text-xs text-left">
+                    <div class="w-full bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 space-y-2 font-mono text-xs text-left">
                         <div class="flex justify-between items-center text-slate-300">
                             <span class="text-slate-400">Status Kedisiplinan:</span>
                             <span class="px-2 py-0.5 rounded text-[11px] font-bold"
@@ -71,95 +71,119 @@
                     </div>
 
                     <p class="font-mono text-[11px] text-slate-500 animate-pulse">
-                        Halaman akan disegarkan otomatis dalam beberapa detik...
+                        Halaman akan disegarkan otomatis dalam 2 detik...
                     </p>
                 </div>
             </template>
 
             <!-- Tampilan KAMERA & SCANNER (AKTIF) -->
             <template x-if="!verificationSuccess">
-                <div class="space-y-4">
+                <div class="space-y-3.5">
 
                     <!-- Pilihan Mode: Masuk atau Pulang -->
                     <div class="flex items-center gap-2 p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-xs font-mono">
                         <button type="button" 
                                 @click="attendanceType = 'clock_in'" 
                                 :class="attendanceType === 'clock_in' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                                class="flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
+                                class="flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
                             <span class="material-symbols-outlined text-base">login</span>
-                            <span>Presensi Masuk (Clock In)</span>
+                            <span>Presensi Masuk</span>
                         </button>
                         <button type="button" 
                                 @click="attendanceType = 'clock_out'" 
                                 :class="attendanceType === 'clock_out' ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                                class="flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
+                                class="flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
                             <span class="material-symbols-outlined text-base">logout</span>
-                            <span>Presensi Pulang (Clock Out)</span>
+                            <span>Presensi Pulang</span>
                         </button>
                     </div>
 
-                    <!-- Viewfinder Kamera Face ID dengan Animasi Radar -->
-                    <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-2xl overflow-hidden border-2 shadow-inner flex items-center justify-center"
-                         :class="faceDetected ? 'border-emerald-500 shadow-emerald-500/20' : 'border-amber-500/50 shadow-amber-500/10'">
+                    <!-- Viewfinder Kamera Face ID -->
+                    <div class="relative w-full rounded-2xl overflow-hidden border-2 bg-slate-950 flex items-center justify-center shadow-lg"
+                         :class="faceDetected ? 'border-emerald-500 shadow-emerald-500/20' : 'border-amber-500/50 shadow-amber-500/10'"
+                         style="height: 290px;">
                         
-                        <!-- Video Feed Langsung -->
+                        <!-- Video Feed Langsung (Always Visible & Playing) -->
                         <video x-ref="videoElement" 
                                autoplay 
                                playsinline 
                                muted 
-                               class="w-full h-full object-cover transform -scale-x-100"
-                               x-show="cameraActive && !photoCaptured">
+                               style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"
+                               x-show="!photoCaptured">
                         </video>
 
-                        <!-- Preview Hasil Foto Snapshot -->
+                        <!-- Preview Hasil Foto Snapshot Setelah Dipotret -->
                         <img x-ref="photoPreview" 
                              x-show="photoCaptured" 
                              :src="photoCaptured" 
                              alt="Snapshot Wajah" 
-                             class="w-full h-full object-cover transform -scale-x-100" />
+                             style="width: 100%; height: 100%; object-fit: cover;" />
 
                         <!-- Canvas Tersembunyi untuk Capture Resolusi Penuh -->
                         <canvas x-ref="captureCanvas" class="hidden"></canvas>
 
-                        <!-- Placeholder Jika Kamera Belum Aktif / Error -->
-                        <div x-show="!cameraActive && !photoCaptured" class="flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2">
-                            <span class="material-symbols-outlined text-4xl text-amber-400 animate-pulse">videocam</span>
-                            <p class="font-mono text-xs text-white font-semibold">Menghubungkan Kamera...</p>
-                            <p class="font-mono text-[11px] text-slate-500">Mohon izinkan akses kamera pada peramban/browser Anda</p>
+                        <!-- Placeholder Jika Kamera Sedang Menghubungkan atau Error -->
+                        <div x-show="!cameraActive && !photoCaptured" 
+                             class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2 z-10">
+                            
+                            <template x-if="cameraLoading">
+                                <div class="flex flex-col items-center space-y-2">
+                                    <span class="material-symbols-outlined text-4xl text-emerald-400 animate-spin">sync</span>
+                                    <p class="font-mono text-xs text-white font-semibold">Mengaktifkan Lensa Kamera...</p>
+                                    <p class="font-mono text-[11px] text-slate-500">Mohon tunggu sebentar</p>
+                                </div>
+                            </template>
+
                             <template x-if="cameraError">
-                                <p class="font-mono text-[11px] text-rose-400 mt-2" x-text="cameraError"></p>
+                                <div class="flex flex-col items-center space-y-2">
+                                    <span class="material-symbols-outlined text-4xl text-rose-400">videocam_off</span>
+                                    <p class="font-mono text-xs text-rose-400 font-semibold" x-text="cameraError"></p>
+                                    <button type="button" @click="startCamera()" class="mt-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold transition-all">
+                                        Coba Aktifkan Kembali
+                                    </button>
+                                </div>
                             </template>
                         </div>
 
-                        <!-- Oval Reticle / Masking Pemindaian Wajah Futuristik -->
-                        <div x-show="cameraActive && !photoCaptured" class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                            <!-- Oval Target -->
-                            <div class="w-48 h-60 sm:w-56 sm:h-72 border-2 border-dashed rounded-[50%] relative flex items-center justify-center transition-all duration-300"
-                                 :class="faceDetected ? 'border-emerald-400 shadow-lg shadow-emerald-500/30' : 'border-amber-400/70'">
-                                
-                                <!-- Corner Marks -->
-                                <div class="absolute -top-2 w-4 h-4 border-t-2 border-l-2" :class="faceDetected ? 'border-emerald-400' : 'border-amber-400'"></div>
-                                <div class="absolute -top-2 w-4 h-4 border-t-2 border-r-2 right-0" :class="faceDetected ? 'border-emerald-400' : 'border-amber-400'"></div>
-                                <div class="absolute -bottom-2 w-4 h-4 border-b-2 border-l-2 left-0" :class="faceDetected ? 'border-emerald-400' : 'border-amber-400'"></div>
-                                <div class="absolute -bottom-2 w-4 h-4 border-b-2 border-r-2 right-0" :class="faceDetected ? 'border-emerald-400' : 'border-amber-400'"></div>
+                        <!-- Top Bar Badges (Status Deteksi, Ganti Kamera, Jam) -->
+                        <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shadow-md"
+                                  :class="faceDetected ? 'bg-slate-900/90 text-emerald-400 border border-emerald-500/40' : 'bg-slate-900/90 text-amber-300 border border-amber-500/40'">
+                                <span class="w-1.5 h-1.5 rounded-full" :class="faceDetected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
+                                <span x-text="faceDetected ? 'Wajah Terdeteksi & Fokus' : 'Posisikan Wajah Anda'"></span>
+                            </span>
 
-                                <!-- Scanning Laser Line -->
-                                <div class="absolute w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-pulse"
-                                     style="top: 50%; animation: scanPulse 2s ease-in-out infinite;"></div>
+                            <div class="inline-flex items-center gap-1.5">
+                                <!-- Tombol Ganti Kamera Depan/Belakang -->
+                                <button type="button" 
+                                        @click="toggleCamera()" 
+                                        class="pointer-events-auto p-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-all shadow-md flex items-center justify-center"
+                                        title="Ganti Kamera">
+                                    <span class="material-symbols-outlined text-sm">flip_camera_ios</span>
+                                </button>
+
+                                <span class="px-2.5 py-1 rounded-full bg-slate-900/90 text-slate-300 font-mono text-[10px] border border-slate-700 font-semibold shadow-md">
+                                    {{ now()->format('H:i') }} WIB
+                                </span>
                             </div>
                         </div>
 
-                        <!-- Status Badge Deteksi Wajah -->
-                        <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider backdrop-blur-none"
-                                  :class="faceDetected ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/40' : 'bg-amber-950/80 text-amber-300 border border-amber-500/40'">
-                                <span class="w-1.5 h-1.5 rounded-full" :class="faceDetected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
-                                <span x-text="faceDetected ? 'Wajah Terdeteksi & Terfokus' : 'Posisikan Wajah di Tengah'"></span>
-                            </span>
+                        <!-- Face ID Oval Viewfinder Frame (Biometric Scanner) -->
+                        <div x-show="cameraActive && !photoCaptured" class="pointer-events-none absolute inset-0 flex items-center justify-center z-10">
+                            <div class="relative w-44 h-56 sm:w-48 sm:h-60 transition-all duration-300 flex items-center justify-center"
+                                 style="border-radius: 50%;"
+                                 :class="faceDetected ? 'border-2 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.35)]' : 'border-2 border-amber-400/80 shadow-[0_0_15px_rgba(245,158,11,0.25)]'">
+                                
+                                <!-- Center Corner Accents -->
+                                <div class="absolute -top-1 w-6 h-1 rounded-full" :class="faceDetected ? 'bg-emerald-400' : 'bg-amber-400'"></div>
+                                <div class="absolute -bottom-1 w-6 h-1 rounded-full" :class="faceDetected ? 'bg-emerald-400' : 'bg-amber-400'"></div>
+                                <div class="absolute -left-1 h-6 w-1 rounded-full" :class="faceDetected ? 'bg-emerald-400' : 'bg-amber-400'"></div>
+                                <div class="absolute -right-1 h-6 w-1 rounded-full" :class="faceDetected ? 'bg-emerald-400' : 'bg-amber-400'"></div>
 
-                            <span class="px-2 py-0.5 rounded bg-black/70 text-slate-300 font-mono text-[10px] border border-slate-800">
-                                {{ now()->format('H:i') }} WIB
-                            </span>
+                                <!-- Scanning Radar Line -->
+                                <div class="absolute w-36 sm:w-40 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_8px_#34d399]"
+                                     style="animation: radarScan 2s ease-in-out infinite;"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -172,12 +196,12 @@
                             </span>
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-bold text-white" x-text="locationStatus"></span>
+                                    <span class="font-bold text-white text-[11px]" x-text="locationStatus"></span>
                                     <template x-if="inOfficeRadius">
-                                        <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-500/30">Dalam Radius</span>
+                                        <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30">Dalam Radius</span>
                                     </template>
                                 </div>
-                                <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                                     <span x-text="latitude ? (latitude.toFixed(5) + ', ' + longitude.toFixed(5)) : 'Mencari sinyal GPS...'"></span>
                                     <template x-if="distanceMeters !== null">
                                         <span>• Jarak: <strong class="text-slate-200" x-text="distanceMeters + ' m'"></strong></span>
@@ -195,14 +219,14 @@
                     </div>
 
                     <!-- Tombol Aksi Verifikasi & Absen -->
-                    <div class="pt-1 flex items-center gap-3">
+                    <div class="pt-1 flex items-center gap-2.5">
                         <template x-if="photoCaptured">
                             <button type="button" 
                                     @click="retakePhoto()" 
                                     :disabled="isProcessing"
                                     class="w-1/3 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 border border-slate-700">
                                 <span class="material-symbols-outlined text-base">replay</span>
-                                <span>Foto Ulang</span>
+                                <span>Ulang</span>
                             </button>
                         </template>
 
@@ -235,12 +259,15 @@ function faceAttendanceComponent() {
     return {
         showModal: false,
         cameraActive: false,
+        cameraLoading: false,
         cameraError: '',
         videoStream: null,
         photoCaptured: null,
         isProcessing: false,
         attendanceType: 'auto', // auto, clock_in, clock_out
-        faceDetected: true,
+        facingMode: 'user', // user (front) or environment (back)
+        faceDetected: false,
+        scanInterval: null,
         verificationSuccess: false,
         successData: null,
 
@@ -259,7 +286,6 @@ function faceAttendanceComponent() {
         allowedRadius: {{ config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500)) }},
 
         init() {
-            // Pre-fetch geolocation
             this.requestLocation();
         },
 
@@ -280,6 +306,11 @@ function faceAttendanceComponent() {
             this.stopCamera();
             this.showModal = false;
             this.photoCaptured = null;
+        },
+
+        toggleCamera() {
+            this.facingMode = (this.facingMode === 'user') ? 'environment' : 'user';
+            this.startCamera();
         },
 
         requestLocation() {
@@ -304,8 +335,8 @@ function faceAttendanceComponent() {
                         : 'Lokasi Terbaca (Di Luar Kantor)';
                 },
                 (err) => {
-                    console.warn('Geolocation error:', err.message);
-                    this.locationStatus = 'Izin Lokasi Ditolak / Lemah';
+                    console.warn('Geolocation warning:', err.message);
+                    this.locationStatus = 'Sinyal Lokasi Lemah (Gunakan GPS)';
                     this.locationReady = false;
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -325,35 +356,110 @@ function faceAttendanceComponent() {
 
         async startCamera() {
             this.cameraError = '';
+            this.cameraLoading = true;
+            this.cameraActive = false;
+
+            // Stop track lama jika ada
+            if (this.videoStream) {
+                this.videoStream.getTracks().forEach(t => t.stop());
+                this.videoStream = null;
+            }
+
+            let stream = null;
             try {
-                const constraints = {
+                // Percobaan 1: Kamera dengan resolusi ideal
+                stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        facingMode: 'user',
+                        facingMode: this.facingMode,
                         width: { ideal: 640 },
                         height: { ideal: 480 }
                     },
                     audio: false
-                };
-
-                this.videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-                if (this.$refs.videoElement) {
-                    this.$refs.videoElement.srcObject = this.videoStream;
-                    this.cameraActive = true;
-                    this.faceDetected = true;
+                });
+            } catch (err1) {
+                console.warn('Attempt 1 failed, trying fallback...', err1);
+                try {
+                    // Percobaan 2: Fallback kamera standar
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: false
+                    });
+                } catch (err2) {
+                    console.error('Semua akses kamera gagal:', err2);
+                    this.cameraError = 'Izin kamera ditolak. Silakan izinkan akses kamera di setelan browser.';
+                    this.cameraLoading = false;
+                    return;
                 }
-            } catch (err) {
-                console.error('Kamera gagal diakses:', err);
-                this.cameraActive = false;
-                this.cameraError = 'Gagal mengakses kamera: ' + (err.message || 'Izin kamera ditolak.');
+            }
+
+            this.videoStream = stream;
+            const video = this.$refs.videoElement;
+            if (video) {
+                video.srcObject = stream;
+                video.setAttribute('playsinline', 'true');
+                video.setAttribute('autoplay', 'true');
+                video.muted = true;
+
+                // Pastikan video aktif diputar (play)
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        this.cameraActive = true;
+                        this.cameraLoading = false;
+                        this.startFaceScanLoop();
+                    }).catch(e => {
+                        console.warn('Auto play was prevented:', e);
+                        this.cameraActive = true;
+                        this.cameraLoading = false;
+                    });
+                }
             }
         },
 
         stopCamera() {
+            if (this.scanInterval) {
+                clearInterval(this.scanInterval);
+                this.scanInterval = null;
+            }
             if (this.videoStream) {
                 this.videoStream.getTracks().forEach(track => track.stop());
                 this.videoStream = null;
             }
             this.cameraActive = false;
+        },
+
+        startFaceScanLoop() {
+            if (this.scanInterval) clearInterval(this.scanInterval);
+            this.scanInterval = setInterval(() => {
+                if (!this.cameraActive || this.photoCaptured) return;
+                const video = this.$refs.videoElement;
+                if (!video || video.readyState < 2) {
+                    this.faceDetected = false;
+                    return;
+                }
+
+                // Cek pencahayaan & aliran frame video
+                try {
+                    const canvas = this.$refs.captureCanvas;
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        canvas.width = 120;
+                        canvas.height = 90;
+                        ctx.drawImage(video, 0, 0, 120, 90);
+                        const frame = ctx.getImageData(0, 0, 120, 90);
+                        let totalB = 0;
+                        const data = frame.data;
+                        for (let i = 0; i < data.length; i += 16) {
+                            totalB += (data[i] + data[i+1] + data[i+2]) / 3;
+                        }
+                        const avg = totalB / (data.length / 16);
+                        // Jika kamera terbuka dan ada cahaya (bukan tertutup / blank black)
+                        this.faceDetected = (avg >= 20);
+                    }
+                } catch (e) {
+                    this.faceDetected = true;
+                }
+            }, 500);
         },
 
         retakePhoto() {
@@ -374,14 +480,18 @@ function faceAttendanceComponent() {
                 canvas.height = height;
 
                 const ctx = canvas.getContext('2d');
-                // Mirror horizontally sesuai preview
-                ctx.translate(width, 0);
-                ctx.scale(-1, 1);
-                ctx.drawImage(video, 0, 0, width, height);
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                // Mirror horizontally jika kamera depan
+                if (this.facingMode === 'user') {
+                    ctx.translate(width, 0);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(video, 0, 0, width, height);
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                } else {
+                    ctx.drawImage(video, 0, 0, width, height);
+                }
 
                 // Tambahkan Watermark Digital Biometrik
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                 ctx.fillRect(10, height - 45, width - 20, 35);
                 ctx.fillStyle = '#10b981';
                 ctx.font = 'bold 12px monospace';
@@ -431,10 +541,9 @@ function faceAttendanceComponent() {
                     this.successData = data;
                     this.playBeepSound();
 
-                    // Refresh otomatis setelah 2.5 detik
                     setTimeout(() => {
                         window.location.reload();
-                    }, 2500);
+                    }, 2200);
                 } else {
                     alert(data.message || 'Gagal memverifikasi presensi.');
                     this.retakePhoto();
@@ -454,25 +563,23 @@ function faceAttendanceComponent() {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 880Hz (A5)
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.3);
-            } catch (e) {
-                // Ignore audio context errors on muted browsers
-            }
+            } catch (e) {}
         }
     };
 }
 </script>
 
 <style>
-@keyframes scanPulse {
-    0% { transform: translateY(-70px); opacity: 0.3; }
-    50% { transform: translateY(70px); opacity: 1; }
-    100% { transform: translateY(-70px); opacity: 0.3; }
+@keyframes radarScan {
+    0% { transform: translateY(-75px); opacity: 0.3; }
+    50% { transform: translateY(75px); opacity: 1; }
+    100% { transform: translateY(-75px); opacity: 0.3; }
 }
 </style>
