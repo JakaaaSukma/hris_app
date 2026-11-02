@@ -26,7 +26,7 @@
                         <span>Presensi Biometrik Wajah</span>
                         <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono uppercase tracking-wider font-semibold">Face ID + GPS</span>
                     </h3>
-                    <p class="font-mono text-[11px] text-slate-400">Verifikasi kamera wajah & titik koordinat GPS</p>
+                    <p class="font-mono text-[11px] text-slate-400">Verifikasi kamera wajah & lokasi terkini</p>
                 </div>
             </div>
             <button type="button" @click="closeModal()" :disabled="isProcessing" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
@@ -38,217 +38,180 @@
         <div class="p-4 sm:p-5 space-y-3.5">
 
             <!-- Tampilan SUKSES VERIFIKASI -->
-            <template x-if="verificationSuccess">
-                <div class="py-6 flex flex-col items-center text-center space-y-4">
-                    <div class="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce shadow-lg shadow-emerald-500/30">
-                        <span class="material-symbols-outlined text-4xl">check_circle</span>
-                    </div>
+            <div x-show="verificationSuccess" class="py-6 flex flex-col items-center text-center space-y-4">
+                <div class="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce shadow-lg shadow-emerald-500/30">
+                    <span class="material-symbols-outlined text-4xl">check_circle</span>
+                </div>
 
-                    <div>
-                        <h4 class="font-headline font-bold text-xl text-white" x-text="successData?.message || 'Presensi Berhasil!'"></h4>
-                        <p class="font-mono text-xs text-slate-400 mt-1">
-                            Tercatat pada <strong class="text-emerald-400 font-semibold" x-text="successData?.time || ''"></strong>
-                        </p>
-                    </div>
-
-                    <!-- Ringkasan Hasil Presensi -->
-                    <div class="w-full bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 space-y-2 font-mono text-xs text-left">
-                        <div class="flex justify-between items-center text-slate-300">
-                            <span class="text-slate-400">Status Kedisiplinan:</span>
-                            <span class="px-2 py-0.5 rounded text-[11px] font-bold"
-                                  :class="successData?.status === 'on_time' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'"
-                                  x-text="successData?.status_label || 'Tercatat'">
-                            </span>
-                        </div>
-                        <div class="flex justify-between items-center text-slate-300">
-                            <span class="text-slate-400">Jarak ke Kantor:</span>
-                            <span class="font-semibold text-white" x-text="successData?.distance !== null ? successData.distance + ' meter' : 'Tercatat'"></span>
-                        </div>
-                        <div class="flex justify-between items-center text-slate-300">
-                            <span class="text-slate-400">Lokasi:</span>
-                            <span class="font-semibold text-slate-200 truncate max-w-[200px]" x-text="successData?.location || 'Terekam'"></span>
-                        </div>
-                    </div>
-
-                    <p class="font-mono text-[11px] text-slate-500 animate-pulse">
-                        Halaman akan disegarkan otomatis dalam 2 detik...
+                <div>
+                    <h4 class="font-headline font-bold text-xl text-white" x-text="successData?.message || 'Presensi Berhasil!'"></h4>
+                    <p class="font-mono text-xs text-slate-400 mt-1">
+                        Tercatat pada <strong class="text-emerald-400 font-semibold" x-text="successData?.time || ''"></strong>
                     </p>
                 </div>
-            </template>
+
+                <!-- Ringkasan Hasil Presensi -->
+                <div class="w-full bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 space-y-2 font-mono text-xs text-left">
+                    <div class="flex justify-between items-center text-slate-300">
+                        <span class="text-slate-400">Status Kedisiplinan:</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-bold"
+                              :class="successData?.status === 'on_time' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'"
+                              x-text="successData?.status_label || 'Tercatat'">
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center text-slate-300">
+                        <span class="text-slate-400">Jarak ke Kantor:</span>
+                        <span class="font-semibold text-white" x-text="successData?.distance !== null ? successData.distance + ' meter' : 'Tercatat'"></span>
+                    </div>
+                    <div class="flex justify-between items-center text-slate-300">
+                        <span class="text-slate-400">Lokasi:</span>
+                        <span class="font-semibold text-slate-200 truncate max-w-[200px]" x-text="successData?.location || 'Terekam'"></span>
+                    </div>
+                </div>
+
+                <p class="font-mono text-[11px] text-slate-500 animate-pulse">
+                    Halaman akan disegarkan otomatis dalam 2 detik...
+                </p>
+            </div>
 
             <!-- Tampilan KAMERA & SCANNER (AKTIF) -->
-            <template x-if="!verificationSuccess">
-                <div class="space-y-3.5">
+            <div x-show="!verificationSuccess" class="space-y-3.5">
 
-                    <!-- Pilihan Mode: Masuk atau Pulang -->
-                    <div class="flex items-center gap-2 p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-xs font-mono">
-                        <button type="button" 
-                                @click="attendanceType = 'clock_in'" 
-                                :class="attendanceType === 'clock_in' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                                class="flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
-                            <span class="material-symbols-outlined text-base">login</span>
-                            <span>Presensi Masuk</span>
-                        </button>
-                        <button type="button" 
-                                @click="attendanceType = 'clock_out'" 
-                                :class="attendanceType === 'clock_out' ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                                class="flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
-                            <span class="material-symbols-outlined text-base">logout</span>
-                            <span>Presensi Pulang</span>
-                        </button>
-                    </div>
-
-                    <!-- Viewfinder Kamera Face ID -->
-                    <div class="relative w-full rounded-2xl overflow-hidden border-2 bg-slate-950 flex items-center justify-center shadow-lg"
-                         :class="faceDetected ? 'border-emerald-500 shadow-emerald-500/20' : 'border-amber-500/50 shadow-amber-500/10'"
-                         style="height: 290px;">
-                        
-                        <!-- Video Feed Langsung (Always Visible & Playing) -->
-                        <video x-ref="videoElement" 
-                               autoplay 
-                               playsinline 
-                               muted 
-                               style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);"
-                               x-show="!photoCaptured">
-                        </video>
-
-                        <!-- Preview Hasil Foto Snapshot Setelah Dipotret -->
-                        <img x-ref="photoPreview" 
-                             x-show="photoCaptured" 
-                             :src="photoCaptured" 
-                             alt="Snapshot Wajah" 
-                             style="width: 100%; height: 100%; object-fit: cover;" />
-
-                        <!-- Canvas Tersembunyi untuk Capture Resolusi Penuh -->
-                        <canvas x-ref="captureCanvas" class="hidden"></canvas>
-
-                        <!-- Placeholder Jika Kamera Sedang Menghubungkan atau Error -->
-                        <div x-show="!cameraActive && !photoCaptured" 
-                             class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2 z-10">
-                            
-                            <template x-if="cameraLoading">
-                                <div class="flex flex-col items-center space-y-2">
-                                    <span class="material-symbols-outlined text-4xl text-emerald-400 animate-spin">sync</span>
-                                    <p class="font-mono text-xs text-white font-semibold">Mengaktifkan Lensa Kamera...</p>
-                                    <p class="font-mono text-[11px] text-slate-500">Mohon tunggu sebentar</p>
-                                </div>
-                            </template>
-
-                            <template x-if="cameraError">
-                                <div class="flex flex-col items-center space-y-2">
-                                    <span class="material-symbols-outlined text-4xl text-rose-400">videocam_off</span>
-                                    <p class="font-mono text-xs text-rose-400 font-semibold" x-text="cameraError"></p>
-                                    <button type="button" @click="startCamera()" class="mt-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold transition-all">
-                                        Coba Aktifkan Kembali
-                                    </button>
-                                </div>
-                            </template>
-                        </div>
-
-                        <!-- Top Bar Badges (Status Deteksi, Ganti Kamera, Jam) -->
-                        <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-20">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shadow-md"
-                                  :class="faceDetected ? 'bg-slate-900/90 text-emerald-400 border border-emerald-500/40' : 'bg-slate-900/90 text-amber-300 border border-amber-500/40'">
-                                <span class="w-1.5 h-1.5 rounded-full" :class="faceDetected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
-                                <span x-text="faceDetected ? 'Wajah Terdeteksi & Fokus' : 'Posisikan Wajah Anda'"></span>
-                            </span>
-
-                            <div class="inline-flex items-center gap-1.5">
-                                <!-- Tombol Ganti Kamera Depan/Belakang -->
-                                <button type="button" 
-                                        @click="toggleCamera()" 
-                                        class="pointer-events-auto p-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-all shadow-md flex items-center justify-center"
-                                        title="Ganti Kamera">
-                                    <span class="material-symbols-outlined text-sm">flip_camera_ios</span>
-                                </button>
-
-                                <span class="px-2.5 py-1 rounded-full bg-slate-900/90 text-slate-300 font-mono text-[10px] border border-slate-700 font-semibold shadow-md">
-                                    {{ now()->format('H:i') }} WIB
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Face ID Oval Viewfinder Frame (Biometric Scanner) -->
-                        <div x-show="cameraActive && !photoCaptured" class="pointer-events-none absolute inset-0 flex items-center justify-center z-10">
-                            <div class="relative w-44 h-56 sm:w-48 sm:h-60 transition-all duration-300 flex items-center justify-center"
-                                 style="border-radius: 50%;"
-                                 :class="faceDetected ? 'border-2 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.35)]' : 'border-2 border-amber-400/80 shadow-[0_0_15px_rgba(245,158,11,0.25)]'">
-                                
-                                <!-- Center Corner Accents -->
-                                <div class="absolute -top-1 w-6 h-1 rounded-full" :class="faceDetected ? 'bg-emerald-400' : 'bg-amber-400'"></div>
-                                <div class="absolute -bottom-1 w-6 h-1 rounded-full" :class="faceDetected ? 'bg-emerald-400' : 'bg-amber-400'"></div>
-                                <div class="absolute -left-1 h-6 w-1 rounded-full" :class="faceDetected ? 'bg-emerald-400' : 'bg-amber-400'"></div>
-                                <div class="absolute -right-1 h-6 w-1 rounded-full" :class="faceDetected ? 'bg-emerald-400' : 'bg-amber-400'"></div>
-
-                                <!-- Scanning Radar Line -->
-                                <div class="absolute w-36 sm:w-40 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_8px_#34d399]"
-                                     style="animation: radarScan 2s ease-in-out infinite;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Kartu Indikator GPS Lokasi Terkini -->
-                    <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between font-mono text-xs">
-                        <div class="flex items-center gap-2.5">
-                            <span class="material-symbols-outlined text-lg" 
-                                  :class="locationReady ? (inOfficeRadius ? 'text-emerald-400' : 'text-amber-400') : 'text-slate-500 animate-spin'">
-                                location_on
-                            </span>
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-white text-[11px]" x-text="locationStatus"></span>
-                                    <template x-if="inOfficeRadius">
-                                        <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30">Dalam Radius</span>
-                                    </template>
-                                </div>
-                                <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                    <span x-text="latitude ? (latitude.toFixed(5) + ', ' + longitude.toFixed(5)) : 'Mencari sinyal GPS...'"></span>
-                                    <template x-if="distanceMeters !== null">
-                                        <span>• Jarak: <strong class="text-slate-200" x-text="distanceMeters + ' m'"></strong></span>
-                                    </template>
-                                </div>
-                            </div>
-                        </div>
-
-                        <template x-if="latitude && longitude">
-                            <a :href="'https://www.google.com/maps?q=' + latitude + ',' + longitude" target="_blank" class="text-primary-light hover:underline text-[11px] flex items-center gap-0.5 shrink-0">
-                                <span>Peta</span>
-                                <span class="material-symbols-outlined text-xs">open_in_new</span>
-                            </a>
-                        </template>
-                    </div>
-
-                    <!-- Tombol Aksi Verifikasi & Absen -->
-                    <div class="pt-1 flex items-center gap-2.5">
-                        <template x-if="photoCaptured">
-                            <button type="button" 
-                                    @click="retakePhoto()" 
-                                    :disabled="isProcessing"
-                                    class="w-1/3 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 border border-slate-700">
-                                <span class="material-symbols-outlined text-base">replay</span>
-                                <span>Ulang</span>
-                            </button>
-                        </template>
-
-                        <button type="button" 
-                                @click="takePhotoAndSubmit()" 
-                                :disabled="!cameraActive || isProcessing"
-                                class="flex-1 py-3 px-4 rounded-xl text-white font-bold text-xs font-mono transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                :class="attendanceType === 'clock_in' ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-500/25 ring-1 ring-emerald-400/30' : 'bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 shadow-orange-500/25 ring-1 ring-amber-400/30'">
-                            
-                            <template x-if="isProcessing">
-                                <span class="material-symbols-outlined text-base animate-spin">progress_activity</span>
-                            </template>
-                            <template x-if="!isProcessing">
-                                <span class="material-symbols-outlined text-lg">camera</span>
-                            </template>
-
-                            <span x-text="isProcessing ? 'Memverifikasi Biometrik...' : (photoCaptured ? 'Konfirmasi & Kirim Presensi' : (attendanceType === 'clock_in' ? 'Ambil Foto & Clock In' : 'Ambil Foto & Clock Out'))"></span>
-                        </button>
-                    </div>
-
+                <!-- Pilihan Mode: Masuk atau Pulang -->
+                <div class="flex items-center gap-2 p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-xs font-mono">
+                    <button type="button" 
+                            @click="attendanceType = 'clock_in'" 
+                            :class="attendanceType === 'clock_in' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
+                            class="flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">login</span>
+                        <span>Presensi Masuk</span>
+                    </button>
+                    <button type="button" 
+                            @click="attendanceType = 'clock_out'" 
+                            :class="attendanceType === 'clock_out' ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
+                            class="flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">logout</span>
+                        <span>Presensi Pulang</span>
+                    </button>
                 </div>
-            </template>
+
+                <!-- Viewfinder Kamera Face ID (BERSIH TANPA TEKS DI TENGAH) -->
+                <div class="relative w-full rounded-2xl overflow-hidden border border-slate-700 bg-black flex items-center justify-center shadow-lg"
+                     style="height: 310px;">
+                    
+                    <!-- Video Feed Langsung -->
+                    <video x-ref="videoElement" 
+                           autoplay 
+                           playsinline 
+                           muted 
+                           style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block;"
+                           x-show="!photoCaptured">
+                    </video>
+
+                    <!-- Preview Hasil Foto Snapshot Setelah Dipotret -->
+                    <img x-ref="photoPreview" 
+                         x-show="photoCaptured" 
+                         :src="photoCaptured" 
+                         alt="Snapshot Wajah" 
+                         style="width: 100%; height: 100%; object-fit: cover;" />
+
+                    <!-- Canvas Tersembunyi untuk Capture Resolusi Penuh -->
+                    <canvas x-ref="captureCanvas" class="hidden"></canvas>
+
+                    <!-- Placeholder Jika Kamera Sedang Menghubungkan atau Izin Ditolak -->
+                    <div x-show="!cameraActive && !photoCaptured" 
+                         class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2 z-10">
+                        
+                        <div x-show="cameraLoading" class="flex flex-col items-center space-y-2">
+                            <span class="material-symbols-outlined text-4xl text-emerald-400 animate-spin">sync</span>
+                            <p class="font-mono text-xs text-white font-semibold">Mengaktifkan Lensa Kamera...</p>
+                            <p class="font-mono text-[11px] text-slate-500">Mohon izinkan akses kamera pada peramban Anda</p>
+                        </div>
+
+                        <div x-show="cameraError && !cameraLoading" class="flex flex-col items-center space-y-2">
+                            <span class="material-symbols-outlined text-4xl text-rose-400">videocam_off</span>
+                            <p class="font-mono text-xs text-rose-400 font-semibold" x-text="cameraError"></p>
+                            <button type="button" @click="startCamera()" class="mt-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold transition-all shadow-md">
+                                Coba Aktifkan Kembali
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Ganti Kamera (Hanya icon kecil di pojok kanan atas) -->
+                    <button type="button" 
+                            @click="toggleCamera()" 
+                            class="absolute top-3 right-3 z-20 p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 shadow-md transition-all flex items-center justify-center"
+                            title="Ganti Kamera Depan/Belakang">
+                        <span class="material-symbols-outlined text-sm">flip_camera_ios</span>
+                    </button>
+
+                    <!-- Frame Oval Panduan Wajah Bersih (Tanpa Teks Apapun) -->
+                    <div x-show="cameraActive && !photoCaptured" class="pointer-events-none absolute inset-0 flex items-center justify-center z-10">
+                        <div style="width: 195px; height: 250px; border-radius: 50%; border: 2px solid rgba(52, 211, 153, 0.6); box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);"></div>
+                    </div>
+                </div>
+
+                <!-- Kartu Indikator GPS Lokasi Terkini (Di Luar Kamera) -->
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between font-mono text-xs">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-lg" 
+                              :class="locationReady ? (inOfficeRadius ? 'text-emerald-400' : 'text-amber-400') : 'text-slate-500 animate-spin'">
+                            location_on
+                        </span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-white text-[11px]" x-text="locationStatus"></span>
+                                <template x-if="inOfficeRadius">
+                                    <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30">Dalam Radius</span>
+                                </template>
+                            </div>
+                            <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                <span x-text="latitude ? (latitude.toFixed(5) + ', ' + longitude.toFixed(5)) : 'Mencari sinyal GPS...'"></span>
+                                <template x-if="distanceMeters !== null">
+                                    <span>• Jarak: <strong class="text-slate-200" x-text="distanceMeters + ' m'"></strong></span>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <template x-if="latitude && longitude">
+                        <a :href="'https://www.google.com/maps?q=' + latitude + ',' + longitude" target="_blank" class="text-primary-light hover:underline text-[11px] flex items-center gap-0.5 shrink-0">
+                            <span>Peta</span>
+                            <span class="material-symbols-outlined text-xs">open_in_new</span>
+                        </a>
+                    </template>
+                </div>
+
+                <!-- Tombol Aksi Verifikasi & Absen -->
+                <div class="pt-1 flex items-center gap-2.5">
+                    <template x-if="photoCaptured">
+                        <button type="button" 
+                                @click="retakePhoto()" 
+                                :disabled="isProcessing"
+                                class="w-1/3 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 border border-slate-700">
+                            <span class="material-symbols-outlined text-base">replay</span>
+                            <span>Ulang</span>
+                        </button>
+                    </template>
+
+                    <button type="button" 
+                            @click="takePhotoAndSubmit()" 
+                            :disabled="!cameraActive || isProcessing"
+                            class="flex-1 py-3 px-4 rounded-xl text-white font-bold text-xs font-mono transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            :class="attendanceType === 'clock_in' ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-500/25 ring-1 ring-emerald-400/30' : 'bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 shadow-orange-500/25 ring-1 ring-amber-400/30'">
+                        
+                        <template x-if="isProcessing">
+                            <span class="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                        </template>
+                        <template x-if="!isProcessing">
+                            <span class="material-symbols-outlined text-lg">camera</span>
+                        </template>
+
+                        <span x-text="isProcessing ? 'Memverifikasi Biometrik...' : (photoCaptured ? 'Konfirmasi & Kirim Presensi' : (attendanceType === 'clock_in' ? 'Ambil Foto & Clock In' : 'Ambil Foto & Clock Out'))"></span>
+                    </button>
+                </div>
+
+            </div>
 
         </div>
     </div>
@@ -266,8 +229,6 @@ function faceAttendanceComponent() {
         isProcessing: false,
         attendanceType: 'auto', // auto, clock_in, clock_out
         facingMode: 'user', // user (front) or environment (back)
-        faceDetected: false,
-        scanInterval: null,
         verificationSuccess: false,
         successData: null,
 
@@ -297,9 +258,9 @@ function faceAttendanceComponent() {
             this.attendanceType = (detail && detail.type) ? detail.type : 'auto';
 
             this.requestLocation();
-            this.$nextTick(() => {
+            setTimeout(() => {
                 this.startCamera();
-            });
+            }, 100);
         },
 
         closeModal() {
@@ -359,7 +320,7 @@ function faceAttendanceComponent() {
             this.cameraLoading = true;
             this.cameraActive = false;
 
-            // Stop track lama jika ada
+            // Hentikan stream lama jika ada
             if (this.videoStream) {
                 this.videoStream.getTracks().forEach(t => t.stop());
                 this.videoStream = null;
@@ -399,67 +360,26 @@ function faceAttendanceComponent() {
                 video.setAttribute('playsinline', 'true');
                 video.setAttribute('autoplay', 'true');
                 video.muted = true;
+                video.playsInline = true;
 
-                // Pastikan video aktif diputar (play)
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        this.cameraActive = true;
-                        this.cameraLoading = false;
-                        this.startFaceScanLoop();
-                    }).catch(e => {
-                        console.warn('Auto play was prevented:', e);
-                        this.cameraActive = true;
-                        this.cameraLoading = false;
-                    });
+                // Langsung jalankan play()
+                try {
+                    await video.play();
+                } catch (e) {
+                    console.warn('Play attempt error:', e);
                 }
+
+                this.cameraActive = true;
+                this.cameraLoading = false;
             }
         },
 
         stopCamera() {
-            if (this.scanInterval) {
-                clearInterval(this.scanInterval);
-                this.scanInterval = null;
-            }
             if (this.videoStream) {
                 this.videoStream.getTracks().forEach(track => track.stop());
                 this.videoStream = null;
             }
             this.cameraActive = false;
-        },
-
-        startFaceScanLoop() {
-            if (this.scanInterval) clearInterval(this.scanInterval);
-            this.scanInterval = setInterval(() => {
-                if (!this.cameraActive || this.photoCaptured) return;
-                const video = this.$refs.videoElement;
-                if (!video || video.readyState < 2) {
-                    this.faceDetected = false;
-                    return;
-                }
-
-                // Cek pencahayaan & aliran frame video
-                try {
-                    const canvas = this.$refs.captureCanvas;
-                    if (canvas) {
-                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                        canvas.width = 120;
-                        canvas.height = 90;
-                        ctx.drawImage(video, 0, 0, 120, 90);
-                        const frame = ctx.getImageData(0, 0, 120, 90);
-                        let totalB = 0;
-                        const data = frame.data;
-                        for (let i = 0; i < data.length; i += 16) {
-                            totalB += (data[i] + data[i+1] + data[i+2]) / 3;
-                        }
-                        const avg = totalB / (data.length / 16);
-                        // Jika kamera terbuka dan ada cahaya (bukan tertutup / blank black)
-                        this.faceDetected = (avg >= 20);
-                    }
-                } catch (e) {
-                    this.faceDetected = true;
-                }
-            }, 500);
         },
 
         retakePhoto() {
@@ -469,7 +389,7 @@ function faceAttendanceComponent() {
 
         takePhotoAndSubmit() {
             if (!this.photoCaptured) {
-                // Step 1: Capture Frame dari Video ke Canvas
+                // Capture Frame dari Video ke Canvas
                 const video = this.$refs.videoElement;
                 const canvas = this.$refs.captureCanvas;
                 if (!video || !canvas) return;
@@ -507,7 +427,7 @@ function faceAttendanceComponent() {
                 this.stopCamera();
             }
 
-            // Step 2: Kirim Payload ke Server
+            // Kirim Payload ke Server
             this.submitAttendance();
         },
 
@@ -575,11 +495,3 @@ function faceAttendanceComponent() {
     };
 }
 </script>
-
-<style>
-@keyframes radarScan {
-    0% { transform: translateY(-75px); opacity: 0.3; }
-    50% { transform: translateY(75px); opacity: 1; }
-    100% { transform: translateY(-75px); opacity: 0.3; }
-}
-</style>
