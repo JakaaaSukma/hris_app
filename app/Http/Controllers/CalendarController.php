@@ -58,8 +58,37 @@ class CalendarController extends Controller
                         ->where('approval_status', 'approved');
                 });
 
-                // Department schedules for user's department (jika user bukan Direktur yang terisolasi dari dept operasional)
-                if (!$authUser->isDirektur() && $authUser->department) {
+                // Jadwal untuk Direktur: Hanya jadwal yang SUDAH DISETUJUI oleh Sekretaris Direktur
+                if ($authUser->isDirektur()) {
+                    $q->orWhere(function ($sub) {
+                        $sub->where('approval_status', 'approved')
+                            ->where(function ($cross) {
+                                $cross->where('target_department', 'Executive')
+                                      ->orWhere('target_departments', 'like', '%"Executive"%')
+                                      ->orWhere('target_department', 'Direksi')
+                                      ->orWhere('target_departments', 'like', '%"Direksi"%')
+                                      ->orWhere('scope', 'direksi');
+                            });
+                    });
+                }
+
+                // Jadwal untuk Sekretaris Direktur: Melihat agenda Direktur dan seluruh pengajuan ke Direksi (pending maupun approved)
+                if ($authUser->isSekretaris()) {
+                    $director = \App\Models\User::where('role', 'direktur')->first();
+                    if ($director) {
+                        $q->orWhere('user_id', $director->id);
+                    }
+                    $q->orWhere(function ($cross) {
+                        $cross->where('target_department', 'Executive')
+                              ->orWhere('target_departments', 'like', '%"Executive"%')
+                              ->orWhere('target_department', 'Direksi')
+                              ->orWhere('target_departments', 'like', '%"Direksi"%')
+                              ->orWhere('scope', 'direksi');
+                    });
+                }
+
+                // Department schedules for user's department (jika user bukan Direktur & bukan Sekretaris)
+                if (!$authUser->isDirektur() && !$authUser->isSekretaris() && $authUser->department) {
                     $q->orWhere(function ($sub) use ($authUser) {
                         $sub->where('scope', 'departemen')
                             ->where('department', $authUser->department);
@@ -155,7 +184,7 @@ class CalendarController extends Controller
         $selectedDayNum = Carbon::parse($selectedDate)->day;
 
         // List of all departments for target department select
-        $departmentsList = ['HR', 'Finance', 'Bisnis Development', 'GA', 'Resepsionis', 'Trainer'];
+        $departmentsList = ['HR', 'Finance', 'Bisnis Development', 'GA', 'Resepsionis', 'Trainer', 'Executive'];
         $availableTargetDepartments = array_values(array_filter($departmentsList, function ($d) use ($authUser) {
             return strcasecmp($d, $authUser->department ?? '') !== 0;
         }));
@@ -163,13 +192,26 @@ class CalendarController extends Controller
         // Pending schedules that need this user's review:
         // 1. Departemen: scope = 'departemen', user_id != $authUser->id, department = $authUser->department, not yet approved by this user
         // 2. Antar Departemen: scope = 'antar_departemen', user_id != $authUser->id, user is manager or direktur, and user's department is in target departments
+        // 3. Direksi (Executive): HANYA Sekretaris Direktur yang berhak me-review jadwal yang ditujukan ke Direktur
         $pendingReviewsList = CalendarSchedule::with(['creator', 'approvals.user'])
             ->where('approval_status', 'pending')
             ->where('user_id', '!=', $authUser->id)
             ->where(function ($q) use ($authUser) {
                 if ($authUser->isDirektur()) {
-                    // Direktur tidak melihat/mereview jadwal departemen operasional
+                    // Direktur terlindungi dari pengajuan langsung; jadwal harus melalui Sekretaris terlebih dahulu
                     $q->whereRaw('1 = 0');
+                    return;
+                }
+
+                if ($authUser->isSekretaris()) {
+                    // Sekretaris bertugas memvalidasi & me-review seluruh pengajuan jadwal ke Direksi / Executive
+                    $q->where(function ($sub) {
+                        $sub->where('target_department', 'Executive')
+                            ->orWhere('target_departments', 'like', '%"Executive"%')
+                            ->orWhere('target_department', 'Direksi')
+                            ->orWhere('target_departments', 'like', '%"Direksi"%')
+                            ->orWhere('scope', 'direksi');
+                    });
                     return;
                 }
 
@@ -260,9 +302,13 @@ class CalendarController extends Controller
 
         $scope = $request->scope;
 
-        // If karyawan, force scope to individu
+        // If karyawan, periksa apakah memilih pengajuan ke Direksi (via Sekretaris)
         if ($authUser->isKaryawan()) {
-            $scope = 'individu';
+            if ($scope === 'antar_departemen' && (in_array('Executive', (array)$request->target_departments) || $request->target_department === 'Executive')) {
+                $scope = 'antar_departemen';
+            } else {
+                $scope = 'individu';
+            }
         }
 
         $targetDepartment = null;
@@ -279,7 +325,7 @@ class CalendarController extends Controller
             // Manager proposing department schedule: requires approval from members
             $approvalStatus = 'pending';
         } elseif ($scope === 'antar_departemen') {
-            // Manager proposing cross-department schedule: can choose multiple target departments
+            // Manager / Karyawan mengajukan jadwal antar departemen / ke Direksi (via Sekretaris)
             $chosenDepartments = $request->input('target_departments', []);
 
             // If passed as comma-separated or single target_department field
@@ -293,7 +339,7 @@ class CalendarController extends Controller
             })));
 
             if (empty($chosenDepartments)) {
-                return back()->withInput()->with('error', 'Pilih minimal satu departemen tujuan (selain departemen Anda sendiri) untuk jadwal antar departemen.');
+                return back()->withInput()->with('error', 'Pilih minimal satu departemen tujuan (selain departemen Anda sendiri) untuk jadwal.');
             }
 
             $targetDepartments = $chosenDepartments;
@@ -342,7 +388,9 @@ class CalendarController extends Controller
 
         $successMsg = 'Jadwal baru berhasil ditambahkan!';
         if ($approvalStatus === 'pending') {
-            if ($scope === 'departemen') {
+            if (in_array('Executive', $targetDepartments) || in_array('Direksi', $targetDepartments)) {
+                $successMsg = 'Pengajuan jadwal ke Direktur berhasil diajukan dan sedang menunggu verifikasi serta persetujuan dari Sekretaris Direktur.';
+            } elseif ($scope === 'departemen') {
                 $successMsg = 'Jadwal departemen berhasil diajukan dan menunggu persetujuan karyawan di departemen Anda.';
             } else {
                 $successMsg = 'Jadwal antar departemen (' . implode(', ', $targetDepartments) . ') berhasil diajukan dan menunggu persetujuan Manager terkait.';
@@ -408,6 +456,38 @@ class CalendarController extends Controller
         if ($schedule->scope === 'antar_departemen') {
             $targetDepts = $schedule->getTargetDepartmentsList();
             
+            // Khusus Jadwal yang ditujukan ke Direksi / Executive:
+            // "baik karyawan maupun manager tidak bisa langsung mengajukan jadwal ke direktur, harus melalui sekertaris terlebih dahulu"
+            if ($schedule->hasTargetDepartment('Executive') || $schedule->hasTargetDepartment('Direksi')) {
+                if (!$authUser->isSekretaris() && !$authUser->isDirektur()) {
+                    return back()->with('error', 'Persetujuan jadwal ke Direktur wajib melalui verifikasi dan persetujuan Sekretaris Direktur terlebih dahulu.');
+                }
+
+                $schedule->approvals()->updateOrCreate(
+                    ['user_id' => $authUser->id],
+                    ['status' => 'approved', 'notes' => $request->input('notes', 'Disetujui dan diverifikasi oleh Sekretaris Direktur')]
+                );
+
+                $schedule->update([
+                    'approval_status' => 'approved',
+                    'approved_by' => $authUser->id,
+                    'approved_at' => now(),
+                    'rejection_notes' => null,
+                ]);
+
+                try {
+                    $schedule->creator?->notify(new \App\Notifications\GeneralNotification(
+                        "Jadwal Direksi Disetujui",
+                        "Pengajuan jadwal '{$schedule->title}' telah diverifikasi & disetujui oleh Sekretaris Direktur dan resmi masuk ke agenda Direktur.",
+                        route('calendar.index', ['date' => $schedule->date->toDateString()]),
+                        'calendar',
+                        'emerald'
+                    ));
+                } catch (\Throwable $e) {}
+
+                return back()->with('success', 'Jadwal telah diverifikasi dan disetujui oleh Sekretaris Direktur, serta resmi masuk ke agenda Direktur!');
+            }
+
             // Check if user is Direktur or Manager of one of the target departments
             $canApprove = false;
             $approvingDept = null;
@@ -509,6 +589,38 @@ class CalendarController extends Controller
 
         if ($schedule->scope === 'antar_departemen') {
             $targetDepts = $schedule->getTargetDepartmentsList();
+
+            // Khusus Jadwal yang ditujukan ke Direksi / Executive
+            if ($schedule->hasTargetDepartment('Executive') || $schedule->hasTargetDepartment('Direksi')) {
+                if (!$authUser->isSekretaris() && !$authUser->isDirektur()) {
+                    return back()->with('error', 'Hanya Sekretaris Direktur yang berwenang memproses review dan penolakan jadwal ke Direktur.');
+                }
+
+                $schedule->approvals()->updateOrCreate(
+                    ['user_id' => $authUser->id],
+                    ['status' => 'rejected', 'notes' => $request->input('notes')]
+                );
+
+                $schedule->update([
+                    'approval_status' => 'rejected',
+                    'approved_by' => $authUser->id,
+                    'approved_at' => now(),
+                    'rejection_notes' => 'Ditolak oleh Sekretaris Direktur: ' . $request->input('notes'),
+                ]);
+
+                try {
+                    $schedule->creator?->notify(new \App\Notifications\GeneralNotification(
+                        "Jadwal Direksi Ditolak",
+                        "Pengajuan jadwal '{$schedule->title}' ditolak oleh Sekretaris Direktur dengan alasan: {$request->input('notes')}",
+                        route('calendar.index', ['date' => $schedule->date->toDateString()]),
+                        'calendar',
+                        'rose'
+                    ));
+                } catch (\Throwable $e) {}
+
+                return back()->with('success', 'Pengajuan jadwal ke Direksi telah ditolak oleh Sekretaris Direktur.');
+            }
+
             $canReject = false;
 
             if ($authUser->isDirektur()) {

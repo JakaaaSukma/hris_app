@@ -405,7 +405,7 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <h2 class="font-headline font-bold text-base text-white">
-                                @if(auth()->user()->isDirektur())
+                                @if(auth()->user()->isDirektur() || auth()->user()->isSekretaris())
                                     Grafik Indeks KPI Departemen Perusahaan
                                 @elseif(auth()->user()->isHR() && auth()->user()->isManager())
                                     Grafik Indeks KPI Departemen HR & Pengawasan GA
@@ -418,7 +418,7 @@
                             </span>
                         </div>
                         <p class="font-mono text-xs text-slate-400">
-                            @if(auth()->user()->isDirektur())
+                            @if(auth()->user()->isDirektur() || auth()->user()->isSekretaris())
                                 Indikator kinerja kunci seluruh divisi: HR, Finance, Bisnis Development, dan General Affairs
                             @elseif(auth()->user()->isHR() && auth()->user()->isManager())
                                 Indikator pencapaian kinerja Departemen HR dan pengawasan performa operasional Departemen General Affairs (GA)
@@ -547,8 +547,8 @@
     @endif
 
 
-    @if(auth()->user()->isDirektur() && !empty($directorMetrics))
-        <!-- EXECUTIVE ANALYTICAL PERCENTAGE BAR (KHUSUS DIREKTUR) -->
+    @if((auth()->user()->isDirektur() || auth()->user()->isSekretaris()) && !empty($directorMetrics))
+        <!-- EXECUTIVE ANALYTICAL PERCENTAGE BAR (DIREKTUR & SEKRETARIS DIREKTUR) -->
         <div class="p-5 bg-gradient-to-r from-surface-container to-surface-container-high rounded-xl border border-amber-500/30 shadow-md">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-[#282a2e]/60">
                 <div class="flex items-center gap-2">

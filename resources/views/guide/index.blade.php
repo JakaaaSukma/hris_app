@@ -420,7 +420,7 @@
                         <ul class="list-disc list-inside space-y-1 text-slate-400 pl-1 leading-relaxed">
                             <li><strong>Supervisi Tim:</strong> Memberikan tugas kerja (Task) dan memantau progres tugas anggota divisi.</li>
                             <li><strong>Jadwal Antar-Departemen:</strong> Mengajukan agenda kalender koordinasi lintas departemen.</li>
-                            <li><strong>Menu Chat Ganda:</strong> Akses ke <em>Chat Departemen</em> bersama anggota tim dan <em>Chat Direksi</em> eksklusif langsung ke Direktur Utama.</li>
+                            <li><strong>Menu Chat Ganda:</strong> Akses ke <em>Chat Departemen</em> bersama anggota tim dan <em>Chat Sekretaris Direktur</em> untuk koordinasi eksekutif (seluruh komunikasi diteruskan melalui Sekretaris).</li>
                             <li><strong>Approval Berdasarkan Divisi:</strong>
                                 <br>&bull; <strong>Manager HR:</strong> Memiliki wewenang eksklusif menyetujui Cuti, Izin, Dispensasi, dan pengajuan Reset Kehadiran.
                                 <br>&bull; <strong>Manager Finance:</strong> Menyetujui klaim Reimbursement dan penerbitan slip gaji.

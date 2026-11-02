@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->role === 'direktur';
     }
 
+    public function isSekretaris(): bool
+    {
+        return in_array($this->role, ['sekretaris', 'sekretaris_direktur']);
+    }
+
     public function isManager(): bool
     {
         return $this->role === 'manager';
@@ -108,8 +113,8 @@ class User extends Authenticatable
 
     public function canViewCompanyMetrics(): bool
     {
-        // Hanya Manager HR dan Direktur Utama yang dapat melihat ringkasan metrik operasional perusahaan di dashboard (Total Karyawan, Kehadiran Global Hari Ini, Cuti Global, Pending Approval)
-        return $this->isDirektur() || ($this->isHR() && $this->isManager());
+        // Manager HR, Direktur Utama, dan Sekretaris Direktur (monitoring KPI) yang dapat melihat ringkasan metrik operasional perusahaan di dashboard
+        return $this->isDirektur() || ($this->isHR() && $this->isManager()) || $this->isSekretaris();
     }
 
     public function canApproveReimbursements(): bool

@@ -288,10 +288,17 @@
                                             $canCurrentUserApprove = true;
                                         }
                                     } elseif ($item->scope === 'antar_departemen') {
-                                        // Manager departemen target (atau Direktur) yang belum menyetujui
                                         $alreadyApproved = $item->approvals->where('user_id', auth()->id())->where('status', 'approved')->isNotEmpty();
-                                        if (!$alreadyApproved && (auth()->user()->isDirektur() || (auth()->user()->isManager() && $item->hasTargetDepartment(auth()->user()->department)))) {
-                                            $canCurrentUserApprove = true;
+                                        // Jadwal Direksi: HANYA Sekretaris Direktur yang berhak menyetujui
+                                        if ($item->hasTargetDepartment('Executive') || $item->hasTargetDepartment('Direksi')) {
+                                            if (!$alreadyApproved && auth()->user()->isSekretaris()) {
+                                                $canCurrentUserApprove = true;
+                                            }
+                                        } else {
+                                            // Manager departemen target yang belum menyetujui
+                                            if (!$alreadyApproved && (auth()->user()->isDirektur() || (auth()->user()->isManager() && $item->hasTargetDepartment(auth()->user()->department)))) {
+                                                $canCurrentUserApprove = true;
+                                            }
                                         }
                                     }
                                 }
@@ -406,7 +413,9 @@
                                 @if($canCurrentUserApprove)
                                     <div class="p-2.5 rounded-lg bg-[#0e1017] border border-amber-500/30 flex items-center justify-between gap-2 mt-2">
                                         <div class="text-[11px] text-amber-300 font-mono">
-                                            @if($item->scope === 'departemen')
+                                            @if($item->hasTargetDepartment('Executive') || $item->hasTargetDepartment('Direksi'))
+                                                Persetujuan Sekretaris Direktur:
+                                            @elseif($item->scope === 'departemen')
                                                 Konfirmasi jadwal departemen:
                                             @else
                                                 Persetujuan Manager {{ auth()->user()->isDirektur() ? '(' . implode(', ', $item->getTargetDepartmentsList()) . ')' : auth()->user()->department }}:
@@ -483,7 +492,11 @@
                     <div class="p-4 rounded-xl bg-[#16161a] border border-[#26262e] hover:border-amber-500/50 transition-all flex flex-col justify-between gap-3">
                         <div class="space-y-2">
                             <div class="flex items-center justify-between gap-2">
-                                @if($pendingItem->scope === 'departemen')
+                                @if($pendingItem->hasTargetDepartment('Executive') || $pendingItem->hasTargetDepartment('Direksi'))
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/30 font-semibold">
+                                        Jadwal Direksi (via Sekretaris)
+                                    </span>
+                                @elseif($pendingItem->scope === 'departemen')
                                     <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-300 border border-blue-500/30">
                                         Jadwal Departemen {{ $pendingItem->department }}
                                     </span>
@@ -586,14 +599,38 @@
 
                 <!-- SCOPE JADWAL / CAKUPAN PENGAJUAN -->
                 @if(auth()->user()->isKaryawan())
-                    <!-- Karyawan: Hanya bisa menambahkan jadwal individu -->
-                    <input type="hidden" name="scope" value="individu">
-                    <div class="p-3 rounded-xl bg-[#0e1017] border border-slate-800 flex items-center gap-2 text-xs text-slate-300">
-                        <span class="material-symbols-outlined text-emerald-400 text-sm">person</span>
-                        <span>Cakupan Jadwal: <strong>Individu (Pribadi)</strong></span>
+                    <!-- Karyawan: Bisa memilih Individu (Pribadi) ATAU Pengajuan Jadwal ke Direksi (via Sekretaris) -->
+                    <div class="p-3.5 rounded-xl bg-[#0e1017] border border-slate-800 space-y-2.5">
+                        <label class="block text-xs font-mono uppercase tracking-wider text-slate-400">Cakupan / Tingkat Jadwal *</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors"
+                                   :class="modalForm.scope === 'individu' ? 'bg-rose-500/10 border-rose-500/50 text-white' : 'border-slate-800 text-slate-400 hover:border-slate-700'">
+                                <input type="radio" name="scope" value="individu" x-model="modalForm.scope" class="accent-rose-500">
+                                <div>
+                                    <span class="text-xs font-semibold block">Individu (Pribadi)</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">Langsung dijadwalkan</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors"
+                                   :class="modalForm.scope === 'antar_departemen' ? 'bg-amber-500/10 border-amber-500/50 text-white' : 'border-slate-800 text-slate-400 hover:border-slate-700'">
+                                <input type="radio" name="scope" value="antar_departemen" x-model="modalForm.scope" @click="modalForm.target_departments = ['Executive']" class="accent-amber-500">
+                                <div>
+                                    <span class="text-xs font-semibold block text-amber-300">Ke Direksi (via Sekretaris)</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">Review Sekretaris Direktur</span>
+                                </div>
+                            </label>
+                        </div>
+                        <div x-show="modalForm.scope === 'antar_departemen'" class="pt-1">
+                            <input type="hidden" name="target_departments[]" value="Executive" :disabled="modalForm.scope !== 'antar_departemen'">
+                            <p class="text-[11px] text-amber-400 font-mono flex items-center gap-1.5 bg-amber-500/10 p-2 rounded-lg border border-amber-500/30">
+                                <span class="material-symbols-outlined text-xs">info</span>
+                                Pengajuan jadwal ke Direktur wajib melalui verifikasi & persetujuan Sekretaris Direktur terlebih dahulu.
+                            </p>
+                        </div>
                     </div>
                 @else
-                    <!-- Manager / Direktur: Bisa pilih Individu, Departemen, atau Antar Departemen -->
+                    <!-- Manager / Direktur / Sekretaris: Bisa pilih Individu, Departemen, atau Antar Departemen -->
                     <div class="p-3.5 rounded-xl bg-[#0e1017] border border-slate-800 space-y-2.5">
                         <label class="block text-xs font-mono uppercase tracking-wider text-slate-400">Cakupan / Tingkat Jadwal *</label>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -612,7 +649,7 @@
                             <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors"
                                    :class="modalForm.scope === 'antar_departemen' ? 'bg-rose-500/10 border-rose-500/50 text-white' : 'border-slate-800 text-slate-400 hover:border-slate-700'">
                                 <input type="radio" name="scope" value="antar_departemen" x-model="modalForm.scope" class="accent-rose-500">
-                                <span class="text-xs font-semibold">Antar Dept</span>
+                                <span class="text-xs font-semibold">Antar Dept / Direksi</span>
                             </label>
                         </div>
 
@@ -630,7 +667,7 @@
                                 Pilih Departemen Tujuan * <span class="text-rose-400 text-[10px] lowercase font-sans">(bisa pilih lebih dari 1)</span>
                             </label>
                             <div class="grid grid-cols-2 gap-2 p-2.5 bg-[#0e1017] rounded-xl border border-slate-700/80">
-                                @foreach($availableTargetDepartments ?? ['HR', 'Finance', 'Bisnis Development', 'GA', 'Resepsionis', 'Trainer'] as $targetDept)
+                                @foreach($availableTargetDepartments ?? ['HR', 'Finance', 'Bisnis Development', 'GA', 'Resepsionis', 'Trainer', 'Executive'] as $targetDept)
                                     <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all text-xs"
                                            :class="modalForm.target_departments.includes('{{ $targetDept }}') ? 'bg-purple-500/15 border-purple-500/60 text-white font-semibold' : 'border-slate-800 text-slate-400 hover:border-slate-700'">
                                         <input type="checkbox" 
@@ -638,13 +675,13 @@
                                                value="{{ $targetDept }}" 
                                                x-model="modalForm.target_departments" 
                                                class="accent-purple-500 rounded">
-                                        <span>{{ $targetDept }}</span>
+                                        <span>{{ $targetDept === 'Executive' ? 'Direksi (via Sekretaris)' : $targetDept }}</span>
                                     </label>
                                 @endforeach
                             </div>
                             <p class="text-[11px] text-purple-400 font-mono mt-1.5 flex items-center gap-1">
                                 <span class="material-symbols-outlined text-xs">approval</span>
-                                Jadwal akan diajukan ke masing-masing Manager departemen tujuan untuk persetujuan.
+                                Jadwal ke departemen di-review oleh Manager terkait. Jadwal ke Direksi di-review oleh Sekretaris Direktur.
                             </p>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
-    <?php
+<?php
 
-    namespace App\Http\Controllers;
+namespace App\Http\Controllers;
 
     use App\Models\Attendance;
     use App\Models\AttendanceExcuse;

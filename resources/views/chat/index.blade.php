@@ -247,12 +247,12 @@
                             <span class="material-symbols-outlined text-xs text-rose-400">check</span>
                         </a>
 
-                        <!-- 2. Chat Direksi -->
+                        <!-- 2. Chat Sekretaris Direktur -->
                         <a href="{{ route('chat.index', ['tab' => 'direksi']) }}" 
                            class="flex items-center justify-between px-3.5 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
                             <div class="flex items-center gap-2.5">
-                                <span class="material-symbols-outlined text-sm text-amber-400">shield_person</span>
-                                <span>Chat Direksi</span>
+                                <span class="material-symbols-outlined text-sm text-amber-400">support_agent</span>
+                                <span>Sekretaris Direktur</span>
                             </div>
                             @if(isset($directorUnreadCount) && $directorUnreadCount > 0)
                                 <span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-black">

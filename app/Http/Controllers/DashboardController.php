@@ -34,9 +34,9 @@ class DashboardController extends Controller
             ->whereDate('end_date', '>=', $today)
             ->count();
 
-        // Analytical Metrics Khusus Direktur
+        // Analytical Metrics Khusus Direktur & Sekretaris Direktur
         $directorMetrics = null;
-        if ($authUser->isDirektur()) {
+        if ($authUser->isDirektur() || $authUser->isSekretaris()) {
             $onTimeRate = $presentTodayCount > 0 ? round(($onTimeCount / $presentTodayCount) * 100, 1) : 0;
             $lateRate = $presentTodayCount > 0 ? round(($lateCount / $presentTodayCount) * 100, 1) : 0;
             $leaveRate = $totalEmployees > 0 ? round(($leaveCount / $totalEmployees) * 100, 1) : 0;
@@ -282,10 +282,10 @@ class DashboardController extends Controller
 
 
         // Filter KPI Departemen:
-        // 1. Direktur: Melihat seluruh 4 departemen
+        // 1. Direktur & Sekretaris Direktur: Melihat seluruh 4 departemen (KPI & Kinerja Global)
         // 2. Manager HR: Melihat Departemen HR dan Departemen GA (General Affairs yang berada dalam kontrol pengawasannya)
         // 3. Staf / Manager divisi lain: HANYA menampilkan KPI departemen tempat akun tersebut bertugas
-        if ($authUser->isDirektur()) {
+        if ($authUser->isDirektur() || $authUser->isSekretaris()) {
             $departmentKpis = $allDepartmentKpis;
         } elseif ($authUser->isHR() && $authUser->isManager()) {
             // Manager HR menampilkan KPI Departemen HR dan Divisi GA yang berada di bawah kepemimpinannya
@@ -349,6 +349,9 @@ class DashboardController extends Controller
                     $q->orWhere('employee_id', $currentUser->id);
                 }
             });
+        } elseif ($authUser->isSekretaris()) {
+            // Sekretaris HANYA untuk mengecek KPI dan kinerja, tidak ada pengambil keputusan operasional cuti/izin
+            $pendingApprovalsQuery->whereRaw('1 = 0');
         } else {
             if ($currentUser) {
                 $pendingApprovalsQuery->where('employee_id', $currentUser->id)
@@ -360,14 +363,14 @@ class DashboardController extends Controller
         $pendingApprovals = $pendingApprovalsQuery->orderBy('created_at', 'desc')->get();
 
         // Scope attendance feed based on role & department:
-        // 1. Direktur & Departemen HR (Manager & Karyawan HR): Melihat presensi seluruh karyawan
+        // 1. Direktur, Sekretaris Direktur & Departemen HR (Manager & Karyawan HR): Melihat presensi seluruh karyawan
         // 2. Manager divisi lain: Melihat dirinya sendiri dan karyawan pada departemennya
         // 3. Karyawan divisi lain: Hanya melihat dirinya sendiri
         $attendanceQuery = Attendance::with('employee')
             ->whereDate('date', $today)
             ->orderBy('clock_in', 'desc');
 
-        if (!$authUser->isDirektur() && !$authUser->isHR()) {
+        if (!$authUser->isDirektur() && !$authUser->isHR() && !$authUser->isSekretaris()) {
             if ($authUser->isKaryawan()) {
                 if ($currentUser) {
                     $attendanceQuery->where('employee_id', $currentUser->id);

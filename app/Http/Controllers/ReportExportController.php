@@ -177,7 +177,7 @@ class ReportExportController extends Controller
         ];
 
         // Scope departemen
-        if ($authUser->isDirektur()) {
+        if ($authUser->isDirektur() || $authUser->isSekretaris()) {
             $departmentKpis = $allDepartmentKpis;
         } elseif ($authUser->isHR() && $authUser->isManager()) {
             $departmentKpis = array_filter($allDepartmentKpis, fn($k) => in_array($k, ['HR', 'General Affairs']), ARRAY_FILTER_USE_KEY);

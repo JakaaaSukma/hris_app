@@ -179,12 +179,12 @@
         }
      }">
 
-    <!-- ==================== TOP HERO / CHANNEL HEADER (MANAGER DIREKSI) ==================== -->
+    <!-- ==================== TOP HERO / CHANNEL HEADER (MANAGER KE SEKRETARIS DIREKTUR) ==================== -->
     <div class="w-full bg-[#141822] border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center gap-3.5 min-w-0">
             <div class="relative shrink-0">
                 <span class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-rose-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-950/40">
-                    <span class="material-symbols-outlined text-2xl">shield_person</span>
+                    <span class="material-symbols-outlined text-2xl">support_agent</span>
                 </span>
                 <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#141822]"></span>
             </div>
@@ -192,18 +192,18 @@
             <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="font-headline font-extrabold text-base sm:text-lg text-white tracking-tight flex items-center gap-2">
-                        <span>Jalur Langsung Direksi</span>
+                        <span>Jalur Eksekutif Sekretaris Direktur</span>
                     </h1>
                     <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 shadow-xs">
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                        <span>Manager {{ auth()->user()->department }} &bull; Direktur</span>
+                        <span>Manager {{ auth()->user()->department }} &bull; Sekretaris Direktur</span>
                     </span>
                     <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800/80 text-slate-400 border border-slate-700/60">
-                        Privat & Rahasia
+                        Privat & Terverifikasi
                     </span>
                 </div>
                 <p class="text-xs text-slate-400 truncate mt-0.5 font-normal">
-                    Saluran koordinasi eksekutif langsung antara Anda selaku Manager {{ auth()->user()->department }} dengan Direktur Utama.
+                    Saluran koordinasi eksekutif antara Anda selaku Manager {{ auth()->user()->department }} dengan Sekretaris Direktur Utama (Seluruh komunikasi dan pengajuan eksekutif diteruskan melalui Sekretaris).
                 </p>
             </div>
         </div>
@@ -215,8 +215,8 @@
                 <button @click="openDropdown = !openDropdown" 
                         type="button"
                         class="px-3.5 py-1.5 rounded-xl text-xs font-semibold font-mono bg-gradient-to-r from-amber-600/20 to-orange-600/20 hover:from-amber-600/30 hover:to-orange-600/30 text-amber-300 border border-amber-500/40 transition-all flex items-center gap-2 shadow-sm active:scale-95">
-                    <span class="material-symbols-outlined text-sm text-amber-400">shield_person</span>
-                    <span>Chat Direksi</span>
+                    <span class="material-symbols-outlined text-sm text-amber-400">support_agent</span>
+                    <span>Chat Sekretaris</span>
                     <span class="material-symbols-outlined text-sm transition-transform duration-100" :class="openDropdown ? 'rotate-180' : ''">arrow_drop_down</span>
                 </button>
 
@@ -238,12 +238,12 @@
                         </div>
                     </a>
 
-                    <!-- 2. Chat Direksi (Aktif) -->
+                    <!-- 2. Chat Sekretaris Direktur (Aktif) -->
                     <a href="{{ route('chat.index', ['tab' => 'direksi']) }}" 
                        class="flex items-center justify-between px-3.5 py-2.5 text-xs text-white bg-amber-500/15 font-semibold transition-colors">
                         <div class="flex items-center gap-2.5">
-                            <span class="material-symbols-outlined text-sm text-amber-400">shield_person</span>
-                            <span>Chat Direksi</span>
+                            <span class="material-symbols-outlined text-sm text-amber-400">support_agent</span>
+                            <span>Sekretaris Direktur</span>
                         </div>
                         <span class="material-symbols-outlined text-xs text-amber-400">check</span>
                     </a>

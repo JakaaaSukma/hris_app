@@ -215,28 +215,28 @@
                                 <span>Chat Departemen</span>
                             </a>
 
-                            <!-- 2. Chat Direksi -->
+                            <!-- 2. Chat Sekretaris Direktur -->
                             <a href="{{ route('chat.index', ['tab' => 'direksi']) }}" 
                                class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ request('tab') === 'direksi' ? 'bg-amber-500/20 text-white font-semibold border border-amber-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
                                 <div class="flex items-center gap-2.5">
-                                    <span class="material-symbols-outlined text-[16px] {{ request('tab') === 'direksi' ? 'text-amber-400' : 'text-slate-500' }}">shield_person</span>
-                                    <span>Chat Direksi</span>
+                                    <span class="material-symbols-outlined text-[16px] {{ request('tab') === 'direksi' ? 'text-amber-400' : 'text-slate-500' }}">support_agent</span>
+                                    <span>Sekretaris Direktur</span>
                                 </div>
                                 <span class="w-2 h-2 rounded-full bg-amber-400"></span>
                             </a>
                         </div>
                     </div>
                 @else
-                    <!-- Chat Departemen (Karyawan) / Komunikasi Direksi (Direktur) -->
+                    <!-- Chat Departemen (Karyawan) / Chat Eksekutif (Direktur & Sekretaris) -->
                     <a href="{{ route('chat.index') }}" 
                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('chat.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('chat.*') ? 'text-white' : (auth()->user()->isDirektur() ? 'text-amber-400' : 'text-cyan-400') }}">
-                            {{ auth()->user()->isDirektur() ? 'supervisor_account' : 'forum' }}
+                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('chat.*') ? 'text-white' : ((auth()->user()->isDirektur() || auth()->user()->isSekretaris()) ? 'text-amber-400' : 'text-cyan-400') }}">
+                            {{ auth()->user()->isDirektur() ? 'support_agent' : (auth()->user()->isSekretaris() ? 'hub' : 'forum') }}
                         </span>
                         <div class="flex items-center justify-between flex-1">
-                            <span>{{ auth()->user()->isDirektur() ? 'Komunikasi Direksi' : 'Chat Departemen' }}</span>
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md {{ auth()->user()->isDirektur() ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' : 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20' }}">
-                                {{ auth()->user()->isDirektur() ? 'Manager' : (auth()->user()->department ?? 'Tim') }}
+                            <span>{{ auth()->user()->isDirektur() ? 'Sekretaris Direktur' : (auth()->user()->isSekretaris() ? 'Koordinasi Eksekutif' : 'Chat Departemen') }}</span>
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md {{ (auth()->user()->isDirektur() || auth()->user()->isSekretaris()) ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' : 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20' }}">
+                                {{ auth()->user()->isDirektur() ? 'Sekretaris' : (auth()->user()->isSekretaris() ? 'Direksi & Mgr' : (auth()->user()->department ?? 'Tim')) }}
                             </span>
                         </div>
                     </a>

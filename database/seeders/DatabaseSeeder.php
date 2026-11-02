@@ -48,6 +48,34 @@ class DatabaseSeeder extends Seeder
             'employee_id' => $direktur->id,
         ]);
 
+        // Sekretaris Direktur (Monitoring KPI & Kinerja Seluruh Departemen)
+        $sekretaris = Employee::create([
+            'nip' => 'NEX-00021',
+            'name' => 'Sekretaris Direktur',
+            'email' => 'sekretaris@gyokai.com',
+            'phone' => '+62 812-9900-1122',
+            'role_title' => 'Sekretaris Direktur',
+            'department' => 'Executive',
+            'sub_department' => 'Sekretariat',
+            'employment_type' => 'Tetap (FTE)',
+            'status' => 'active',
+            'join_date' => '2023-01-01',
+            'avatar_url' => 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
+            'location' => 'Executive Office (Jakarta)',
+            'annual_leave_quota' => 12,
+            'annual_leave_used' => 0,
+        ]);
+
+        User::create([
+            'name' => $sekretaris->name,
+            'email' => $sekretaris->email,
+            'password' => Hash::make(env('DEFAULT_USER_PASSWORD', 'password123')),
+            'role' => 'sekretaris',
+            'department' => 'Executive',
+            'sub_department' => 'Sekretariat',
+            'employee_id' => $sekretaris->id,
+        ]);
+
         // ==========================================
         // 2. DEPARTEMEN HR (Human Resources)
         // ==========================================

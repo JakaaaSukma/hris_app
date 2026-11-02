@@ -48,9 +48,10 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
 | **28** | Novitasari | `manager` | `Finance` | Manager Finance, approval reimbursement, laporan keuangan. |
 | **29** | Wahyu | `manager` | `Bisnis Development` | Manager Bisnis Development, approval & supervisi pipeline deals. |
 | **30** | Rahmat | `manager` | `HR` (sub: `HR`) | Manager HR, manajemen SDM, approval cuti & operasional, akses GA & HR. |
+| **31** | Sekretaris Direktur | `sekretaris` | `Executive` (sub: `Sekretariat`) | **Sekretaris Direktur**: Monitoring & cek KPI serta kinerja seluruh departemen (HR, Finance, Bisnis Development, GA). Review & verifikasi awal jadwal yang diajukan ke Direktur Utama (karyawan/manager tidak bisa langsung menjadwalkan ke Direktur). Jalur komunikasi chat eksklusif para Manager (Manager tidak bisa chat langsung ke Direktur). **DILARANG mengambil keputusan operasional** (tidak ada approval cuti/reimbursement/inventaris/reset kehadiran). |
 
 *Helper method otorisasi di `App\Models\User`:*
-- `isDirektur()`, `isManager()`, `isAsistenManager()`, `isKaryawan()`
+- `isDirektur()`, `isSekretaris()`, `isManager()`, `isAsistenManager()`, `isKaryawan()`
 - `isPureHR()` -> Karyawan atau Manager HR murni (`department === 'HR' && sub_department !== 'GA'`).
 - `canAccessGAFeatures()` -> Tim GA (Asisten Manager GA, Staf GA), Manager HR, Finance (approval inventaris), dan Direktur Utama. **Karyawan HR murni dilarang keras**.
 - `canAccessHRFeatures()` -> Karyawan HR murni, Manager HR, dan Direktur Utama. **Staf GA dan Asisten Manager GA dilarang keras**.
@@ -96,11 +97,15 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
 - **Aturan Cakupan (Scope):**
   1. `individu`: Karyawan & Manager bisa membuat. Langsung aktif (`approved`) untuk diri sendiri.
   2. `departemen`: Khusus Manager/Direktur. Berstatus `pending`, harus di-review dan disetujui oleh anggota/karyawan di departemen tersebut sebelum resmi terjadwal.
-  3. `antar_departemen`: Manager/Direktur dapat memilih **satu atau lebih dari 1 departemen tujuan** (`target_departments`: HR, Finance, Bisnis Development, GA, Resepsionis, Trainer). Berstatus `pending`, harus di-review dan disetujui oleh masing-masing Manager dari setiap departemen tujuan yang dipilih (atau langsung disetujui oleh Direktur).
+  3. `antar_departemen`: Manager/Direktur/Karyawan dapat memilih **satu atau lebih dari departemen tujuan** (`target_departments`: HR, Finance, Bisnis Development, GA, Resepsionis, Trainer, Executive). Berstatus `pending`, harus di-review dan disetujui oleh masing-masing Manager dari setiap departemen tujuan yang dipilih.
+  4. **Aturan Khusus Pengajuan Jadwal ke Direktur Utama (Executive):**
+     - Baik **karyawan maupun manager TIDAK BISA langsung mengajukan jadwal ke Direktur**.
+     - Setiap jadwal yang ditujukan ke Direksi (`target_departments = ['Executive']`) berstatus `pending` dan **wajib melalui verifikasi dan persetujuan Sekretaris Direktur terlebih dahulu**.
+     - Jadwal yang diajukan ke Direktur **HANYA AKAN MUNCUL di kalender Direktur setelah disetujui resmi oleh Sekretaris Direktur**.
+     - Panel review pending Direksi hanya dimunculkan pada akun **Sekretaris Direktur**; Direktur terlindungi dari pengajuan sepihak.
 - **Isolasi Visibilitas Jadwal Akun Direktur:**
-  - Akun Direktur memiliki agenda kerja eksekutif mandiri dan **tidak melihat jadwal dari karyawan, manager, maupun departemen operasional**.
-  - Direktur hanya melihat jadwal yang dibuat oleh dirinya sendiri (`user_id = authUser->id`) atau pengumuman resmi perusahaan (`is_company_wide = true`).
-  - Bilah review jadwal pending departemen operasional tidak dimunculkan pada akun Direktur agar fokus pada agenda eksekutif.
+  - Akun Direktur memiliki agenda kerja eksekutif mandiri dan **tidak melihat jadwal mentah/pending dari karyawan, manager, maupun departemen operasional**.
+  - Direktur hanya melihat jadwal yang dibuat oleh dirinya sendiri (`user_id = authUser->id`), pengumuman resmi perusahaan (`is_company_wide = true`), atau jadwal lintas departemen yang telah diverifikasi dan disetujui oleh Sekretaris Direktur.
 - **Anti Self-Approval & Mandatory Rejection Reason:** Pembuat jadwal tidak bisa meng-approve jadwalnya sendiri. Setiap penolakan jadwal wajib menyertakan alasan penolakan.
 
 ### C. Ekspor Laporan & Template PDF
@@ -129,7 +134,7 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
   - **Reimbursement:** Klaim baru memberi notifikasi ke Finance & Direktur; persetujuan/pembayaran/penolakan memberi notifikasi ke pemohon.
   - **Tugas (Tasks):** Penugasan task baru memberi notifikasi ke PIC karyawan atau seluruh anggota tim; perubahan progres task memberi notifikasi ke pembuat tugas.
 
-### G. Chat Departemen & Saluran Komunikasi Direksi
+### G. Chat Departemen & Saluran Komunikasi Eksekutif
 - **Controller:** `App\Http\Controllers\DepartmentChatController.php`
 - **Model:** `App\Models\DepartmentMessage.php`, `App\Models\DirectMessage.php`
 - **Tabel Database:** 
@@ -137,10 +142,16 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
   - `direct_messages` (`sender_id`, `receiver_id`, `message`, `read_at`, `timestamps`)
 - **Fitur & Alur Bisnis:**
   - **Isolasi Privasi Departemen (Direktur TIDAK BISA melihat chat internal departemen):** Chat internal divisi murni diperuntukkan bagi koordinasi internal antara staf/karyawan dan manager di departemen tersebut. Direktur dilarang/diblokir melihat percakapan internal ini.
-  - **Saluran Langsung Direktur ↔ Manager (Direct Executive Communication):** Direktur memiliki modul khusus *"Komunikasi Direksi"* untuk melakukan direct chat 1-on-1 dengan seluruh Kepala Departemen (Manager HR, Finance, Bisnis Development, dan GA).
+  - **Aturan Ketat Chat Manager ke Eksekutif (Hanya ke Sekretaris Direktur):**
+    - Sesuai instruksi pimpinan, **fitur chat Manager HANYA terhubung ke Sekretaris Direktur** (Manager **DILARANG / TIDAK BISA chat langsung ke Direktur**).
+    - Seluruh koordinasi eksekutif para Manager disaring, dijembatani, dan direspons melalui Sekretaris Direktur.
+  - **Sekretaris Direktur Sebagai Executive Communication Hub:**
+    - Sekretaris Direktur memiliki akses pusat obrolan: berkomunikasi langsung 1-on-1 dengan seluruh Kepala Departemen (Manager) dan memiliki saluran koordinasi privat dengan Direktur Utama.
+  - **Saluran Direktur ↔ Sekretaris:**
+    - Direktur Utama berkomunikasi langsung dengan Sekretaris Direktur untuk memberikan arahan eksekutif dan menerima laporan ringkasan komunikasi dari para Manager.
   - **Dropdown Saluran Chat pada Manager:** Pada akun Manager, menu di navigasi sidebar maupun tombol di header halaman chat berbentuk **dropdown interaktif** dengan dua pilihan saluran:
     1. **Chat Departemen:** Komunikasi internal bersama karyawan departemennya.
-    2. **Chat Direksi:** Saluran langsung privat dan rahasia bersama Direktur Utama.
+    2. **Chat Sekretaris Direktur:** Saluran koordinasi eksekutif privat ke Sekretaris Direktur Utama.
   - **Pemberitahuan Otomatis:** Setiap pesan baru memicu `GeneralNotification` in-app ke penerima terkait.
   - **Live Auto-Sync & Audio Cue:** Menggunakan asynchronous JSON fetch polling (3 detik) dengan Web Audio notification chime untuk pesan masuk baru.
   - **Fitur Interaktif Lanjutan:** Pencarian pesan & filter pengirim secara real-time, balasan pesan kontekstual (Quote/Reply context banner), pemilih quick emoji (`👍 ❤️ 🔥 👏 🎯 🚀 ✅ 😂`), tombol salin pesan ke clipboard, serta pencarian anggota tim di sidebar.
@@ -565,6 +576,16 @@ hris_app/
   7. *Logging Notifikasi Terbuka:* Mengganti komentar silent fail pada blok pengiriman notifikasi di `LeaveRequestController`, `FinanceController`, dan `TaskController` dengan `Log::warning`.
   8. *Slip Gaji Print PDF & Panduan Reset Password:* Menyempurnakan CSS cetak bersih (clean printable media) pada slip gaji detail dan menambahkan petunjuk reset kata sandi modal informatif pada form login.
 
+- **2026-11-02:** Implementasi Akun & Peran Sekretaris Direktur, Gatekeeping Jadwal Direksi & Filter Chat Manager:
+  1. *Pembuatan Akun & Model Role:* Membuat migrasi `2026_11_02_200000_create_sekretaris_direktur_account.php` dan data akun `Sekretaris Direktur` (`sekretaris@gyokai.com`, role: `sekretaris`, department: `Executive`, sub_department: `Sekretariat`, NIP: `NEX-00021`). Menambahkan helper otorisasi `isSekretaris()` di `User.php`.
+  2. *Hak Akses Read-Only KPI & Kinerja (Tanpa Pengambil Keputusan):* Sekretaris Direktur memiliki akses penuh melihat grafik indeks KPI harian/mingguan/bulanan dan metrik analitis performa seluruh 4 departemen perusahaan (HR, Finance, Bisnis Development, GA) di Dashboard dan Laporan PDF (`DashboardController` & `ReportExportController`), namun **sama sekali tidak memiliki wewenang pengambilan keputusan operasional** (`canApproveLeaves`, `canApproveReimbursements`, `canApproveInventoryRequests`, `canManageEmployees` bernilai `false`, antrean pending approval cuti/izin dinonaktifkan).
+  3. *Protokol Gatekeeping Jadwal Direktur:* Karyawan maupun Manager dilarang keras langsung menjadwalkan agenda ke Direktur Utama. Seluruh permohonan jadwal ke Direksi (`target_departments = ['Executive']`) berstatus `pending` dan wajib diverifikasi serta disetujui terlebih dahulu oleh **Sekretaris Direktur** sebelum resmi masuk dan tampil di kalender Direktur (`CalendarController`).
+  4. *Restriksi Fitur Chat Manager:* Saluran chat komunikasi eksekutif pada akun Manager dialihkan secara ketat **HANYA ke Sekretaris Direktur** (`tab=direksi`), memblokir pesan langsung ke Direktur. Sekretaris Direktur bertindak sebagai jembatan eksekutif (*Executive Communication Hub* - `chat.sekretaris`) yang menghubungkan para Manager dan Direktur Utama secara privat dan terstruktur (`DepartmentChatController`).
+- **2026-11-02:** QA & Code Health Audit:
+  1. *Perbaikan Sintaks Controller:* Memperbaiki error sintaks namespace declaration pada `AttendanceExcuseController.php` akibat leading whitespace.
+  2. *Audit Suite Test Laravel:* Memperbarui pengujian `tests/Feature/ExampleTest.php` untuk memvalidasi unauthenticated redirect (`302` ke `/login`). Semua unit & feature test kini lolos (`2 passed`).
+  3. *Verifikasi Build & View Cache:* Verifikasi kelancaran kompilasi Vite (`npm run build`) dan pembersihan view cache (`php artisan view:clear`).
+  4. *Audit Aturan UI & Database:* Memastikan integritas migrasi database (35 batch migrasi telah dijalankan) dan kepatuhan prinsip modal tanpa `backdrop-blur` render lag.
 - **2026-11-02:** Pembersihan Aset Krusial & Keamanan Publikasi GitHub:
   1. *Pembersihan Tanda Tangan:* Menghapus seluruh file dan goresan tanda tangan basah Direktur (`signature_2.png`, `stamp_signature_combined.png`) serta meregenerasi template paklaring `exact_base_template.png` dan Base64 tertanam di `PaklaringController.php` dengan stempel bulat resmi bersih tanpa tanda tangan (`stamp_official_gyokai.png`). Hal ini mencegah penyalahgunaan tanda tangan pejabat saat repository dijadikan open source / publik.
   2. *Sanitasi Password Default & Environment:* Mengganti hardcoded password akun pada `EmployeeController.php` dan `resources/views/employees/index.blade.php` dengan pembacaan dinamis `env('DEFAULT_USER_PASSWORD', 'password123')`.
