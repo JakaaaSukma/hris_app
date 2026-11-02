@@ -1,0 +1,396 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  --color-page-bg: #f8fafc;
+  --color-page-text: #0f172a;
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-border: #e2e8f0;
+  --color-header-bg: #ffffff;
+  --color-header-border: #e2e8f0;
+  --color-card-bg: #ffffff;
+  --color-card-border: #e2e8f0;
+  --color-subcard-bg: #f1f5f9;
+  --color-subcard-border: #cbd5e1;
+  --color-input-bg: #ffffff;
+  --color-input-border: #cbd5e1;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+  --color-table-header-bg: #f1f5f9;
+  --color-table-row-hover: #f8fafc;
+  --color-table-divider: #e2e8f0;
+}
+
+html.dark {
+  --color-page-bg: #0f1117;
+  --color-page-text: #e2e8f0;
+  --color-sidebar-bg: #141822;
+  --color-sidebar-border: #1e293b;
+  --color-header-bg: #11151f;
+  --color-header-border: #1e293b;
+  --color-card-bg: #151922;
+  --color-card-border: #232936;
+  --color-subcard-bg: #11151f;
+  --color-subcard-border: #1e293b;
+  --color-input-bg: rgba(15, 23, 42, 0.6);
+  --color-input-border: #334155;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-table-header-bg: rgba(15, 23, 42, 0.5);
+  --color-table-row-hover: #1e2433;
+  --color-table-divider: #1e293b;
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-page-bg);
+    color: var(--color-page-text);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+/* Glassmorphism & Modern Card Elevation (Hardware accelerated & optimized) */
+.glass-card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+html.dark .glass-card {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.glass-card-hover {
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  will-change: transform;
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: #f43f5e;
+}
+
+/* ==========================================================================
+   MODE TERANG (LIGHT MODE) STYLES & OVERRIDES
+   Warna background, teks, huruf, angka, badge, dan tabel otomatis adaptif.
+   ========================================================================== */
+
+html:not(.dark) body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Sidebar & Header */
+html:not(.dark) aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+}
+
+html:not(.dark) aside .bg-\[\#161b26\]\/90,
+html:not(.dark) aside .bg-\[\#11151f\]\/80 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) header {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+}
+
+html:not(.dark) main {
+  background-color: #f8fafc !important;
+}
+
+/* Card & Container Backgrounds */
+html:not(.dark) .bg-\[\#151922\],
+html:not(.dark) .bg-\[\#121620\],
+html:not(.dark) .bg-\[\#141822\],
+html:not(.dark) .bg-surface-container,
+html:not(.dark) .bg-surface-container-low,
+html:not(.dark) .bg-surface-container-high {
+  background-color: #ffffff !important;
+}
+
+/* Border Adaptations */
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-800\/80,
+html:not(.dark) .border-slate-800\/60,
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-700\/60,
+html:not(.dark) .border-\[\#282a2e\],
+html:not(.dark) .border-\[\#282a2e\]\/60,
+html:not(.dark) .border-\[\#282a2e\]\/50,
+html:not(.dark) .border-\[\#282a2e\]\/40,
+html:not(.dark) .border-\[\#333539\] {
+  border-color: #e2e8f0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   WARNA HURUF, JUDUL, & ANGKA (TYPOGRAPHY ADAPTATION)
+   Memastikan angka metrik, judul, dan teks terbaca sangat tajam dan jelas di mode terang.
+   -------------------------------------------------------------------------- */
+
+/* Teks Putih / Light yang di Dark Mode, diubah menjadi Gelap Pekat di Light Mode */
+html:not(.dark) .text-white:not(.btn-primary):not(.badge-solid) {
+  color: #0f172a !important;
+}
+
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6 {
+  color: #0f172a;
+}
+
+/* Angka-angka metrik besar, judul headline, dan teks utama */
+html:not(.dark) .font-headline.text-3xl,
+html:not(.dark) .font-headline.text-2xl,
+html:not(.dark) .font-headline.text-xl {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-on-surface {
+  color: #1e293b !important;
+}
+
+/* Teks sekunder, label keterangan, dan tanggal */
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-tertiary {
+  color: #475569 !important;
+}
+
+html:not(.dark) .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Sub-informasi, keterangan mono kecil */
+html:not(.dark) .font-mono.text-slate-400,
+html:not(.dark) .font-mono.text-tertiary {
+  color: #475569 !important;
+}
+
+/* Pengecualian Khusus: Elemen dengan Latar Gradient Berwarna Harus Tetap Huruf Putih */
+html:not(.dark) .bg-gradient-to-r .text-white,
+html:not(.dark) .bg-gradient-to-r span,
+html:not(.dark) .bg-gradient-to-r h1,
+html:not(.dark) .bg-gradient-to-r h2,
+html:not(.dark) .bg-gradient-to-r h3,
+html:not(.dark) [class*="bg-gradient-"] .text-white,
+html:not(.dark) [class*="bg-gradient-"] span,
+html:not(.dark) .bg-rose-600 .text-white,
+html:not(.dark) .bg-rose-600 span,
+html:not(.dark) .bg-emerald-600 .text-white,
+html:not(.dark) .bg-emerald-600 span,
+html:not(.dark) .bg-primary-container,
+html:not(.dark) .bg-primary-container span,
+html:not(.dark) button.bg-gradient-to-r,
+html:not(.dark) a.bg-gradient-to-r,
+html:not(.dark) button[type="submit"].bg-gradient-to-r,
+html:not(.dark) .btn-primary,
+html:not(.dark) .bg-amber-600,
+html:not(.dark) .bg-amber-600 span,
+html:not(.dark) .bg-red-600,
+html:not(.dark) .bg-red-600 span {
+  color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   SUB-CONTAINER, INPUT, DAN TABEL DI MODE TERANG
+   -------------------------------------------------------------------------- */
+html:not(.dark) .bg-\[\#11151f\],
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/40,
+html:not(.dark) .bg-slate-800\/80,
+html:not(.dark) .bg-slate-800\/50,
+html:not(.dark) .bg-surface-container-lowest,
+html:not(.dark) .bg-surface-container-highest {
+  background-color: #f1f5f9 !important;
+}
+
+html:not(.dark) .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+html:not(.dark) .bg-slate-900 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Input Fields & Form Controls */
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) select,
+html:not(.dark) textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Table Headers & Rows */
+html:not(.dark) thead tr {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+html:not(.dark) tr.hover\:bg-surface-container:hover,
+html:not(.dark) tr.hover\:bg-slate-800\/40:hover,
+html:not(.dark) tr:hover {
+  background-color: #f8fafc !important;
+}
+
+html:not(.dark) td {
+  color: #1e293b;
+}
+
+html:not(.dark) .divide-slate-800,
+html:not(.dark) .divide-slate-800\/80,
+html:not(.dark) .divide-\[\#282a2e\]\/30 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Sidebar Navigation Hover */
+html:not(.dark) aside nav a:not([class*="bg-gradient"]):hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Status Badges di Light Mode (Lebih pekat & mudah dibaca di latar putih) */
+html:not(.dark) .text-emerald-400 {
+  color: #059669 !important;
+}
+html:not(.dark) .text-rose-400 {
+  color: #e11d48 !important;
+}
+html:not(.dark) .text-amber-400,
+html:not(.dark) .text-amber-300 {
+  color: #d97706 !important;
+}
+html:not(.dark) .text-blue-400 {
+  color: #2563eb !important;
+}
+html:not(.dark) .text-indigo-400 {
+  color: #4f46e5 !important;
+}
+html:not(.dark) .text-teal-400 {
+  color: #0d9488 !important;
+}
+
+html:not(.dark) .bg-emerald-500\/10,
+html:not(.dark) .bg-emerald-950\/40,
+html:not(.dark) .bg-emerald-950\/60 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+html:not(.dark) .bg-rose-500\/10,
+html:not(.dark) .bg-red-950\/40,
+html:not(.dark) .bg-red-950\/60 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+html:not(.dark) .bg-amber-500\/10,
+html:not(.dark) .bg-amber-950\/40 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+html:not(.dark) .bg-blue-500\/10 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Soft Modern Badges & Glows */
+.badge-subtle-emerald {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+html.dark .badge-subtle-emerald {
+  color: #34d399;
+}
+
+.badge-subtle-rose {
+  background: rgba(244, 63, 94, 0.12);
+  color: #e11d48;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+html.dark .badge-subtle-rose {
+  color: #fb7185;
+}
+
+.badge-subtle-amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+html.dark .badge-subtle-amber {
+  color: #fbbf24;
+}
+
+.badge-subtle-blue {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+html.dark .badge-subtle-blue {
+  color: #60a5fa;
+}
+
+/* Micro animations */
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.96); }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-page-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2d3748;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4a5568;
+}

@@ -1,0 +1,88 @@
+# ==========================================
+# 1. Environment & Secret Credentials (SANGAT KRUSIAL)
+# ==========================================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.crt
+*.pfx
+oauth-*.key
+auth.json
+
+# ==========================================
+# 2. Database Dumps, Backups & Archives (KRUSIAL)
+# ==========================================
+*.sql
+*.sqlite
+*.db
+*.dump
+*.bak
+*.backup
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ==========================================
+# 3. Storage, User Uploads, Dokumen & Log (KRUSIAL)
+# ==========================================
+/storage/app/*
+!/storage/app/public/
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# ==========================================
+# 4. Dependencies & Compiled Assets
+# ==========================================
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# 5. Testing & Cache
+# ==========================================
+/.phpunit.cache
+.phpunit.result.cache
+
+# ==========================================
+# 6. IDE, System & OS Metadata
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+/.idea
+/.vscode
+/.fleet
+Homestead.json
+Homestead.yaml
+
+# ==========================================
+# 7. Local Scratch, Temporary Scripts & Demos
+# ==========================================
+scratch/
+test_content.js
+build_*.php
+stitch_modern_dark_hris_webapp/
+
