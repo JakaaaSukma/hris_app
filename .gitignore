@@ -86,3 +86,11 @@ test_content.js
 build_*.php
 stitch_modern_dark_hris_webapp/
 
+# ==========================================
+# 8. AI Agent System & Guidelines (Lokal Only)
+# ==========================================
+AGENTS.md
+GEMINI.md
+.agents/
+
+
