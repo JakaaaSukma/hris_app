@@ -420,16 +420,16 @@
                                         @if($att->photo_in)
                                             <button type="button" 
                                                     @click="photoPreviewUrl = '{{ $att->photo_in_url }}'; photoPreviewTitle = 'Foto Wajah Masuk (Clock In) - {{ $att->employee->name }}'; photoPreviewGps = '{{ $att->latitude && $att->longitude ? $att->latitude . ', ' . $att->longitude : '' }}'; photoPreviewMapsUrl = '{{ $att->google_maps_url }}'; photoPreviewModal = true;"
-                                                    class="group relative inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] font-mono text-slate-200 transition-all shadow-sm">
-                                                <img src="{{ $att->photo_in_url }}" class="w-4 h-4 rounded object-cover" alt="Face In"/>
+                                                    class="group relative inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-[10px] font-mono text-slate-200 transition-all shadow-sm">
+                                                <img src="{{ $att->photo_in_url }}" class="w-5 h-5 rounded object-cover border border-slate-600 bg-slate-900" alt="Face In" onerror="this.style.display='none'"/>
                                                 <span>Foto Masuk</span>
                                             </button>
                                         @endif
                                         @if($att->photo_out)
                                             <button type="button" 
                                                     @click="photoPreviewUrl = '{{ $att->photo_out_url }}'; photoPreviewTitle = 'Foto Wajah Pulang (Clock Out) - {{ $att->employee->name }}'; photoPreviewGps = '{{ $att->latitude && $att->longitude ? $att->latitude . ', ' . $att->longitude : '' }}'; photoPreviewMapsUrl = '{{ $att->google_maps_url }}'; photoPreviewModal = true;"
-                                                    class="group relative inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] font-mono text-slate-200 transition-all shadow-sm">
-                                                <img src="{{ $att->photo_out_url }}" class="w-4 h-4 rounded object-cover" alt="Face Out"/>
+                                                    class="group relative inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-[10px] font-mono text-slate-200 transition-all shadow-sm">
+                                                <img src="{{ $att->photo_out_url }}" class="w-5 h-5 rounded object-cover border border-slate-600 bg-slate-900" alt="Face Out" onerror="this.style.display='none'"/>
                                                 <span>Foto Pulang</span>
                                             </button>
                                         @endif
@@ -758,22 +758,36 @@
             </div>
 
             <div class="mt-4 flex flex-col items-center">
-                <div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-black border border-slate-700 flex items-center justify-center">
-                    <img :src="photoPreviewUrl" alt="Face Snapshot" class="w-full h-full object-cover"/>
+                <div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-black border border-slate-700 flex items-center justify-center relative shadow-inner">
+                    <img :src="photoPreviewUrl" 
+                         alt="Face Snapshot" 
+                         class="w-full h-full object-cover"
+                         @error="$el.classList.add('hidden'); $refs.imgFallback.classList.remove('hidden')"
+                         @load="$el.classList.remove('hidden'); $refs.imgFallback.classList.add('hidden')"/>
+                    <div x-ref="imgFallback" class="hidden flex flex-col items-center justify-center p-6 text-center text-slate-400">
+                        <span class="material-symbols-outlined text-4xl text-rose-400 mb-1">broken_image</span>
+                        <span class="text-xs font-mono text-slate-300">Foto belum dapat dimuat dari server</span>
+                    </div>
                 </div>
 
-                <template x-if="photoPreviewGps">
-                    <div class="w-full mt-3 p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between font-mono text-xs">
-                        <div class="flex items-center gap-2 text-slate-300">
-                            <span class="material-symbols-outlined text-emerald-400 text-sm">location_on</span>
-                            <span x-text="'GPS: ' + photoPreviewGps"></span>
+                <div class="w-full mt-3 flex items-center justify-between gap-2 flex-wrap">
+                    <template x-if="photoPreviewGps">
+                        <div class="flex-1 p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between font-mono text-xs">
+                            <div class="flex items-center gap-1.5 text-slate-300 truncate">
+                                <span class="material-symbols-outlined text-emerald-400 text-sm">location_on</span>
+                                <span class="truncate" x-text="'GPS: ' + photoPreviewGps"></span>
+                            </div>
+                            <a :href="photoPreviewMapsUrl" target="_blank" class="shrink-0 px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 hover:underline text-[11px] font-semibold flex items-center gap-1 border border-emerald-500/20">
+                                <span>Google Maps</span>
+                                <span class="material-symbols-outlined text-xs">open_in_new</span>
+                            </a>
                         </div>
-                        <a :href="photoPreviewMapsUrl" target="_blank" class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 hover:underline text-[11px] font-semibold flex items-center gap-1 border border-emerald-500/20">
-                            <span>Google Maps</span>
-                            <span class="material-symbols-outlined text-xs">open_in_new</span>
-                        </a>
-                    </div>
-                </template>
+                    </template>
+                    <a :href="photoPreviewUrl" target="_blank" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-mono text-xs flex items-center gap-1.5 shadow-sm shrink-0" title="Buka foto di tab baru">
+                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                        <span>Resolusi Penuh</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

@@ -396,7 +396,7 @@ class AttendanceController extends Controller
                 'status_label' => $status === 'on_time' ? 'Tepat Waktu' : 'Terlambat',
                 'distance' => $distanceMeters,
                 'location' => $detectedLocation,
-                'photo_url' => Storage::disk('public')->url($fileName),
+                'photo_url' => $attendance->photo_in_url ?? Storage::disk('public')->url($fileName),
             ]);
         } else {
             // Clock Out
@@ -435,9 +435,49 @@ class AttendanceController extends Controller
                 'time' => substr($nowTime, 0, 5) . ' WIB',
                 'distance' => $distanceMeters,
                 'location' => $detectedLocation,
-                'photo_url' => Storage::disk('public')->url($fileName),
+                'photo_url' => $attendance->photo_out_url ?? Storage::disk('public')->url($fileName),
             ]);
         }
+    }
+
+    /**
+     * Tampilkan / Stream Foto Presensi Wajah (Face ID) secara Langsung
+     * Menjamin foto dapat diakses di cPanel/hosting tanpa ketergantungan symlink storage:link
+     */
+    public function showPhoto($attendanceId, $type = 'in')
+    {
+        $attendance = Attendance::findOrFail($attendanceId);
+
+        $field = in_array(strtolower($type), ['out', 'clock_out', 'pulang']) ? 'photo_out' : 'photo_in';
+        $filePath = $attendance->{$field};
+
+        if (!$filePath) {
+            abort(404, 'Foto presensi tidak ditemukan.');
+        }
+
+        // Cek file di Storage public disk
+        $disk = Storage::disk('public');
+        if ($disk->exists($filePath)) {
+            $fileContent = $disk->get($filePath);
+            $mimeType = $disk->mimeType($filePath) ?: 'image/jpeg';
+            return response($fileContent, 200, [
+                'Content-Type' => $mimeType,
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        // Fallback: Path fisik langsung di storage/app/public
+        $fullPath = storage_path('app/public/' . $filePath);
+        if (file_exists($fullPath)) {
+            $fileContent = file_get_contents($fullPath);
+            $mimeType = mime_content_type($fullPath) ?: 'image/jpeg';
+            return response($fileContent, 200, [
+                'Content-Type' => $mimeType,
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        abort(404, 'File fisik foto belum tersimpan di server.');
     }
 
     /**

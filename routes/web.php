@@ -46,6 +46,7 @@
             Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('clockIn');
             Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('clockOut');
             Route::post('/face-record', [AttendanceController::class, 'faceRecord'])->name('faceRecord');
+            Route::get('/photo/{attendance}/{type?}', [AttendanceController::class, 'showPhoto'])->name('photo');
 
             // Pengajuan & Persetujuan Reset Kehadiran Seluruh Karyawan (Manager HR <-> Direktur)
             Route::post('/reset-request', [AttendanceController::class, 'requestReset'])->name('resetRequest');

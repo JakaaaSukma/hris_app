@@ -30,6 +30,10 @@ class Attendance extends Model
             return $this->photo_in;
         }
 
+        if ($this->id) {
+            return route('attendance.photo', ['attendance' => $this->id, 'type' => 'in']);
+        }
+
         return Storage::disk('public')->url($this->photo_in);
     }
 
@@ -44,6 +48,10 @@ class Attendance extends Model
 
         if (str_starts_with($this->photo_out, 'http')) {
             return $this->photo_out;
+        }
+
+        if ($this->id) {
+            return route('attendance.photo', ['attendance' => $this->id, 'type' => 'out']);
         }
 
         return Storage::disk('public')->url($this->photo_out);

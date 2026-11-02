@@ -49,5 +49,17 @@ class FaceAttendanceTest extends TestCase
             'date' => Carbon::today()->toDateString(),
             'verification_method' => 'face_location',
         ]);
+
+        $createdAttendance = Attendance::where('employee_id', $user->employee_id)
+            ->whereDate('date', Carbon::today()->toDateString())
+            ->first();
+
+        $this->assertNotNull($createdAttendance->photo_in);
+        $this->assertNotNull($createdAttendance->photo_in_url);
+
+        // Test showPhoto route streams the file correctly
+        $photoResponse = $this->actingAs($user)->get($createdAttendance->photo_in_url);
+        $photoResponse->assertStatus(200);
+        $this->assertTrue(str_contains($photoResponse->headers->get('content-type'), 'image/'));
     }
 }
