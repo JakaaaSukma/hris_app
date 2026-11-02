@@ -454,6 +454,16 @@
 
                 <div class="h-4 w-px bg-slate-800"></div>
 
+                <!-- Presensi Biometrik Wajah (Face ID & Lokasi) untuk Seluruh Karyawan & Manager -->
+                @if(auth()->check() && auth()->user()->canFaceClock())
+                    <button @click="$dispatch('open-face-modal', { type: 'auto' })" 
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-emerald-600/20 hover:from-emerald-600/30 hover:to-teal-600/30 text-xs font-semibold text-emerald-300 transition-all border border-emerald-500/30 shadow-sm active:scale-95"
+                            title="Presensi Wajah & Lokasi (Face ID + GPS)">
+                        <span class="material-symbols-outlined text-base text-emerald-400">face_retouching_natural</span>
+                        <span class="hidden sm:inline">Absen Face ID</span>
+                    </button>
+                @endif
+
                 <!-- Clock in/out Quick Trigger (Hanya untuk Manager HR dan Direktur) -->
                 @if(auth()->check() && auth()->user()->canQuickClock())
                     <button @click="showClockInModal = true" 
@@ -769,6 +779,9 @@
         </div>
     </div>
     @endif
+
+    <!-- Biometric Face ID & Location Modal Component -->
+    <x-face-attendance-modal />
 
     <!-- Real-time Clock Javascript -->
     <script>

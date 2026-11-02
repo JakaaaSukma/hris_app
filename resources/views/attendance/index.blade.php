@@ -9,7 +9,12 @@
     showResetModal: false,
     showRejectModal: false,
     rejectTargetId: null,
-    resetScope: 'all_time'
+    resetScope: 'all_time',
+    photoPreviewModal: false,
+    photoPreviewUrl: '',
+    photoPreviewTitle: '',
+    photoPreviewGps: '',
+    photoPreviewMapsUrl: ''
 }">
 
     <!-- Header Actions & Date Picker -->
@@ -72,6 +77,16 @@
                 <span class="material-symbols-outlined text-base">picture_as_pdf</span>
                 <span>Export PDF</span>
             </a>
+
+            <!-- Tombol Absen Biometrik Face ID & GPS -->
+            @if(auth()->user()->canFaceClock())
+                <button type="button" @click="$dispatch('open-face-modal', { type: 'auto' })" 
+                        class="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold font-mono transition-all shadow-md shadow-emerald-500/20 active:scale-95" 
+                        title="Presensi Wajah Mandiri dengan Verifikasi Biometrik & GPS">
+                    <span class="material-symbols-outlined text-base">face_retouching_natural</span>
+                    <span>Absen Face ID & Lokasi</span>
+                </button>
+            @endif
 
             <!-- Tombol Perizinan Kehadiran (Izin Terlambat, Dinas Luar, Tidak Absen Pulang) -->
             <a href="{{ route('attendance.excuses.index') }}" class="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-semibold font-mono transition-all shadow-sm" title="Kelola & Ajukan Izin Terlambat, Dinas Luar, dan Tidak Absen Pulang">
@@ -303,8 +318,9 @@
                         <th class="px-5 py-3.5">Jam Masuk</th>
                         <th class="px-5 py-3.5">Jam Keluar</th>
                         <th class="px-5 py-3.5">Status</th>
+                        <th class="px-5 py-3.5">Verifikasi & Foto</th>
                         <th class="px-5 py-3.5">Mode Kerja</th>
-                        <th class="px-5 py-3.5">Lokasi & IP</th>
+                        <th class="px-5 py-3.5">Lokasi & GPS</th>
                         <th class="px-5 py-3.5">Catatan</th>
                     </tr>
                 </thead>
@@ -381,13 +397,66 @@
                                 @endif
                             </td>
                             <td class="px-5 py-4">
+                                <div class="flex flex-col gap-1.5 items-start">
+                                    @if($att->verification_method === 'face_location')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-semibold">
+                                            <span class="material-symbols-outlined text-[13px] text-emerald-400">face_retouching_natural</span>
+                                            <span>Face ID + GPS</span>
+                                        </span>
+                                    @elseif($att->verification_method === 'adms_fingerprint')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-950/60 border border-blue-500/20 text-blue-300 font-mono text-[10px]">
+                                            <span class="material-symbols-outlined text-[12px] text-blue-400">fingerprint</span>
+                                            <span>Finger ADMS</span>
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
+                                            <span class="material-symbols-outlined text-[12px]">desktop_windows</span>
+                                            <span>Web Manual</span>
+                                        </span>
+                                    @endif
+
+                                    <!-- Foto Snapshot Masuk & Pulang -->
+                                    <div class="flex items-center gap-1.5">
+                                        @if($att->photo_in)
+                                            <button type="button" 
+                                                    @click="photoPreviewUrl = '{{ $att->photo_in_url }}'; photoPreviewTitle = 'Foto Wajah Masuk (Clock In) - {{ $att->employee->name }}'; photoPreviewGps = '{{ $att->latitude && $att->longitude ? $att->latitude . ', ' . $att->longitude : '' }}'; photoPreviewMapsUrl = '{{ $att->google_maps_url }}'; photoPreviewModal = true;"
+                                                    class="group relative inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] font-mono text-slate-200 transition-all shadow-sm">
+                                                <img src="{{ $att->photo_in_url }}" class="w-4 h-4 rounded object-cover" alt="Face In"/>
+                                                <span>Foto Masuk</span>
+                                            </button>
+                                        @endif
+                                        @if($att->photo_out)
+                                            <button type="button" 
+                                                    @click="photoPreviewUrl = '{{ $att->photo_out_url }}'; photoPreviewTitle = 'Foto Wajah Pulang (Clock Out) - {{ $att->employee->name }}'; photoPreviewGps = '{{ $att->latitude && $att->longitude ? $att->latitude . ', ' . $att->longitude : '' }}'; photoPreviewMapsUrl = '{{ $att->google_maps_url }}'; photoPreviewModal = true;"
+                                                    class="group relative inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] font-mono text-slate-200 transition-all shadow-sm">
+                                                <img src="{{ $att->photo_out_url }}" class="w-4 h-4 rounded object-cover" alt="Face Out"/>
+                                                <span>Foto Pulang</span>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4">
                                 <span class="px-2 py-0.5 rounded bg-surface-container text-xs font-medium text-on-surface">
                                     {{ $att->work_mode }}
                                 </span>
                             </td>
                             <td class="px-5 py-4">
                                 <div class="text-on-surface font-medium">{{ $att->location_name ?? 'Headquarters' }}</div>
-                                <div class="font-mono text-[10px] text-tertiary">{{ $att->ip_address ?? '127.0.0.1' }}</div>
+                                @if($att->latitude && $att->longitude)
+                                    <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                        <a href="{{ $att->google_maps_url }}" target="_blank" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/20 text-emerald-400 font-mono text-[10px] hover:underline" title="Buka di Google Maps">
+                                            <span class="material-symbols-outlined text-[11px]">pin_drop</span>
+                                            <span>{{ number_format($att->latitude, 4) }}, {{ number_format($att->longitude, 4) }}</span>
+                                            <span class="material-symbols-outlined text-[10px]">open_in_new</span>
+                                        </a>
+                                        @if($att->distance_meters !== null)
+                                            <span class="text-[10px] font-mono text-slate-400">({{ $att->distance_meters }}m)</span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <div class="font-mono text-[10px] text-tertiary">{{ $att->ip_address ?? '127.0.0.1' }}</div>
+                                @endif
                             </td>
                             <td class="px-5 py-4 text-xs max-w-sm">
                                 @if($att->notes)
@@ -663,6 +732,49 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Preview Foto Wajah Face ID & GPS -->
+    <div x-cloak x-show="photoPreviewModal" 
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <div class="bg-[#151922] rounded-2xl border border-slate-700/80 w-full max-w-md p-5 shadow-2xl relative"
+             @click.away="photoPreviewModal = false">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-emerald-400 text-xl">face</span>
+                    <h3 class="font-headline font-bold text-sm text-white" x-text="photoPreviewTitle"></h3>
+                </div>
+                <button type="button" @click="photoPreviewModal = false" class="text-slate-400 hover:text-white p-1">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+            </div>
+
+            <div class="mt-4 flex flex-col items-center">
+                <div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-black border border-slate-700 flex items-center justify-center">
+                    <img :src="photoPreviewUrl" alt="Face Snapshot" class="w-full h-full object-cover"/>
+                </div>
+
+                <template x-if="photoPreviewGps">
+                    <div class="w-full mt-3 p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between font-mono text-xs">
+                        <div class="flex items-center gap-2 text-slate-300">
+                            <span class="material-symbols-outlined text-emerald-400 text-sm">location_on</span>
+                            <span x-text="'GPS: ' + photoPreviewGps"></span>
+                        </div>
+                        <a :href="photoPreviewMapsUrl" target="_blank" class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 hover:underline text-[11px] font-semibold flex items-center gap-1 border border-emerald-500/20">
+                            <span>Google Maps</span>
+                            <span class="material-symbols-outlined text-xs">open_in_new</span>
+                        </a>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 

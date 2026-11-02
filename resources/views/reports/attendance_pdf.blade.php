@@ -213,6 +213,9 @@
                         </td>
                         <td>{{ $att->work_mode }}</td>
                         <td style="font-size: 10px; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">
+                            @if($att->verification_method === 'face_location')
+                                <div style="color: #34d399; font-weight: bold; margin-bottom: 2px;">[Face ID + GPS]</div>
+                            @endif
                             {{ $att->notes ?? '—' }}
                         </td>
                     </tr>

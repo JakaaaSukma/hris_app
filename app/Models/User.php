@@ -111,6 +111,12 @@ class User extends Authenticatable
         return $this->isDirektur() || ($this->isHR() && $this->isManager());
     }
 
+    public function canFaceClock(): bool
+    {
+        // Seluruh akun yang terhubung dengan data Employee (Karyawan, Manager, Direktur)
+        return !empty($this->employee_id) || !empty($this->employee);
+    }
+
     public function canViewCompanyMetrics(): bool
     {
         // Manager HR, Direktur Utama, dan Sekretaris Direktur (monitoring KPI) yang dapat melihat ringkasan metrik operasional perusahaan di dashboard

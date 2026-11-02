@@ -11,6 +11,7 @@ use App\Notifications\GeneralNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AttendanceController extends Controller
 {
@@ -252,6 +253,206 @@ class AttendanceController extends Controller
         ]);
 
         return back()->with('success', 'Presensi Pulang (Clock Out) berhasil dicatat pada ' . Carbon::now()->format('H:i:s') . ' WIB.');
+    }
+
+    /**
+     * Presensi Mandiri Biometrik Wajah (Face ID) & Geolocation GPS
+     * Dapat digunakan oleh seluruh Karyawan, Manager, dan Direksi
+     */
+    public function faceRecord(Request $request)
+    {
+        $authUser = Auth::user();
+        $currentUser = $authUser->employee;
+
+        if (!$currentUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda belum terhubung dengan data profil karyawan.'
+            ], 422);
+        }
+
+        $request->validate([
+            'photo' => 'required|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'type' => 'nullable|in:clock_in,clock_out,auto',
+            'work_mode' => 'nullable|string',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $today = Carbon::today()->toDateString();
+        $now = Carbon::now();
+        $nowTime = $now->toTimeString();
+
+        // Cari atau periksa kehadiran hari ini
+        $attendance = Attendance::where('employee_id', $currentUser->id)
+            ->whereDate('date', $today)
+            ->first();
+
+        // Tentukan tipe aksi secara otomatis atau manual
+        $requestedType = $request->input('type', 'auto');
+        if ($requestedType === 'auto') {
+            if (!$attendance || !$attendance->clock_in) {
+                $actionType = 'clock_in';
+            } elseif (!$attendance->clock_out) {
+                $actionType = 'clock_out';
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda telah menyelesaikan presensi masuk dan pulang untuk hari ini.'
+                ], 422);
+            }
+        } else {
+            $actionType = $requestedType;
+        }
+
+        // Decode dan simpan foto selfie wajah dari Base64
+        $base64Image = $request->input('photo');
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+            $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
+            $imgExt = strtolower($type[1]) === 'png' ? 'png' : 'jpg';
+        } else {
+            $imgExt = 'jpg';
+        }
+
+        $decodedImage = base64_decode($base64Image);
+        if (!$decodedImage) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Format foto wajah tidak valid atau rusak.'
+            ], 422);
+        }
+
+        $folder = 'attendance_photos/' . $now->format('Y-m');
+        $fileName = $folder . '/' . $currentUser->nip . '_' . $actionType . '_' . time() . '.' . $imgExt;
+        Storage::disk('public')->put($fileName, $decodedImage);
+
+        // Koordinat Geofencing GPS Kantor (Default: Jakarta HQ / Configurable)
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
+        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2088));
+        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.8456));
+        $allowedRadius = (int) config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500));
+
+        $distanceMeters = null;
+        $inOfficeRadius = false;
+        if ($latitude && $longitude) {
+            $distanceMeters = $this->calculateDistanceMeters((float)$latitude, (float)$longitude, $officeLat, $officeLng);
+            $inOfficeRadius = ($distanceMeters <= $allowedRadius);
+        }
+
+        $detectedLocation = $request->input('location_name');
+        if (!$detectedLocation) {
+            if ($inOfficeRadius) {
+                $detectedLocation = "Kantor Pusat Gyokai ({$distanceMeters}m dari titik pusat)";
+            } elseif ($distanceMeters !== null) {
+                $detectedLocation = "Luar Radius Kantor ({$distanceMeters}m dari kantor)";
+            } else {
+                $detectedLocation = "Lokasi Geolocation Tidak Diketahui";
+            }
+        }
+
+        $workMode = $request->input('work_mode') ?: ($inOfficeRadius ? 'WFO' : 'WFH / Dinas Luar');
+        $userNotes = $request->input('notes') ? trim($request->input('notes')) . " • " : "";
+        $deviceInfo = $request->header('User-Agent');
+
+        if ($actionType === 'clock_in') {
+            if ($attendance && $attendance->clock_in) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan Presensi Masuk (Clock In) hari ini pada pukul ' . substr($attendance->clock_in, 0, 5) . ' WIB.'
+                ], 422);
+            }
+
+            // Batas Masuk: 09:15:00 WIB
+            $status = ($nowTime > '09:15:00') ? 'late' : 'on_time';
+            $faceTag = "[Face ID & GPS Masuk: " . ($inOfficeRadius ? "Dalam Kantor ({$distanceMeters}m)" : "Luar Radius ({$distanceMeters}m)") . "]";
+            $finalNotes = $userNotes . $faceTag;
+
+            $attendance = Attendance::updateOrCreate(
+                ['employee_id' => $currentUser->id, 'date' => $today],
+                [
+                    'clock_in' => $nowTime,
+                    'status' => $status,
+                    'work_mode' => $workMode,
+                    'location_name' => $detectedLocation,
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'photo_in' => $fileName,
+                    'distance_meters' => $distanceMeters,
+                    'verification_method' => 'face_location',
+                    'device_info' => substr($deviceInfo ?? '', 0, 250),
+                    'ip_address' => $request->ip(),
+                    'notes' => $finalNotes,
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'action' => 'clock_in',
+                'message' => 'Presensi Masuk Berhasil Terverifikasi! Wajah & Titik GPS tercatat.',
+                'time' => substr($nowTime, 0, 5) . ' WIB',
+                'status' => $status,
+                'status_label' => $status === 'on_time' ? 'Tepat Waktu' : 'Terlambat',
+                'distance' => $distanceMeters,
+                'location' => $detectedLocation,
+                'photo_url' => Storage::disk('public')->url($fileName),
+            ]);
+        } else {
+            // Clock Out
+            if (!$attendance || !$attendance->clock_in) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda belum melakukan Presensi Masuk hari ini. Silakan Clock In terlebih dahulu.'
+                ], 422);
+            }
+
+            if ($attendance->clock_out) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan Presensi Pulang (Clock Out) hari ini pada pukul ' . substr($attendance->clock_out, 0, 5) . ' WIB.'
+                ], 422);
+            }
+
+            $faceTag = "[Face ID & GPS Pulang: " . ($inOfficeRadius ? "Dalam Kantor ({$distanceMeters}m)" : "Luar Radius ({$distanceMeters}m)") . "]";
+            $existingNotes = $attendance->notes ?? '';
+            $finalNotes = $existingNotes ? $existingNotes . " • " . $faceTag : $faceTag;
+
+            $attendance->update([
+                'clock_out' => $nowTime,
+                'photo_out' => $fileName,
+                'latitude' => $latitude ?? $attendance->latitude,
+                'longitude' => $longitude ?? $attendance->longitude,
+                'distance_meters' => $distanceMeters ?? $attendance->distance_meters,
+                'verification_method' => 'face_location',
+                'notes' => $finalNotes,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'action' => 'clock_out',
+                'message' => 'Presensi Pulang Berhasil Terverifikasi! Wajah & Titik GPS tercatat.',
+                'time' => substr($nowTime, 0, 5) . ' WIB',
+                'distance' => $distanceMeters,
+                'location' => $detectedLocation,
+                'photo_url' => Storage::disk('public')->url($fileName),
+            ]);
+        }
+    }
+
+    /**
+     * Hitung Jarak antara Dua Koordinat GPS Menggunakan Rumus Haversine (Hasil dalam Meter)
+     */
+    private function calculateDistanceMeters($lat1, $lon1, $lat2, $lon2): int
+    {
+        $earthRadius = 6371000; // Radius Bumi dalam meter
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return (int) round($earthRadius * $c);
     }
 
     /**

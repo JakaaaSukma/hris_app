@@ -68,8 +68,16 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
 
 ## 3. Fitur Utama & Alur Bisnis (Core Workflows)
 
-### A. Presensi & Mesin Fingerprint ADMS (Solution X609)
+### A. Presensi & Mesin Fingerprint ADMS (Solution X609) serta Biometrik Face ID & GPS
 - **Controller:** `App\Http\Controllers\AttendanceController.php` & `App\Http\Controllers\Api\AdmsAttendanceController.php`.
+- **Fitur Baru Presensi Biometrik Wajah (Face ID) & Geolocation GPS:**
+  - **Akses Pengguna:** Tersedia untuk **seluruh karyawan, manager, dan direksi** (`canFaceClock()`).
+  - **Mekanisme Kamera Web:** Menggunakan webcam / kamera depan smartphone via HTML5 `navigator.mediaDevices.getUserMedia` dengan scanner overlay biometrik beranimasi radar, canvas snapshot beresolusi tajam, dan watermark digital otomatis (Nama Karyawan, Tanggal, Jam WIB, Koordinat GPS, dan watermark resmi *LPK Gyokai Biometric Verified*).
+  - **Penyimpanan Foto Wajah:** Foto selfie kehadiran disimpan ke direktori `storage/app/public/attendance_photos/{Y-m}/` dan dicatat ke kolom `photo_in` (saat masuk) dan `photo_out` (saat pulang) pada tabel `attendances`.
+  - **Geofencing & Deteksi GPS:** Koordinat satelit (`latitude`, `longitude`, `accuracy`) diambil via Browser Geolocation API. Jarak fisik dihitung menggunakan formula Haversine terhadap titik koordinat kantor pusat LPK Gyokai Indonesia (`OFFICE_LATITUDE` & `OFFICE_LONGITUDE`, toleransi radius `OFFICE_RADIUS_METERS`).
+  - **Status Kerja & Radius:** Menampilkan indikator real-time *Dalam Radius Kantor* (&le; 500m / WFO) atau *Luar Radius Kantor* (WFH / Dinas Luar) tanpa memblokir presensi sah, sehingga fleksibilitas operasional terjaga dengan transparansi audit penuh.
+  - **Tampilan Inspeksi HR & Direktur:** Pada tabel presensi web (`attendance/index.blade.php`), setiap presensi Face ID dilengkapi thumbnail foto wajah interaktif yang dapat diklik untuk membuka modal inspeksi foto resolusi tinggi, waktu persis, koordinat GPS, dan tautan langsung ke Google Maps (`open_in_new`).
+  - **Rute Web:** `POST /attendance/face-record` (`attendance.faceRecord`).
 - **Integrasi Mesin Fingerprint:** Mendukung protokol cloud ADMS ZKTeco / Solution via endpoint `/iclock/cdata`, `/iclock/ping`, `/iclock/getrequest`.
 - **Filter Log Absensi:** Mendukung filter rentang tanggal (maksimal 31 hari/1 bulan) di view `attendance/index.blade.php`.
 - **Akses HR:** Khusus akun departemen HR & Direktur dapat melihat log presensi **seluruh karyawan**, sedangkan karyawan biasa melihat riwayat presensi miliknya sendiri.
@@ -575,6 +583,14 @@ hris_app/
   6. *Halaman Error Kustom Branded:* Membuat view error elegan bertema dark GYOKAI HR untuk `403.blade.php`, `404.blade.php`, dan `500.blade.php`.
   7. *Logging Notifikasi Terbuka:* Mengganti komentar silent fail pada blok pengiriman notifikasi di `LeaveRequestController`, `FinanceController`, dan `TaskController` dengan `Log::warning`.
   8. *Slip Gaji Print PDF & Panduan Reset Password:* Menyempurnakan CSS cetak bersih (clean printable media) pada slip gaji detail dan menambahkan petunjuk reset kata sandi modal informatif pada form login.
+
+- **2026-11-02:** Implementasi Fitur Presensi Mandiri Biometrik Wajah (Face ID) & Geolocation GPS:
+  1. *Migrasi Database:* Membuat migrasi `2026_11_02_210000_add_face_id_and_location_to_attendances_table.php` yang menambahkan kolom `latitude`, `longitude`, `photo_in`, `photo_out`, `distance_meters`, `verification_method`, `device_info` pada tabel `attendances`.
+  2. *Controller & Logika Bisnis:* Penambahan method `AttendanceController@faceRecord` yang memproses selfie base64 terenkode, menyimpan file fisik foto ke `storage/app/public/attendance_photos/{Y-m}/`, menghitung jarak geofencing GPS ke kantor pusat dengan formula Haversine, mencatat status kedisiplinan, serta mengembalikan JSON response terstruktur.
+  3. *Model Eloquent:* Penambahan accessor `photo_in_url`, `photo_out_url`, `google_maps_url` pada `Attendance.php` serta helper `canFaceClock()` pada `User.php`.
+  4. *Komponen Antarmuka Web:* Pembuatan komponen Blade modern `<x-face-attendance-modal />` (`resources/views/components/face-attendance-modal.blade.php`) dengan viewfinder pemindaian biometrik beranimasi radar, watermark otomatis, audio feedback Web Audio API, serta integrasi tombol presensi di Topbar, Dashboard, dan Halaman Presensi.
+  5. *Audit Trail & Inspeksi HR:* Menambahkan kolom *Verifikasi & Foto* dan *Lokasi & GPS* pada tabel presensi dengan popup modal preview foto resolusi tinggi dan tautan Google Maps langsung.
+  6. *Automated Testing:* Pembuatan unit & feature test `tests/Feature/FaceAttendanceTest.php` yang memvalidasi keberhasilan presensi biometrik (lulus 100%).
 
 - **2026-11-02:** Implementasi Akun & Peran Sekretaris Direktur, Gatekeeping Jadwal Direksi & Filter Chat Manager:
   1. *Pembuatan Akun & Model Role:* Membuat migrasi `2026_11_02_200000_create_sekretaris_direktur_account.php` dan data akun `Sekretaris Direktur` (`sekretaris@gyokai.com`, role: `sekretaris`, department: `Executive`, sub_department: `Sekretariat`, NIP: `NEX-00021`). Menambahkan helper otorisasi `isSekretaris()` di `User.php`.

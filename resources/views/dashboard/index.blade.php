@@ -33,27 +33,27 @@
                     <span>Pengajuan Cuti</span>
                 </a>
 
-                @if(auth()->user()->canQuickClock())
+                @if(auth()->user()->canFaceClock())
                     @if($userTodayAttendance)
                         @if(!$userTodayAttendance->clock_out)
-                            <form action="{{ route('attendance.clockOut') }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="employee_id" value="{{ $currentUser->id }}">
-                                <button type="submit" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-orange-500/20 active:scale-95">
-                                    <span class="material-symbols-outlined text-base">logout</span>
-                                    <span>Clock Out (In: {{ substr($userTodayAttendance->clock_in, 0, 5) }})</span>
-                                </button>
-                            </form>
+                            <button type="button" 
+                                    @click="$dispatch('open-face-modal', { type: 'clock_out' })"
+                                    class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-orange-500/20 active:scale-95">
+                                <span class="material-symbols-outlined text-base">face_retouching_natural</span>
+                                <span>Clock Out Face ID (In: {{ substr($userTodayAttendance->clock_in, 0, 5) }})</span>
+                            </button>
                         @else
                             <div class="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl text-xs font-mono font-medium border border-emerald-500/25">
                                 <span class="material-symbols-outlined text-base">verified</span>
-                                <span>Selesai: {{ substr($userTodayAttendance->clock_out, 0, 5) }}</span>
+                                <span>Presensi Lengkap: {{ substr($userTodayAttendance->clock_out, 0, 5) }}</span>
                             </div>
                         @endif
                     @else
-                        <button @click="showClockInModal = true" class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:from-rose-500 hover:to-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-rose-600/30 active:scale-95 ring-1 ring-white/20">
-                            <span class="material-symbols-outlined text-base">fingerprint</span>
-                            <span>Presensi Masuk</span>
+                        <button type="button" 
+                                @click="$dispatch('open-face-modal', { type: 'clock_in' })" 
+                                class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 active:scale-95 ring-1 ring-white/20">
+                            <span class="material-symbols-outlined text-base">face_retouching_natural</span>
+                            <span>Presensi Face ID & Lokasi</span>
                         </button>
                     @endif
                 @endif
