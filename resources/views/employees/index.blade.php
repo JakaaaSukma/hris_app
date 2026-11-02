@@ -398,11 +398,11 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-mono text-tertiary mb-1">Password Akun (Default: Gikindo14$)</label>
-                            <input type="text" name="password" placeholder="Kosongkan untuk default: Gikindo14$" class="w-full bg-surface-container border border-[#333539] rounded-lg px-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary-container"/>
+                            <label class="block text-[11px] font-mono text-tertiary mb-1">Password Akun (Default: {{ env('DEFAULT_USER_PASSWORD', 'password123') }})</label>
+                            <input type="text" name="password" placeholder="Kosongkan untuk default password" class="w-full bg-surface-container border border-[#333539] rounded-lg px-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary-container"/>
                         </div>
                     </div>
-                    <p class="text-[10px] text-tertiary font-mono">*Akun login dibuat otomatis dengan email (nama)@gyokai.com dan password default <strong>Gikindo14$</strong>.</p>
+                    <p class="text-[10px] text-tertiary font-mono">*Akun login dibuat otomatis dengan email (nama)@gyokai.com dan password default <strong>{{ env('DEFAULT_USER_PASSWORD', 'password123') }}</strong>.</p>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-[#282a2e]">
@@ -492,7 +492,7 @@
                     <div>
                         <h3 class="font-headline font-bold text-base text-on-surface">Pendaftaran Akun Massal (Sesuai Tabel / Mesin Finger)</h3>
                         <p class="text-xs text-tertiary font-mono">
-                            Email otomatis: <span class="text-emerald-400 font-bold">(nama)@gyokai.com</span> &bull; Password default: <span class="text-emerald-400 font-bold">Gikindo14$</span>
+                            Email otomatis: <span class="text-emerald-400 font-bold">(nama)@gyokai.com</span> &bull; Password default: <span class="text-emerald-400 font-bold">{{ env('DEFAULT_USER_PASSWORD', 'password123') }}</span>
                         </p>
                     </div>
                 </div>

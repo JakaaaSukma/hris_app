@@ -449,8 +449,9 @@ class EmployeeController extends Controller
 
         $employee = Employee::create($validated);
 
-        // Password default: Gikindo14$ sesuai instruksi
-        $password = $request->filled('password') ? $request->password : 'Gikindo14$';
+        // Password default diambil dari .env (atau fallback aman)
+        $defaultPassword = env('DEFAULT_USER_PASSWORD', 'password123');
+        $password = $request->filled('password') ? $request->password : $defaultPassword;
 
         // Otomatis buat akun User Login
         User::create([
@@ -498,7 +499,8 @@ class EmployeeController extends Controller
         $updatedCount = 0;
 
         // Hash default password 1 KALI saja di luar loop untuk menghemat ribuan cycle CPU (menghindari timeout)
-        $defaultPasswordHash = Hash::make('Gikindo14$');
+        $defaultPassword = env('DEFAULT_USER_PASSWORD', 'password123');
+        $defaultPasswordHash = Hash::make($defaultPassword);
 
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
@@ -557,7 +559,7 @@ class EmployeeController extends Controller
 
             \Illuminate\Support\Facades\DB::commit();
 
-            return back()->with('success', "Pendaftaran massal berhasil diproses! Sebanyak {$createdCount} akun baru dibuat dan {$updatedCount} akun disinkronkan dengan password default Gikindo14$.");
+            return back()->with('success', "Pendaftaran massal berhasil diproses! Sebanyak {$createdCount} akun baru dibuat dan {$updatedCount} akun disinkronkan.");
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan saat pendaftaran akun: ' . $e->getMessage());
