@@ -63,3 +63,4 @@ class OfficeSupply extends Model
         return 'emerald';
     }
 }
+

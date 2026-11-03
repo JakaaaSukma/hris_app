@@ -398,6 +398,20 @@
                         </div>
                     </a>
                 @endif
+
+                <!-- 6. Tata Persuratan Resmi (Sekretaris Direktur & Direktur Utama) -->
+                @if(auth()->user() && auth()->user()->canManageExecutiveLetters())
+                    <a href="{{ route('secretary.letters.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('secretary.letters.*') ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-600/25 border border-amber-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('secretary.letters.*') ? 'text-white' : 'text-amber-400' }}">mark_email_read</span>
+                        <div class="flex items-center justify-between flex-1">
+                            <span>Surat Keluar & Agenda</span>
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                {{ auth()->user()->isSekretaris() ? 'Sekretaris' : 'Direksi' }}
+                            </span>
+                        </div>
+                    </a>
+                @endif
             </nav>
         </div>
 

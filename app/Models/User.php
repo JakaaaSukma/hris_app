@@ -62,6 +62,11 @@ class User extends Authenticatable
         return in_array($this->role, ['sekretaris', 'sekretaris_direktur']);
     }
 
+    public function canManageExecutiveLetters(): bool
+    {
+        return $this->isSekretaris() || $this->isDirektur();
+    }
+
     public function isManager(): bool
     {
         return $this->role === 'manager';

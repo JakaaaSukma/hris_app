@@ -63,6 +63,7 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
 - `canApproveInventoryRequests()` -> Finance / Manager HR / Direktur
 - `canManageEmployees()` -> HR Murni / Direktur (Karyawan GA & Asisten Manager GA dilarang mengelola pegawai)
 - `canManagePaklaring()` -> **Khusus HR Murni / Direktur** (Pembuatan dan penerbitan Surat Keterangan / Paklaring resmi LPK Gyokai Indonesia dengan template persis A4 Landscape).
+- `canManageExecutiveLetters()` -> **Khusus Sekretaris Direktur & Direktur Utama** (Pengelolaan buku agenda surat keluar resmi kantor, registrasi nomor surat, auto-numbering, pengarsipan berkas digital, dan cetak lembar tanda terima ekspedisi).
 
 ---
 
@@ -187,6 +188,7 @@ hris_app/
 │   │   ├── GuideController.php              # Panduan Penggunaan & Diagram Alur Sistem Seluruh Akun
 │   │   ├── LeaveRequestController.php       # Pengajuan Cuti/Izin & Approval HR
 │   │   ├── OffboardingController.php        # Offboarding Karyawan
+│   │   ├── OutgoingLetterController.php     # Tata Persuratan Resmi, Penomoran Surat Keluar & Lembar Ekspedisi
 │   │   ├── PaklaringController.php          # Generator & Penerbitan Surat Keterangan / Paklaring LPK
 │   │   ├── ProfileController.php            # Pengaturan Profil, Sesi Perangkat & Log Aktivitas
 │   │   ├── RecruitmentController.php        # Rekrutmen & Onboarding Calon Karyawan
@@ -201,6 +203,9 @@ hris_app/
 │       ├── DepartmentMessage.php            # Pesan Chat Internal Departemen
 │       ├── Employee.php                     # Detail Karyawan (NIP, Posisi, Gaji, dll.)
 │       ├── LeaveRequest.php                 # Pengajuan Cuti
+│       ├── OfficeSupply.php                 # Master Data ATK Kantor & Ambang Batas Stok
+│       ├── OfficeSupplyUsage.php            # Log Pemakaian & Distribusi ATK Karyawan
+│       ├── OutgoingLetter.php               # Agenda Surat Keluar Resmi, Penomoran Otomatis & Status
 │       ├── Paklaring.php                    # Record Arsip Surat Keterangan / Paklaring LPK
 │       ├── Reimbursement.php                # Klaim Biaya Operasional
 │       ├── SalarySlip.php                   # Slip Gaji
@@ -220,7 +225,9 @@ hris_app/
 │       ├── attendance/index.blade.php       # UI Log Presensi & Filter Tanggal
 │       ├── leave/index.blade.php            # UI Pengajuan Cuti & Approval
 │       ├── reports/                         # Template PDF Siap Cetak (KPI & Absensi)
-│       └── departments/                     # View khusus HR, Finance, GA, BizDev
+│       ├── departments/                     # View khusus HR, Finance, GA, BizDev
+│       └── secretary/                       # View khusus Sekretaris Direktur & Direksi
+│           └── letters/index.blade.php      # UI Buku Agenda Surat Keluar & Penomoran Resmi
 └── routes/
     └── web.php                              # Seluruh route web & endpoint ADMS iclock
 ```
@@ -376,9 +383,51 @@ hris_app/
   - `POST /ga/supplies/usage` (`ga.supplies.recordUsage`)
   - `DELETE /ga/supplies/usage/{id}` (`ga.supplies.destroyUsage`)
 
+### Tata Persuratan Resmi & Penomoran Surat Keluar (Sekretaris Direktur & Direktur Utama):
+- **Model:** `App\Models\OutgoingLetter.php`
+- **Tabel Database:** `outgoing_letters`
+  - Kolom: `letter_number` (unique), `sequence_number`, `letter_category`, `organization_code`, `month_roman`, `year`, `letter_date`, `recipient`, `recipient_address`, `subject`, `regarding_summary`, `urgency` (biasa/penting/segera/rahasia), `status` (draft/reserved/signed/sent/archived), `signer_name`, `signer_title`, `file_path`, `notes`, `created_by`, `signed_at`, `sent_at`, `timestamps`.
+  - Indexes: composite `[year, sequence_number]`, `status`, `letter_category`, `created_by`.
+- **Standar Format Penomoran Resmi:**
+  - Pola: `[Nomor Urut 3 Digit]/[Kode Kategori]/[Kode Organisasi]/[Bulan Romawi]/[Tahun]`
+  - Contoh: `001/SK/DIR-GYOKAI/XI/2026`
+  - Auto-Increment Tahunan: Nomor urut berulang dari 1 pada setiap pergantian tahun takwim (`getNextSequence($year)`).
+  - Kategori Surat: SK (Surat Keputusan), SPK (Surat Perjanjian Kerja), ST (Surat Tugas), UND (Surat Undangan), SKet (Surat Keterangan), SPH (Surat Penawaran Harga), MOU (Nota Kesepahaman), NOTA (Nota Dinas), SE (Surat Edaran), BAST (Berita Acara Serah Terima), UMUM (Surat Keluar Umum).
+- **Fitur & Logika Bisnis:**
+  1. *Registrasi Nomor Surat Baru:* Otomatisasi perhitungan nomor urut berikutnya dan konversi bulan romawi secara real-time via AJAX endpoint `GET /secretary/letters/next-number`.
+  2. *Reservasi / Booking Nomor Cepat:* Kemampuan memesan nomor urut resmi lebih awal sebelum draft fisik surat selesai ditandatangani untuk mencegah bentrok nomor surat antar dokumen.
+  3. *Manajemen Status Persuratan:* Alur status transparan: Draft &rarr; Reserved &rarr; Signed &rarr; Sent &rarr; Archived.
+  4. *Pengarsipan Berkas Digital:* Unggah salinan berkas resmi (PDF, JPG, PNG hingga 10MB) yang disimpan terstruktur per tahun takwim (`storage/app/public/outgoing_letters/{year}/`).
+  5. *Streaming Berkas Tanpa Symlink:* Endpoint `GET /secretary/letters/{id}/download` mengalirkan file langsung via controller stream response untuk kompatibilitas penuh lingkungan hosting cPanel yang menonaktifkan symlink.
+  6. *Cetak Lembar Tanda Terima Ekspedisi:* Fitur cetak bukti tanda terima pengiriman surat fisik / kurir (Lembar Ekspedisi Persuratan) siap print A4.
+- **Rute Web:**
+  - `GET /secretary/letters` (`secretary.letters.index`)
+  - `POST /secretary/letters` (`secretary.letters.store`)
+  - `GET /secretary/letters/next-number` (`secretary.letters.nextNumber`)
+  - `PATCH /secretary/letters/{id}` (`secretary.letters.update`)
+  - `DELETE /secretary/letters/{id}` (`secretary.letters.destroy`)
+  - `GET /secretary/letters/{id}/download` (`secretary.letters.download`)
+
 ---
 
 ## 12. Riwayat Pembaruan Dokumentasi (Changelog)
+- **2026-11-03:** **Implementasi Modul Tata Persuratan Resmi & Penomoran Surat Keluar (Buku Agenda & Ekspedisi Persuratan Eksekutif):**
+  - **Latar Belakang:** Menambahkan modul Buku Agenda Surat Keluar Resmi & Penomoran Otomatis pada akun Sekretaris Direktur dan Direktur Utama untuk menertibkan tata naskah dinas, penomoran resmi perusahaan, pengarsipan berkas surat digital, dan bukti ekspedisi pengiriman surat keluar.
+  - **Skema & Migrasi Database:**
+    - Membuat migrasi `2026_11_03_122731_create_outgoing_letters_table.php` dengan indeks performa pencarian.
+    - Tabel `outgoing_letters`: `letter_number` (unique), `sequence_number`, `letter_category`, `organization_code`, `month_roman`, `year`, `letter_date`, `recipient`, `recipient_address`, `subject`, `regarding_summary`, `urgency`, `status`, `signer_name`, `signer_title`, `file_path`, `notes`, `created_by`, `signed_at`, `sent_at`.
+  - **Model & Logika Bisnis:**
+    - `OutgoingLetter.php`: Helper `convertMonthToRoman()`, `formatLetterNumber()`, `getNextSequence()`, `categoryOptions()`, `organizationOptions()`, dan accessor status badge warna Tailwind.
+    - `User.php`: Penambahan helper `canManageExecutiveLetters()` yang membatasi hak akses eksklusif hanya untuk Sekretaris Direktur (`isSekretaris()`) dan Direktur Utama (`isDirektur()`).
+    - `OutgoingLetterController.php`: Method `index`, `store`, `update`, `destroy`, `getNextNumber` (AJAX real-time generator nomor surat), dan `downloadFile` (resilient direct streaming tanpa symlink).
+  - **Antarmuka & Komponen Desain (`secretary/letters/index.blade.php`):**
+    - Desain premium tema dark GYOKAI dengan kartu statistik: Total Surat Keluar Tahun Berjalan, Terkirim & Diarsipkan, Pending / Reservasi Nomor, dan Terbit Bulan Ini.
+    - Filter pencarian cepat: Kata kunci (perihal/nomor/penerima/penandatangan), Kategori Surat, Status Surat, Tingkat Urgensi, dan Filter Tahun Takwim.
+    - Modal popup interaktif tanpa `backdrop-blur`: Modal Registrasi Surat Keluar (Live Preview Nomor Surat), Modal Reservasi Nomor Cepat, Modal Edit / Pembaruan Status Surat, dan Modal Cetak Lembar Ekspedisi Pengiriman Surat.
+    - Navigasi sidebar dinamis pada `layouts/app.blade.php` dengan badge "Sekretaris" / "Direksi".
+  - **Seeder & Automated Testing:**
+    - Seeder `OutgoingLetterSeeder.php` dengan 7 contoh surat resmi realistis (SK, SPK, ST, UND, SKet, SPH, MOU).
+    - Test Suite `tests/Feature/OutgoingLetterTest.php` (5 pengujian mencakup index, otorisasi 403 karyawan biasa, AJAX auto-numbering, pendaftaran surat, pembaruan status; seluruhnya lolos 100%).
 - **2026-11-03:** **Implementasi Modul Manajemen Stok & Pemakaian ATK Kantor (Office Supplies / Consumables):**
   - **Latar Belakang:** Menambahkan modul pengelolaan persediaan barang habis pakai kantor (ATK) pada menu General Affairs (GA) untuk memonitor ketersediaan stok fisik dan mencatat distribusi pemakaian ke seluruh departemen (HR, Finance, Bisnis Development, Executive, Resepsionis, Trainer).
   - **Skema & Migrasi Database:**

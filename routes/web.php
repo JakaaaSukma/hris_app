@@ -231,6 +231,16 @@
             Route::post('/bulk-update-status', [\App\Http\Controllers\MemberController::class, 'bulkUpdateMemberStatus'])->name('bulkUpdateStatus');
         });
 
+        // 6. MODUL TATA PERSURATAN RESMI & PENOMORAN SURAT (SEKRETARIS DIREKTUR & DIREKTUR)
+        Route::prefix('secretary/letters')->name('secretary.letters.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\OutgoingLetterController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\OutgoingLetterController::class, 'store'])->name('store');
+            Route::get('/next-number', [\App\Http\Controllers\OutgoingLetterController::class, 'getNextNumber'])->name('nextNumber');
+            Route::patch('/{id}', [\App\Http\Controllers\OutgoingLetterController::class, 'update'])->name('update');
+            Route::delete('/{id}', [\App\Http\Controllers\OutgoingLetterController::class, 'destroy'])->name('destroy');
+            Route::get('/{id}/download', [\App\Http\Controllers\OutgoingLetterController::class, 'downloadFile'])->name('download');
+        });
+
     });
 
     // =========================================================================

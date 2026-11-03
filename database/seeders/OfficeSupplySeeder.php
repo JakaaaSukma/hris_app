@@ -203,3 +203,4 @@ class OfficeSupplySeeder extends Seeder
         }
     }
 }
+
