@@ -357,9 +357,49 @@ hris_app/
   - `FacilityTicketController@updateProgress`: Membatasi wewenang update tiket fasilitas hanya bagi pengguna dengan otorisasi `canControlGA()`.
   - `EmployeeController.php`: Validasi pembuatan dan pembaruan akun (`store`, `update`, `updateAccount`) mendukung role `asisten_manager` dan sinkronisasi `sub_department`.
 
+### Manajemen Stok & Pemakaian ATK Kantor (Office Supplies / Consumables):
+- **Model:** `App\Models\OfficeSupply.php` & `App\Models\OfficeSupplyUsage.php`
+- **Tabel Database:** 
+  1. `office_supplies`: `item_code` (unique), `name`, `category`, `unit`, `stock_qty`, `min_stock`, `location`, `notes`, `timestamps`.
+  2. `office_supply_usages`: `office_supply_id`, `employee_id`, `department`, `quantity`, `usage_date`, `purpose`, `recorded_by`, `notes`, `timestamps`.
+- **Fitur & Logika Bisnis:**
+  1. *Katalog Stok ATK Tersedia:* Manajemen barang habis pakai kantor (Kertas HVS, Pulpen, Spidol Whiteboard, Map Snelhechter, Toner Printer, Binder Clip, Lakban, dll.) lengkap dengan ambang batas stok minimum (`min_stock`) dan visual indikator status (Tersedia / Menipis / Habis).
+  2. *Distribusi & Pencatatan Pemakaian:* Tim GA mencatat pengambilan ATK oleh karyawan dari departemen mana pun (HR, Finance, Bisnis Development, Executive, Resepsionis, Trainer) beserta jumlah, tanggal, dan keperluannya.
+  3. *Pengurangan Stok Otomatis:* Stok fisik barang di gudang otomatis terpotong saat pemakaian dicatat (`decrement`). Sistem menolak pemakaian jika kuantitas melebihi sisa stok yang tersedia.
+  4. *Restock / Pasokan Masuk:* Penambahan stok instan untuk barang baru datang dari pengadaan belanja ATK (`increment`).
+  5. *Rollback Otomatis Saat Pembatalan:* Jika catatan pemakaian dihapus/dibatalkan, kuantitas stok otomatis dikembalikan ke gudang.
+- **Rute Web:**
+  - `POST /ga/supplies` (`ga.supplies.store`)
+  - `PATCH /ga/supplies/{id}` (`ga.supplies.update`)
+  - `DELETE /ga/supplies/{id}` (`ga.supplies.destroy`)
+  - `POST /ga/supplies/{id}/restock` (`ga.supplies.restock`)
+  - `POST /ga/supplies/usage` (`ga.supplies.recordUsage`)
+  - `DELETE /ga/supplies/usage/{id}` (`ga.supplies.destroyUsage`)
+
 ---
 
 ## 12. Riwayat Pembaruan Dokumentasi (Changelog)
+- **2026-11-03:** **Implementasi Modul Manajemen Stok & Pemakaian ATK Kantor (Office Supplies / Consumables):**
+  - **Latar Belakang:** Menambahkan modul pengelolaan persediaan barang habis pakai kantor (ATK) pada menu General Affairs (GA) untuk memonitor ketersediaan stok fisik dan mencatat distribusi pemakaian ke seluruh departemen (HR, Finance, Bisnis Development, Executive, Resepsionis, Trainer).
+  - **Skema & Migrasi Database:**
+    - Membuat migrasi `2026_11_03_080327_create_office_supplies_and_usages_tables.php`.
+    - Tabel `office_supplies`: `item_code` (unique), `name`, `category`, `unit`, `stock_qty`, `min_stock`, `location`, `notes`.
+    - Tabel `office_supply_usages`: `office_supply_id`, `employee_id`, `department`, `quantity`, `usage_date`, `purpose`, `recorded_by`, `notes`.
+  - **Model & Logika Bisnis:**
+    - `OfficeSupply.php`: Relasi ke usages, helper method `isLowStock()`, `isOutOfStock()`, serta accessor `status_label` dan `status_color`.
+    - `OfficeSupplyUsage.php`: Relasi ke `officeSupply`, `employee`, dan `recorder` (User).
+    - `GeneralAffairsController.php`: Method `storeSupply`, `updateSupply`, `restockSupply`, `destroySupply`, `recordSupplyUsage`, dan `destroySupplyUsage`.
+    - Pengurangan stok otomatis saat pemakaian dicatat (`decrement`) dengan validasi anti-overdraft (menolak pencatatan jika stok tidak mencukupi).
+    - Rollback stok otomatis saat catatan pemakaian dibatalkan/dihapus (`increment`).
+  - **Antarmuka & Komponen Desain (`ga/index.blade.php`):**
+    - Tab utama "Stok & Pemakaian ATK Kantor" dengan badge peringatan restock jika ada stok kritis.
+    - Metrik kartu: Total Jenis ATK, Total Stok Fisik Unit, Peringatan Stok Menipis/Habis, dan Total Terdistribusi Bulan Ini.
+    - Sub-tab terpisah: *Katalog Stok ATK Tersedia* dan *Riwayat Log Pemakaian & Distribusi ATK*.
+    - Modal popup interaktif tanpa `backdrop-blur`: Modal Catat Pemakaian, Modal Tambah Master ATK, Modal Restock, dan Modal Edit ATK.
+  - **Seeder & Automated Testing:**
+    - Seeder `OfficeSupplySeeder.php` dengan 12 data master ATK kantor umum dan riwayat pemakaian awal.
+    - Test Suite `tests/Feature/GeneralAffairsAtkTest.php` (6 pengujian lolos 100%).
+
 - **2026-11-02:** **Penyelesaian Komprehensif Template Paklaring (Blank / 404 Image & `filemtime` Stat Failed):**
   - **Masalah:** Di server live/cPanel (`/home/lpkx2536/...`), berkas fisik `public/images/paklaring/exact_base_template.png` belum ter-upload sehingga:
     1. Awalnya memicu fatal error `filemtime(): stat failed for ...`.

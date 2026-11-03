@@ -193,6 +193,14 @@
             Route::patch('/inventory/{id}', [GeneralAffairsController::class, 'update'])->name('update');
             Route::post('/request', [GeneralAffairsController::class, 'storeRequest'])->name('storeRequest');
             Route::patch('/request/{id}/status', [GeneralAffairsController::class, 'updateRequestStatus'])->name('updateRequestStatus');
+
+            // Fitur Manajemen ATK Kantor (Office Supplies) & Pemakaian
+            Route::post('/supplies', [GeneralAffairsController::class, 'storeSupply'])->name('supplies.store');
+            Route::patch('/supplies/{id}', [GeneralAffairsController::class, 'updateSupply'])->name('supplies.update');
+            Route::delete('/supplies/{id}', [GeneralAffairsController::class, 'destroySupply'])->name('supplies.destroy');
+            Route::post('/supplies/{id}/restock', [GeneralAffairsController::class, 'restockSupply'])->name('supplies.restock');
+            Route::post('/supplies/usage', [GeneralAffairsController::class, 'recordSupplyUsage'])->name('supplies.recordUsage');
+            Route::delete('/supplies/usage/{id}', [GeneralAffairsController::class, 'destroySupplyUsage'])->name('supplies.destroyUsage');
         });
 
         // Modul Notifikasi: Tersedia untuk seluruh akun (Karyawan, Manager, Direktur)
