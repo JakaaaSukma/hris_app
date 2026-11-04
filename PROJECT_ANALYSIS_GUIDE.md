@@ -175,7 +175,12 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
 hris_app/
 ├── app/
 │   ├── Http/Controllers/
-│   │   ├── Api/AdmsAttendanceController.php  # Integrasi mesin fingerprint Solution X609 (ADMS)
+│   │   ├── Api/
+│   │   │   ├── AdmsAttendanceController.php  # Integrasi mesin fingerprint Solution X609 (ADMS)
+│   │   │   ├── AuthApiController.php         # REST API Mobile: Login Sanctum, Profil & Sesi
+│   │   │   ├── AttendanceApiController.php   # REST API Mobile: Presensi Face ID, Geofence GPS & Anti Fake GPS
+│   │   │   ├── LeaveApiController.php        # REST API Mobile: Cuti, Two-Tier Approval & Kuota
+│   │   │   └── DashboardApiController.php    # REST API Mobile: Ringkasan Metrik & Notifikasi
 │   │   ├── AttendanceController.php         # Absensi Web, Clock-In/Out, Filter Rentang Tanggal
 │   │   ├── AuthController.php               # Login/Logout & Multi-Role Redirect
 │   │   ├── CalendarController.php           # Kalender, Jadwal Kerja, Multi-Scope & Approval
@@ -229,6 +234,7 @@ hris_app/
 │       └── secretary/                       # View khusus Sekretaris Direktur & Direksi
 │           └── letters/index.blade.php      # UI Buku Agenda Surat Keluar & Penomoran Resmi
 └── routes/
+    ├── api.php                              # REST API terproteksi Bearer Token Sanctum (Mobile Android)
     └── web.php                              # Seluruh route web & endpoint ADMS iclock
 ```
 
@@ -690,6 +696,21 @@ hris_app/
   2. *Hak Akses Read-Only KPI & Kinerja (Tanpa Pengambil Keputusan):* Sekretaris Direktur memiliki akses penuh melihat grafik indeks KPI harian/mingguan/bulanan dan metrik analitis performa seluruh 4 departemen perusahaan (HR, Finance, Bisnis Development, GA) di Dashboard dan Laporan PDF (`DashboardController` & `ReportExportController`), namun **sama sekali tidak memiliki wewenang pengambilan keputusan operasional** (`canApproveLeaves`, `canApproveReimbursements`, `canApproveInventoryRequests`, `canManageEmployees` bernilai `false`, antrean pending approval cuti/izin dinonaktifkan).
   3. *Protokol Gatekeeping Jadwal Direktur:* Karyawan maupun Manager dilarang keras langsung menjadwalkan agenda ke Direktur Utama. Seluruh permohonan jadwal ke Direksi (`target_departments = ['Executive']`) berstatus `pending` dan wajib diverifikasi serta disetujui terlebih dahulu oleh **Sekretaris Direktur** sebelum resmi masuk dan tampil di kalender Direktur (`CalendarController`).
   4. *Restriksi Fitur Chat Manager:* Saluran chat komunikasi eksekutif pada akun Manager dialihkan secara ketat **HANYA ke Sekretaris Direktur** (`tab=direksi`), memblokir pesan langsung ke Direktur. Sekretaris Direktur bertindak sebagai jembatan eksekutif (*Executive Communication Hub* - `chat.sekretaris`) yang menghubungkan para Manager dan Direktur Utama secara privat dan terstruktur (`DepartmentChatController`).
+- **2026-11-04:** Penyelarasan REST API XAMPP & Redesain UI Mobile App (Tema Merah & Silver):
+  1. *Sinkronisasi Apache XAMPP:* Memperbaiki perizinan write permission folder `storage/logs/laravel.log` dan `storage/framework/cache/` untuk user `daemon` Apache XAMPP (`chmod -R 777`), serta menyesuaikan URL default mobile app ke endpoint Apache XAMPP (`/hris_app/public/api`) pada port 80.
+  2. *Redesain Visual Mobile App (Red & Silver Executive):* Mengubah seluruh sistem warna aplikasi Android dari hijau-putih menjadi palet premium **Crimson/Ruby Red (`#C81E1E`, `#881337`, `#EF4444`) dan Metallic Brushed Silver (`#CBD5E1`, `#E2E8F0`, `#F8FAFC`, `#64748B`)**. Pembaruan mencakup Splash Screen, Login Screen, Hero Card Presensi Dashboard, Tab Navigation, Riwayat, Form Cuti, dan Notifikasi.
+
+- **2026-11-03:** Pengembangan Fondasi Backend REST API (Laravel Sanctum) & Arsitektur Mobile App Android (Flutter):
+  1. *Arsitektur Backend REST API:* Membuat 4 API Controller mandiri di `app/Http/Controllers/Api/` terproteksi middleware `auth:sanctum`:
+     - `AuthApiController.php`: Login via Bearer Token, verifikasi profil pengguna (`GET /api/auth/me`), pembaruan telepon/alamat (`POST /api/auth/update-profile`), dan pencabutan sesi token (`POST /api/auth/logout`).
+     - `AttendanceApiController.php`: Pengecekan status kehadiran hari ini (`GET /api/attendance/today`), presensi biometrik Face ID kamera depan & GPS (`POST /api/attendance/face-record`), riwayat kehadiran bulanan (`GET /api/attendance/history`), dan konfigurasi geofencing kantor (`GET /api/attendance/config`).
+     - `LeaveApiController.php`: Manajemen pengajuan cuti/izin/sakit, validasi kuota sisa efektif, pencegahan tanggal overlap, dan persetujuan bertingkat (*Two-Tier Approval*) dengan prinsip ketat *Anti Self-Approval*.
+     - `DashboardApiController.php`: Ringkasan metrik kehadiran harian, statistik bulanan, sisa cuti, badge antrean persetujuan, dan notifikasi sistem (`GET /api/dashboard/summary` & `GET /api/dashboard/notifications`).
+  2. *Fitur Keamanan Khusus Mobile (Anti Fake GPS):* Menerapkan validasi keamanan mobile `is_mocked`. Jika karyawan menggunakan aplikasi pemalsu koordinat (Fake GPS), request presensi langsung ditolak dengan kode `422 Unprocessable Entity`.
+  3. *Inisialisasi Project Mobile App:* Membangun arsitektur lengkap aplikasi Flutter Android di direktori `/Applications/XAMPP/xamppfiles/htdocs/mobile app hris/` lengkap dengan konfigurasi `AndroidManifest.xml` (izin Kamera & GPS), integrasi `flutter_secure_storage` (Android Keystore), kompresi gambar lokal (Edge Image Compression < 100 KB), state management `Provider`, serta panduan kompilasi APK mandiri (`GUIDE.md` & `README.md`).
+  4. *Automated Feature Tests:* Menambahkan test suite `tests/Feature/MobileApiTest.php` yang menguji 5 skenario inti (Login/Logout, Today/Config, Anti-Mock GPS, Leave & Anti Self-Approval, Dashboard). Seluruh 19 test suite Laravel lolos 100% (`19 passed, 122 assertions`).
+  5. *Sinkronisasi Git:* Seluruh kode backend REST API, controller, route, dan automated feature test mobile telah di-push ke GitHub repository `main`.
+
 - **2026-11-02:** QA & Code Health Audit:
   1. *Perbaikan Sintaks Controller:* Memperbaiki error sintaks namespace declaration pada `AttendanceExcuseController.php` akibat leading whitespace.
   2. *Audit Suite Test Laravel:* Memperbarui pengujian `tests/Feature/ExampleTest.php` untuk memvalidasi unauthenticated redirect (`302` ke `/login`). Semua unit & feature test kini lolos (`2 passed`).

@@ -149,3 +149,4 @@ class OutgoingLetter extends Model
         return route('secretary.letters.download', $this->id);
     }
 }
+
