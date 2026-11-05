@@ -18,6 +18,11 @@ class AdmsAttendanceController extends Controller
     public function handshake(Request $request)
     {
         $sn = $request->query('SN', 'UNKNOWN_DEVICE');
+        if (!$this->isSerialAllowed($sn)) {
+            Log::warning("ADMS Handshake REJECTED: Unregistered SN={$sn} from IP={$request->ip()}");
+            return response("ERROR: Device not registered\n", 403)->header('Content-Type', 'text/plain');
+        }
+
         Log::info("ADMS Handshake received from Mesin Solution: SN={$sn}");
 
         // Format respon standar protokol ADMS ZKTeco / Solution
@@ -47,11 +52,10 @@ class AdmsAttendanceController extends Controller
         $table = $request->query('table', 'ATTLOG');
         $rawContent = $request->getContent();
 
-        // Proteksi: Validasi Serial Number (SN) mesin — hanya mesin terdaftar yang bisa push data
-        $allowedSerials = array_filter(explode(',', env('ADMS_ALLOWED_SN', '')));
-        if (!empty($allowedSerials) && !in_array($sn, $allowedSerials)) {
+        // Proteksi Fail-Closed: Validasi Serial Number (SN) mesin — hanya mesin terdaftar yang bisa push data
+        if (!$this->isSerialAllowed($sn)) {
             Log::warning("ADMS REJECTED: Unregistered device SN={$sn} attempted to push data from IP={$request->ip()}");
-            return response("ERROR: Device not registered", 403);
+            return response("ERROR: Device not registered\n", 403)->header('Content-Type', 'text/plain');
         }
 
         Log::info("ADMS Log Push from {$sn} (Table: {$table}): " . substr($rawContent, 0, 200));
@@ -213,5 +217,19 @@ class AdmsAttendanceController extends Controller
     public function deviceCmd(Request $request)
     {
         return response("OK", 200)->header('Content-Type', 'text/plain');
+    }
+
+    /**
+     * Dapatkan status validasi Serial Number mesin absensi (Fail-Closed)
+     */
+    protected function isSerialAllowed(string $sn): bool
+    {
+        $rawConfig = trim((string) env('ADMS_ALLOWED_SN', 'SOLUTION_X609'));
+        if ($rawConfig === '') {
+            $rawConfig = 'SOLUTION_X609';
+        }
+
+        $allowedSerials = array_filter(array_map('trim', explode(',', $rawConfig)));
+        return in_array($sn, $allowedSerials, true);
     }
 }

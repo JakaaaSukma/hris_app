@@ -291,9 +291,13 @@ class FinanceController extends Controller
         $periodMonth = $request->input('period_month');
         $paymentDate = $request->input('payment_date');
 
-        // Pastikan direktori public storage ada
+        // Pastikan direktori storage ada dan terlindungi dari akses HTTP langsung
         if (!Storage::disk('public')->exists('salary_slips')) {
             Storage::disk('public')->makeDirectory('salary_slips');
+        }
+        $htaccessPath = storage_path('app/public/salary_slips/.htaccess');
+        if (!file_exists($htaccessPath)) {
+            @file_put_contents($htaccessPath, "<IfModule authz_core_module>\n    Require all denied\n</IfModule>\n<IfModule !authz_core_module>\n    Deny from all\n</IfModule>\n");
         }
 
         $hasPdfColumn = Schema::hasColumn('salary_slips', 'pdf_path');
@@ -374,14 +378,39 @@ class FinanceController extends Controller
             if ($extension === 'zip') {
                 $zip = new ZipArchive;
                 if ($zip->open($file->getRealPath()) === true) {
-                    $zip->extractTo($tempDir);
+                    for ($i = 0; $i < $zip->numFiles; $i++) {
+                        $entryName = $zip->getNameIndex($i);
+                        if (str_ends_with($entryName, '/') || str_ends_with($entryName, '\\')) {
+                            continue;
+                        }
+                        $baseName = basename($entryName);
+                        if (strtolower(pathinfo($baseName, PATHINFO_EXTENSION)) !== 'pdf') {
+                            continue;
+                        }
+                        // Abaikan file metadata macOS
+                        if (str_contains($entryName, '__MACOSX') || str_starts_with($baseName, '._')) {
+                            continue;
+                        }
+                        // Cegah Zip Slip & sanitasi nama file
+                        $safeBaseName = preg_replace('/[^a-zA-Z0-9_\.\-]/', '_', $baseName);
+                        if (empty($safeBaseName) || strtolower(pathinfo($safeBaseName, PATHINFO_EXTENSION)) !== 'pdf') {
+                            continue;
+                        }
+
+                        $stream = $zip->getStream($entryName);
+                        if ($stream) {
+                            file_put_contents($tempDir . '/' . $safeBaseName, stream_get_contents($stream));
+                            fclose($stream);
+                        }
+                    }
                     $zip->close();
                 } else {
                     return back()->with('error', 'Gagal mengekstrak arsip ZIP. Pastikan file ZIP tidak terenkripsi atau rusak.');
                 }
             } else {
                 // PDF tunggal tanpa spesifik karyawan -> dicocokkan otomatis
-                $file->move($tempDir, $file->getClientOriginalName());
+                $safeName = preg_replace('/[^a-zA-Z0-9_\.\-]/', '_', $file->getClientOriginalName());
+                $file->move($tempDir, $safeName);
             }
 
             // Temukan seluruh file PDF di direktori sementara secara rekursif

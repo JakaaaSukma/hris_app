@@ -195,7 +195,7 @@ class MobileApiTest extends TestCase
         LeaveRequest::where('employee_id', $applicant->employee_id)->forceDelete();
 
         $startDate = Carbon::today()->addDays(20)->toDateString();
-        $endDate = Carbon::today()->addDays(21)->toDateString();
+        $endDate = $startDate;
 
         // 1. Submit Cuti Tahunan
         $leaveRes = $this->withHeader('Authorization', 'Bearer ' . $applicantToken)

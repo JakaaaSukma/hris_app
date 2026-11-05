@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AttendanceApiController;
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\CalendarApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\LeaveApiController;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public Authentication
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthApiController::class, 'login'])->name('api.auth.login');
+    Route::post('/login', [AuthApiController::class, 'login'])->middleware('throttle:6,1')->name('api.auth.login');
 });
 
 // Authenticated Routes (Requires Bearer Token)
@@ -42,6 +43,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [LeaveApiController::class, 'show'])->name('api.leave.show');
         Route::post('/{id}/approve', [LeaveApiController::class, 'approve'])->name('api.leave.approve');
         Route::post('/{id}/reject', [LeaveApiController::class, 'reject'])->name('api.leave.reject');
+    });
+
+    // Calendar & Schedules Management
+    Route::prefix('calendar')->group(function () {
+        Route::get('/schedules', [CalendarApiController::class, 'index'])->name('api.calendar.schedules');
+        Route::post('/schedules', [CalendarApiController::class, 'store'])->name('api.calendar.store');
+        Route::get('/schedules/{id}', [CalendarApiController::class, 'show'])->name('api.calendar.show');
     });
 
     // Dashboard Overview & Notifications

@@ -61,3 +61,4 @@ class FinanceSalarySlipUploadTest extends TestCase
         $response->assertSessionHasErrors('slip_file');
     }
 }
+

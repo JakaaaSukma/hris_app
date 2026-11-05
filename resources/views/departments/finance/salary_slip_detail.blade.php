@@ -249,7 +249,7 @@
                 </a>
             </div>
             <div class="rounded-xl overflow-hidden border border-slate-800 bg-white shadow-inner">
-                <iframe src="{{ asset('storage/' . $slip->pdf_path) }}" class="w-full h-[650px] border-0" title="PDF Slip Gaji"></iframe>
+                <iframe src="{{ route('finance.salarySlips.downloadPdf', $slip->id) }}" class="w-full h-[650px] border-0" title="PDF Slip Gaji"></iframe>
             </div>
         </div>
     @endif

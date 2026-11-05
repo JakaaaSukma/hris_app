@@ -43,6 +43,34 @@ trait ValidatesFileUpload
             ];
         }
 
+        // Inspeksi Signature Biner (Magic Bytes) untuk mencegah file executable atau skrip tersembunyi
+        $realPath = $file->getRealPath();
+        if ($realPath && file_exists($realPath) && is_readable($realPath)) {
+            $fp = @fopen($realPath, 'rb');
+            if ($fp) {
+                $header = fread($fp, 16);
+                fclose($fp);
+                if ($header !== false && strlen($header) >= 2) {
+                    $hex = strtoupper(bin2hex($header));
+                    foreach ($this->dangerousMagicBytes as $magicHex => $label) {
+                        if (str_starts_with($hex, strtoupper($magicHex))) {
+                            return [
+                                'safe' => false,
+                                'message' => "Berkas ditolak: Terdeteksi format file berbahaya ({$label})."
+                            ];
+                        }
+                    }
+                    // Deteksi skrip PHP di awal file (<?php atau <?=)
+                    if (str_starts_with($hex, '3C3F706870') || str_starts_with($hex, '3C3F3D')) {
+                        return [
+                            'safe' => false,
+                            'message' => "Berkas ditolak: Terdeteksi skrip PHP yang dilarang."
+                        ];
+                    }
+                }
+            }
+        }
+
         return ['safe' => true, 'message' => null];
     }
 }

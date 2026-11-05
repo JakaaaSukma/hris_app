@@ -362,8 +362,8 @@ class OutgoingLetterController extends Controller
     public function downloadFile($id)
     {
         $authUser = Auth::user();
-        if (!$authUser) {
-            abort(403, 'Akses Ditolak.');
+        if (!$authUser || !$authUser->canManageExecutiveLetters()) {
+            abort(403, 'Akses Ditolak: Dokumen fisik surat resmi hanya dapat diakses oleh Sekretaris Direktur dan Direktur Utama.');
         }
 
         $letter = OutgoingLetter::findOrFail($id);

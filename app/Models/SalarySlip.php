@@ -55,6 +55,6 @@ class SalarySlip extends Model
         if (empty($this->pdf_path)) {
             return null;
         }
-        return asset('storage/' . ltrim($this->pdf_path, '/'));
+        return $this->id ? route('finance.salarySlips.downloadPdf', $this->id) : asset('storage/' . ltrim($this->pdf_path, '/'));
     }
 }

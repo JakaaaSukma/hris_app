@@ -70,10 +70,25 @@ class DashboardApiController extends Controller
                 ->count();
         }
 
-        // 5. Notifikasi Belum Dibaca
+        // 5. Sinkronisasi Reminder Otomatis & Notifikasi Belum Dibaca
+        try {
+            \App\Services\ReminderService::processReminders($user->id);
+        } catch (\Throwable $e) {
+            \Log::warning("Process reminders error: " . $e->getMessage());
+        }
         $unreadNotifCount = $user->unreadNotifications()->count();
 
-        // 6. Geofence Configuration
+        // 6. Hitung Agenda Jadwal Kalender Hari Ini & Mendatang
+        $todayStr = $today;
+        $todaySchedulesCount = \App\Models\CalendarSchedule::whereDate('date', $todayStr)
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhere('is_company_wide', true)
+                  ->orWhere('department', $user->department);
+            })
+            ->count();
+
+        // 7. Geofence Configuration
         $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2088));
         $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.8456));
         $officeRadius = (int) config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500));
@@ -118,6 +133,7 @@ class DashboardApiController extends Controller
                     'pending_count' => $pendingApprovalsCount,
                 ],
                 'notifications_count' => $unreadNotifCount,
+                'today_schedules_count' => $todaySchedulesCount,
                 'office_config' => [
                     'office_name' => 'Kantor Pusat LPK Gyokai Indonesia',
                     'latitude' => $officeLat,
@@ -134,7 +150,15 @@ class DashboardApiController extends Controller
     public function notifications(Request $request)
     {
         $user = $request->user();
-        $notifications = $user->notifications()->latest()->paginate(20);
+
+        // Otomatis sinkronisasi reminder jadwal (H-1) dan reminder tugas aktif
+        try {
+            \App\Services\ReminderService::processReminders($user->id);
+        } catch (\Throwable $e) {
+            \Log::warning("Process reminders error: " . $e->getMessage());
+        }
+
+        $notifications = $user->notifications()->latest()->paginate(30);
 
         return response()->json([
             'success' => true,

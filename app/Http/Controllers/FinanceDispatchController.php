@@ -110,12 +110,42 @@ class FinanceDispatchController extends Controller
                 } elseif ($extension === 'zip') {
                     $zipPath = $file->storeAs('temp', 'upload.zip');
                     $zip = new \ZipArchive;
-                    if ($zip->open(storage_path('app/' . $zipPath)) === TRUE) {
-                        $zip->extractTo($storagePath);
+                    $fullZipPath = storage_path('app/' . $zipPath);
+                    if ($zip->open($fullZipPath) === TRUE) {
+                        $extractedCount = 0;
+                        for ($i = 0; $i < $zip->numFiles; $i++) {
+                            $entryName = $zip->getNameIndex($i);
+                            if (str_ends_with($entryName, '/') || str_ends_with($entryName, '\\')) {
+                                continue;
+                            }
+                            $baseName = basename($entryName);
+                            if (strtolower(pathinfo($baseName, PATHINFO_EXTENSION)) !== 'pdf') {
+                                continue;
+                            }
+                            if (str_contains($entryName, '__MACOSX') || str_starts_with($baseName, '._')) {
+                                continue;
+                            }
+                            // Cegah Zip Slip & sanitasi nama file
+                            $safeBaseName = preg_replace('/[^a-zA-Z0-9_\.\-]/', '_', $baseName);
+                            if (empty($safeBaseName) || strtolower(pathinfo($safeBaseName, PATHINFO_EXTENSION)) !== 'pdf') {
+                                continue;
+                            }
+
+                            $stream = $zip->getStream($entryName);
+                            if ($stream) {
+                                file_put_contents($storagePath . '/' . $safeBaseName, stream_get_contents($stream));
+                                fclose($stream);
+                                $extractedCount++;
+                            }
+                        }
                         $zip->close();
                         Storage::delete($zipPath);
+
+                        if ($extractedCount === 0) {
+                            return back()->with('error', 'Tidak ditemukan dokumen PDF yang valid di dalam file ZIP.');
+                        }
                     } else {
-                        return back()->with('error', 'Gagal mengekstrak file ZIP.');
+                        return back()->with('error', 'Gagal mengekstrak file ZIP. Pastikan file arsip tidak rusak.');
                     }
                 }
 
