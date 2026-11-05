@@ -327,11 +327,11 @@ class AttendanceController extends Controller
         $fileName = $folder . '/' . $currentUser->nip . '_' . $actionType . '_' . time() . '.' . $imgExt;
         Storage::disk('public')->put($fileName, $decodedImage);
 
-        // Koordinat Geofencing GPS Kantor (Default: Jakarta HQ / Configurable)
+        // Koordinat Geofencing GPS Kantor Pusat (SMK & LPK Gyokai Cisoka)
         $latitude = $request->input('latitude');
         $longitude = $request->input('longitude');
-        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2088));
-        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.8456));
+        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2614075));
+        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.4433519));
         $allowedRadius = (int) config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500));
 
         $distanceMeters = null;
@@ -344,7 +344,7 @@ class AttendanceController extends Controller
         $detectedLocation = $request->input('location_name');
         if (!$detectedLocation) {
             if ($inOfficeRadius) {
-                $detectedLocation = "Kantor Pusat Gyokai ({$distanceMeters}m dari titik pusat)";
+                $detectedLocation = "SMK & LPK Gyokai Indonesia ({$distanceMeters}m dari titik pusat)";
             } elseif ($distanceMeters !== null) {
                 $detectedLocation = "Luar Radius Kantor ({$distanceMeters}m dari kantor)";
             } else {

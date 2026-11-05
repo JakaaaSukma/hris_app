@@ -30,8 +30,8 @@ class AttendanceApiController extends Controller
             ->whereDate('date', $today)
             ->first();
 
-        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2088));
-        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.8456));
+        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2614075));
+        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.4433519));
         $officeRadius = (int) config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500));
 
         return response()->json([
@@ -60,7 +60,8 @@ class AttendanceApiController extends Controller
                     'notes' => $attendance->notes,
                 ] : null,
                 'office_config' => [
-                    'office_name' => 'Kantor Pusat LPK Gyokai Indonesia',
+                    'office_name' => config('app.office_name', env('OFFICE_NAME', 'SMK & LPK Gyokai Indonesia')),
+                    'office_address' => config('app.office_address', env('OFFICE_ADDRESS', 'Jl.Pesona Wibawa Praja, Jeungjing, Kec. Cisoka, Kabupaten Tangerang, Banten 15730')),
                     'latitude' => $officeLat,
                     'longitude' => $officeLng,
                     'radius_meters' => $officeRadius,
@@ -163,11 +164,11 @@ class AttendanceApiController extends Controller
             Storage::disk('public')->put($fileName, $decodedImage);
         }
 
-        // Koordinat Geofencing GPS
+        // Koordinat Geofencing GPS Kantor Pusat (SMK & LPK Gyokai Cisoka)
         $latitude = $request->input('latitude');
         $longitude = $request->input('longitude');
-        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2088));
-        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.8456));
+        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2614075));
+        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.4433519));
         $allowedRadius = (int) config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500));
 
         $distanceMeters = null;
@@ -180,7 +181,7 @@ class AttendanceApiController extends Controller
         $detectedLocation = $request->input('location_name');
         if (!$detectedLocation) {
             if ($inOfficeRadius) {
-                $detectedLocation = "Kantor Pusat Gyokai ({$distanceMeters}m dari titik pusat)";
+                $detectedLocation = "SMK & LPK Gyokai Indonesia ({$distanceMeters}m dari titik pusat)";
             } elseif ($distanceMeters !== null) {
                 $detectedLocation = "Luar Radius Kantor ({$distanceMeters}m dari kantor)";
             } else {
@@ -354,9 +355,10 @@ class AttendanceApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'office_name' => 'Kantor Pusat LPK Gyokai Indonesia',
-                'latitude' => (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2088)),
-                'longitude' => (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.8456)),
+                'office_name' => config('app.office_name', env('OFFICE_NAME', 'SMK & LPK Gyokai Indonesia')),
+                'office_address' => config('app.office_address', env('OFFICE_ADDRESS', 'Jl.Pesona Wibawa Praja, Jeungjing, Kec. Cisoka, Kabupaten Tangerang, Banten 15730')),
+                'latitude' => (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2614075)),
+                'longitude' => (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.4433519)),
                 'radius_meters' => (int) config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500)),
                 'work_start_limit' => '09:15:00',
                 'server_time' => Carbon::now()->format('Y-m-d H:i:s'),

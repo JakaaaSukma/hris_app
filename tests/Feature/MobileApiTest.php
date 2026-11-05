@@ -130,8 +130,8 @@ class MobileApiTest extends TestCase
         $mockedRes = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->postJson(route('api.attendance.faceRecord'), [
                 'photo' => $fakeBase64,
-                'latitude' => -6.2088,
-                'longitude' => 106.8456,
+                'latitude' => -6.2614075,
+                'longitude' => 106.4433519,
                 'is_mocked' => true,
             ]);
 
@@ -150,8 +150,8 @@ class MobileApiTest extends TestCase
         $clockInRes = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->postJson(route('api.attendance.faceRecord'), [
                 'photo' => $fakeBase64,
-                'latitude' => -6.2088,
-                'longitude' => 106.8456,
+                'latitude' => -6.2614075,
+                'longitude' => 106.4433519,
                 'type' => 'clock_in',
                 'is_mocked' => false,
                 'device_info' => 'Samsung Galaxy S23 (HRIS Mobile)',

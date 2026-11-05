@@ -185,4 +185,17 @@ return [
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Geofencing Titik Kantor Pusat (SMK & LPK Gyokai Indonesia)
+    |--------------------------------------------------------------------------
+    | Lokasi: Jl.Pesona Wibawa Praja, Jeungjing, Kec. Cisoka, Kab. Tangerang, Banten 15730
+    | Koordinat Google Maps: https://maps.app.goo.gl/1GNqHLACQaGw61oU6
+    */
+    'office_name' => env('OFFICE_NAME', 'SMK & LPK Gyokai Indonesia'),
+    'office_address' => env('OFFICE_ADDRESS', 'Jl.Pesona Wibawa Praja, Jeungjing, Kec. Cisoka, Kabupaten Tangerang, Banten 15730'),
+    'office_latitude' => (float) env('OFFICE_LATITUDE', -6.2614075),
+    'office_longitude' => (float) env('OFFICE_LONGITUDE', 106.4433519),
+    'office_radius_meters' => (int) env('OFFICE_RADIUS_METERS', 500),
+
 ];

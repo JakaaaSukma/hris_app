@@ -89,8 +89,8 @@ class DashboardApiController extends Controller
             ->count();
 
         // 7. Geofence Configuration
-        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2088));
-        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.8456));
+        $officeLat = (float) config('app.office_latitude', env('OFFICE_LATITUDE', -6.2614075));
+        $officeLng = (float) config('app.office_longitude', env('OFFICE_LONGITUDE', 106.4433519));
         $officeRadius = (int) config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500));
 
         return response()->json([
@@ -135,7 +135,8 @@ class DashboardApiController extends Controller
                 'notifications_count' => $unreadNotifCount,
                 'today_schedules_count' => $todaySchedulesCount,
                 'office_config' => [
-                    'office_name' => 'Kantor Pusat LPK Gyokai Indonesia',
+                    'office_name' => config('app.office_name', env('OFFICE_NAME', 'SMK & LPK Gyokai Indonesia')),
+                    'office_address' => config('app.office_address', env('OFFICE_ADDRESS', 'Jl.Pesona Wibawa Praja, Jeungjing, Kec. Cisoka, Kabupaten Tangerang, Banten 15730')),
                     'latitude' => $officeLat,
                     'longitude' => $officeLng,
                     'radius_meters' => $officeRadius,

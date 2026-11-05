@@ -241,9 +241,9 @@ function faceAttendanceComponent() {
         locationStatus: 'Mendeteksi Lokasi GPS...',
         locationReady: false,
 
-        // Default Office Coordinate (Gyokai Headquarters)
-        officeLat: {{ config('app.office_latitude', env('OFFICE_LATITUDE', -6.2088)) }},
-        officeLng: {{ config('app.office_longitude', env('OFFICE_LONGITUDE', 106.8456)) }},
+        // Default Office Coordinate (SMK & LPK Gyokai Cisoka)
+        officeLat: {{ config('app.office_latitude', env('OFFICE_LATITUDE', -6.2614075)) }},
+        officeLng: {{ config('app.office_longitude', env('OFFICE_LONGITUDE', 106.4433519)) }},
         allowedRadius: {{ config('app.office_radius_meters', env('OFFICE_RADIUS_METERS', 500)) }},
 
         init() {

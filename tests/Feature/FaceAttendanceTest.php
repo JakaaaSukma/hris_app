@@ -32,10 +32,10 @@ class FaceAttendanceTest extends TestCase
 
         $response = $this->actingAs($user)->postJson(route('attendance.faceRecord'), [
             'photo' => $fakeBase64,
-            'latitude' => -6.2088,
-            'longitude' => 106.8456,
+            'latitude' => -6.2614075,
+            'longitude' => 106.4433519,
             'type' => 'clock_in',
-            'location_name' => 'Kantor Pusat Jakarta',
+            'location_name' => 'SMK & LPK Gyokai Indonesia',
         ]);
 
         $response->assertStatus(200);
