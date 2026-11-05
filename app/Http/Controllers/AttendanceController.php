@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Api\AdmsAttendanceController;
 
 class AttendanceController extends Controller
 {
@@ -727,6 +728,31 @@ class AttendanceController extends Controller
         }
 
         return back()->with('success', 'Pengajuan reset kehadiran telah ditolak dan alasan telah disampaikan kepada pemohon.');
+    }
+
+    /**
+     * Impor Berkas Log Riwayat Presensi dari Flashdisk Mesin (.dat / .txt / .csv)
+     */
+    public function importLogFile(Request $request)
+    {
+        $authUser = Auth::user();
+        if (!$authUser->isHR() && !$authUser->isDirektur()) {
+            abort(403, 'Akses Ditolak: Hanya HR dan Direktur yang dapat mengimpor berkas log mesin.');
+        }
+
+        $request->validate([
+            'log_file' => 'required|file|max:20480',
+        ], [
+            'log_file.required' => 'Pilih berkas log mesin (.dat / .txt / .csv) yang akan diimpor.',
+            'log_file.max' => 'Ukuran berkas log maksimal 20 MB.',
+        ]);
+
+        $file = $request->file('log_file');
+        $rawContent = file_get_contents($file->getRealPath());
+
+        $result = AdmsAttendanceController::processAttlogContent($rawContent, 'USB_FILE_' . $file->getClientOriginalName(), $request->ip());
+
+        return back()->with('success', "Sinkronisasi berhasil! Sebanyak {$result['success_count']} rekaman data riwayat kehadiran berhasil diproses dan disinkronkan ke sistem.");
     }
 }
 

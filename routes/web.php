@@ -63,6 +63,10 @@
             Route::post('/face-record', [AttendanceController::class, 'faceRecord'])->name('faceRecord');
             Route::get('/photo/{attendance}/{type?}', [AttendanceController::class, 'showPhoto'])->name('photo');
 
+            // Sinkronisasi Riwayat Mesin Fingerprint (ADMS OTA & Upload File USB)
+            Route::post('/sync-adms-history', [\App\Http\Controllers\Api\AdmsAttendanceController::class, 'syncHistory'])->name('adms.syncHistory');
+            Route::post('/import-log-file', [AttendanceController::class, 'importLogFile'])->name('importLogFile');
+
             // Pengajuan & Persetujuan Reset Kehadiran Seluruh Karyawan (Manager HR <-> Direktur)
             Route::post('/reset-request', [AttendanceController::class, 'requestReset'])->name('resetRequest');
             Route::post('/reset-requests/{id}/approve', [AttendanceController::class, 'approveReset'])->name('approveReset');

@@ -8,6 +8,8 @@ use App\Models\Employee;
 use App\Models\Attendance;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class AdmsAttendanceController extends Controller
 {
@@ -25,6 +27,9 @@ class AdmsAttendanceController extends Controller
 
         Log::info("ADMS Handshake received from Mesin Solution: SN={$sn}");
 
+        // Jika ada antrean penarikan riwayat, set ATTLOGStamp=0 agar mesin mem-push dari awal
+        $attlogStamp = Cache::get('adms_query_history') ? '0' : 'None';
+
         // Format respon standar protokol ADMS ZKTeco / Solution
         // ServerVersion=3.0.1, PushVersion=2.0.4, RegistryCode, dll.
         $response = "GET OPTION FROM: {$sn}\n" .
@@ -37,6 +42,8 @@ class AdmsAttendanceController extends Controller
                     "TransInterval=1\n" .
                     "TransTables=User Transaction\n" .
                     "Realtime=1\n" .
+                    "ATTLOGStamp={$attlogStamp}\n" .
+                    "OPERLOGStamp=None\n" .
                     "SessionID=" . md5($sn . time()) . "\n";
 
         return response($response, 200)->header('Content-Type', 'text/plain');
@@ -52,29 +59,51 @@ class AdmsAttendanceController extends Controller
         $table = $request->query('table', 'ATTLOG');
         $rawContent = $request->getContent();
 
-        // Proteksi Fail-Closed: Validasi Serial Number (SN) mesin — hanya mesin terdaftar yang bisa push data
+        // Proteksi Fail-Closed: Validasi Serial Number (SN) mesin
         if (!$this->isSerialAllowed($sn)) {
             Log::warning("ADMS REJECTED: Unregistered device SN={$sn} attempted to push data from IP={$request->ip()}");
             return response("ERROR: Device not registered\n", 403)->header('Content-Type', 'text/plain');
         }
 
-        Log::info("ADMS Log Push from {$sn} (Table: {$table}): " . substr($rawContent, 0, 200));
+        Log::info("ADMS Log Push from SN={$sn} (IP: {$request->ip()}, Table: {$table}): " . substr($rawContent, 0, 250));
 
-        // Format data baris ATTLOG pada mesin Solution X609:
-        // Contoh: PIN\tTime\tStatus\tVerify\tWorkCode
-        // Contoh isi: 101\t2026-10-21 08:15:30\t0\t1\t0
+        // Proses parsing dan pemetaan data log presensi
+        $result = self::processAttlogContent($rawContent, $sn, $request->ip());
+
+        // Respon balasan wajib standar Solution ADMS
+        return response("OK: {$result['success_count']}\n", 200)->header('Content-Type', 'text/plain');
+    }
+
+    /**
+     * Parser & Processor Konten Data Log ATTLOG (Digunakan bersama untuk Real-Time Push & Upload USB)
+     */
+    public static function processAttlogContent(string $rawContent, string $sn = 'SOLUTION_X609', ?string $ip = null): array
+    {
         $lines = preg_split("/\r\n|\n|\r/", trim($rawContent));
         $successCount = 0;
+        $skippedCount = 0;
 
         foreach ($lines as $line) {
             $line = trim($line);
             if (empty($line)) continue;
 
-            // Pisahkan berdasarkan tab atau spasi
-            $parts = preg_split("/\t+|\s{2,}/", $line);
+            // Dukungan multi-format separator (Tab, Spasi Ganda, Comma, atau Spasi Tunggal)
+            $parts = preg_split("/\t+/", $line);
             if (count($parts) < 2) {
-                // Alternatif format comma separated
+                $parts = preg_split("/\s{2,}/", $line);
+            }
+            if (count($parts) < 2) {
                 $parts = explode(',', $line);
+            }
+            // Format ZK spasi tunggal: "PIN 2026-11-05 17:30:00 0 1"
+            if (count($parts) < 2) {
+                $spaceParts = preg_split('/\s+/', $line);
+                if (count($spaceParts) >= 3 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $spaceParts[1]) && preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $spaceParts[2])) {
+                    $pin = $spaceParts[0];
+                    $timestampStr = $spaceParts[1] . ' ' . $spaceParts[2];
+                    $statusType = isset($spaceParts[3]) ? (int)$spaceParts[3] : 0;
+                    $parts = [$pin, $timestampStr, $statusType];
+                }
             }
 
             if (count($parts) >= 2) {
@@ -88,12 +117,6 @@ class AdmsAttendanceController extends Controller
                     $time = $dateTime->toTimeString();
 
                     // Pencocokan PIN Mesin Finger ke NIP Karyawan Secara AKURAT & KETAT (STRICT):
-                    // PIN di mesin finger HARUS sama dengan NIP karyawan di sistem:
-                    // 1. Cocok langsung: $employee->nip === $pin (misal '51', '44444', atau 'NEX-00051')
-                    // 2. Cocok format prefix standar jika PIN berupa angka murni: 'NEX-' + padded (misal '51' -> 'NEX-00051' / 'NEX-0051')
-                    // 3. JIKA TIDAK COCOK SAMA SEKALI DENGAN NIP: Data diabaikan (TIDAK MUNCUL)
-                    // DILARANG: mencocokkan id primary key (orWhere('id', pin)) atau substring (like '%pin%')
-                    // karena dapat menyebabkan salah orang (misal PIN 41 masuk ke karyawan id=41 [Risma NIP 51] atau PIN 40 masuk ke karyawan id=40 [Rahmat NIP 44444]).
                     $cleanPin = trim($pin);
                     $paddedNip5 = is_numeric($cleanPin) ? 'NEX-' . str_pad((int)$cleanPin, 5, '0', STR_PAD_LEFT) : null;
                     $paddedNip4 = is_numeric($cleanPin) ? 'NEX-' . str_pad((int)$cleanPin, 4, '0', STR_PAD_LEFT) : null;
@@ -112,86 +135,95 @@ class AdmsAttendanceController extends Controller
                         }
                     })->first();
 
-                    // Jika PIN tidak cocok dengan NIP karyawan manapun di database,
-                    // jangan tampilkan atau buat record presensi (abaikan log tidak valid)
                     if (!$employee) {
                         Log::warning("ADMS Log Diabaikan: PIN {$cleanPin} tidak cocok dengan NIP karyawan manapun di sistem.");
+                        $skippedCount++;
                         continue;
                     }
 
-                    if ($employee) {
-                        // Cek apakah sudah ada log kehadiran di tanggal tsb
-                        $attendance = Attendance::where('employee_id', $employee->id)
-                            ->whereDate('date', $date)
-                            ->first();
+                    // Cek apakah sudah ada log kehadiran di tanggal tsb
+                    $attendance = Attendance::where('employee_id', $employee->id)
+                        ->whereDate('date', $date)
+                        ->first();
 
-                        // Toleransi Jam Masuk: Jam kerja 09:00:00 WIB dengan toleransi keterlambatan 15 menit (s.d. 09:15:00 WIB).
-                        // Kedatangan <= 09:15:00 dihitung Tepat Waktu (on_time).
-                        // Kedatangan > 09:15:00 dihitung Terlambat (late).
-                        // Menggunakan perbandingan string waktu murni (H:i:s) untuk menghindari bug beda tanggal Carbon.
-                        $isLate = ($time > '09:15:00');
+                    // Toleransi Jam Masuk: Jam kerja 09:00:00 WIB dengan toleransi keterlambatan s.d. 09:15:00 WIB
+                    $isLate = ($time > '09:15:00');
 
-                        // Aturan Jam Masuk & Jam Pulang:
-                        // - Jam Kerja: 09.00 s/d 18.00 WIB.
-                        // - Jam >= 15:00 WIB atau statusType = 1 menandakan Clock Out (Pulang).
-                        // - Jam < 15:00 WIB menandakan Clock In (Masuk).
-                        $isDepartureTime = ($statusType == 1 || $dateTime->hour >= 15);
-
-                        if (!$attendance) {
-                            if ($isDepartureTime) {
-                                // Jika scan pertama kali dilakukan saat jam pulang (>= 15:00 atau >= 18:00 WIB),
-                                // catat clock_out dan beri catatan khusus
-                                Attendance::create([
-                                    'employee_id' => $employee->id,
-                                    'date' => $date,
-                                    'clock_in' => $time,
-                                    'clock_out' => $time,
-                                    'status' => 'on_time',
-                                    'work_mode' => 'WFO',
-                                    'location_name' => "Mesin Finger ({$sn})",
-                                    'ip_address' => $request->ip(),
-                                    'notes' => "ADMS Solution X609 - PIN: {$pin} (Clock Out)",
-                                ]);
-                            } else {
-                                // Belum ada absen sama sekali hari ini -> Catat Clock In
-                                Attendance::create([
-                                    'employee_id' => $employee->id,
-                                    'date' => $date,
-                                    'clock_in' => $time,
-                                    'status' => $isLate ? 'late' : 'on_time',
-                                    'work_mode' => 'WFO',
-                                    'location_name' => "Mesin Finger ({$sn})",
-                                    'ip_address' => $request->ip(),
-                                    'notes' => "ADMS Fingerprint Solution X609 - PIN: {$pin}",
-                                ]);
-                            }
-                            $successCount++;
+                    if (!$attendance) {
+                        // Scan PERTAMA di hari tersebut
+                        if ($dateTime->hour >= 15 || $statusType == 1) {
+                            // Karyawan baru scan saat pulang / lupa scan masuk
+                            Attendance::create([
+                                'employee_id' => $employee->id,
+                                'date' => $date,
+                                'clock_in' => $time,
+                                'clock_out' => $time,
+                                'status' => 'on_time',
+                                'work_mode' => 'WFO',
+                                'location_name' => "Mesin Finger ({$sn})",
+                                'ip_address' => $ip,
+                                'notes' => "ADMS Solution X609 - PIN: {$pin} (Clock Out)",
+                            ]);
                         } else {
-                            // Sudah ada record kehadiran hari ini
-                            if ($isDepartureTime) {
-                                // Presensi Pulang (Clock Out)
-                                // Jika jam sudah >= 15:00 (termasuk jam 18:00 ke atas), selalu update waktu pulang (clock_out)
-                                $attendance->update([
-                                    'clock_out' => $time,
-                                ]);
-                                $successCount++;
-                            } elseif (!$attendance->clock_in) {
-                                $attendance->update([
-                                    'clock_in' => $time,
-                                    'status' => $isLate ? 'late' : 'on_time',
-                                ]);
-                                $successCount++;
+                            // Scan masuk normal di pagi/siang hari
+                            Attendance::create([
+                                'employee_id' => $employee->id,
+                                'date' => $date,
+                                'clock_in' => $time,
+                                'status' => $isLate ? 'late' : 'on_time',
+                                'work_mode' => 'WFO',
+                                'location_name' => "Mesin Finger ({$sn})",
+                                'ip_address' => $ip,
+                                'notes' => "ADMS Fingerprint Solution X609 - PIN: {$pin}",
+                            ]);
+                        }
+                        $successCount++;
+                    } else {
+                        // Record kehadiran SUDAH ADA di tanggal tsb
+                        if (!$attendance->clock_in) {
+                            $attendance->update([
+                                'clock_in' => $time,
+                                'status' => $isLate ? 'late' : 'on_time',
+                            ]);
+                            $successCount++;
+                        } elseif ($time < $attendance->clock_in) {
+                            // Data log ini ternyata lebih pagi dari clock_in yang tercatat sebelumnya
+                            // (misal log riwayat ditarik belakangan atau urutan scan terbalik)
+                            $oldClockIn = $attendance->clock_in;
+                            $newClockOut = $attendance->clock_out ? max($attendance->clock_out, $oldClockIn) : $oldClockIn;
+                            $attendance->update([
+                                'clock_in' => $time,
+                                'clock_out' => $newClockOut,
+                                'status' => ($time > '09:15:00') ? 'late' : 'on_time',
+                            ]);
+                            $successCount++;
+                        } elseif ($time > $attendance->clock_in) {
+                            // Scan setelah clock_in: Ini adalah Absen Pulang (Clock Out)!
+                            // Pastikan ada jeda minimal 2 menit (120 detik) untuk menghindari scan ganda detik yang sama
+                            $timeDiffSeconds = abs(strtotime($time) - strtotime($attendance->clock_in));
+                            if ($timeDiffSeconds >= 120) {
+                                // Selalu catat dan perbarui waktu pulang ke scan yang paling akhir hari itu
+                                if (!$attendance->clock_out || $time > $attendance->clock_out) {
+                                    $attendance->update([
+                                        'clock_out' => $time,
+                                    ]);
+                                    $successCount++;
+                                }
                             }
                         }
                     }
                 } catch (\Exception $e) {
                     Log::error("Error parsing ADMS record line [{$line}]: " . $e->getMessage());
+                    $skippedCount++;
                 }
             }
         }
 
-        // Respon balasan wajib standar Solution ADMS
-        return response("OK: {$successCount}", 200)->header('Content-Type', 'text/plain');
+        return [
+            'success_count' => $successCount,
+            'skipped_count' => $skippedCount,
+            'total_lines' => count($lines),
+        ];
     }
 
     /**
@@ -199,7 +231,7 @@ class AdmsAttendanceController extends Controller
      */
     public function ping(Request $request)
     {
-        return response("OK", 200)->header('Content-Type', 'text/plain');
+        return response("OK\n", 200)->header('Content-Type', 'text/plain');
     }
 
     /**
@@ -207,8 +239,18 @@ class AdmsAttendanceController extends Controller
      */
     public function getRequest(Request $request)
     {
+        $sn = $request->query('SN', 'UNKNOWN_DEVICE');
+
+        // Cek apakah ada antrean perintah sync seluruh riwayat data mesin
+        if (Cache::get('adms_query_history')) {
+            $cmdId = rand(100, 999);
+            Log::info("ADMS getRequest: Mengirim perintah query riwayat ke mesin SN={$sn} (Cmd ID: {$cmdId})");
+            // Perintah standar ADMS Solution / ZKTeco untuk membaca seluruh log di memori internal:
+            return response("C:{$cmdId}:DATA QUERY ATTLOG\n", 200)->header('Content-Type', 'text/plain');
+        }
+
         // Jika tidak ada perintah antrean untuk mesin, kembalikan OK
-        return response("OK", 200)->header('Content-Type', 'text/plain');
+        return response("OK\n", 200)->header('Content-Type', 'text/plain');
     }
 
     /**
@@ -216,7 +258,34 @@ class AdmsAttendanceController extends Controller
      */
     public function deviceCmd(Request $request)
     {
-        return response("OK", 200)->header('Content-Type', 'text/plain');
+        $sn = $request->query('SN', 'UNKNOWN_DEVICE');
+        $raw = $request->getContent();
+        Log::info("ADMS deviceCmd response from SN={$sn}: {$raw}");
+
+        // Jika mesin sudah merespon eksekusi perintah, selesaikan antrean
+        if (str_contains($raw, 'Return=0') || str_contains($raw, 'Return=1')) {
+            Cache::forget('adms_query_history');
+        }
+
+        return response("OK\n", 200)->header('Content-Type', 'text/plain');
+    }
+
+    /**
+     * Trigger Pengambilan Seluruh Log Riwayat Mesin (ADMS OTA Query)
+     */
+    public function syncHistory(Request $request)
+    {
+        $authUser = Auth::user();
+        if (!$authUser || (!$authUser->isHR() && !$authUser->isDirektur())) {
+            abort(403, 'Akses Ditolak: Hanya HR dan Direktur yang dapat memicu sinkronisasi data riwayat mesin.');
+        }
+
+        // Set antrean perintah pengambilan data riwayat selama 6 jam
+        Cache::put('adms_query_history', true, now()->addHours(6));
+
+        Log::info("ADMS: Perintah sinkronisasi riwayat mesin dipicu oleh {$authUser->name} ({$authUser->email})");
+
+        return back()->with('success', 'Perintah penarikan seluruh riwayat data mesin berhasil diaktifkan! Mesin finger akan otomatis mengirimkan riwayat kehadiran ke server dalam beberapa detik saat polling berikutnya.');
     }
 
     /**
@@ -230,6 +299,10 @@ class AdmsAttendanceController extends Controller
         }
 
         $allowedSerials = array_filter(array_map('trim', explode(',', $rawConfig)));
+        if (in_array('*', $allowedSerials, true)) {
+            return true;
+        }
+
         return in_array($sn, $allowedSerials, true);
     }
 }

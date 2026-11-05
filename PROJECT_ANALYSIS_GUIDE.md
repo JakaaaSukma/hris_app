@@ -80,7 +80,11 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
   - **Tampilan Inspeksi HR & Direktur:** Pada tabel presensi web (`attendance/index.blade.php`), setiap presensi Face ID dilengkapi thumbnail foto wajah interaktif yang dapat diklik untuk membuka modal inspeksi foto resolusi tinggi, waktu persis, koordinat GPS, dan tautan langsung ke Google Maps (`open_in_new`).
   - **Streaming Foto Tanpa Symlink:** Endpoint `GET /attendance/photo/{attendance}/{type}` (`attendance.photo`) mengalirkan file foto langsung dari storage server via PHP response, memastikan foto presensi wajah dapat dimuat secara instan di shared hosting cPanel tanpa ketergantungan pada symlink Apache (`php artisan storage:link`).
   - **Rute Web:** `POST /attendance/face-record` (`attendance.faceRecord`), `GET /attendance/photo/{attendance}/{type?}` (`attendance.photo`).
-- **Integrasi Mesin Fingerprint:** Mendukung protokol cloud ADMS ZKTeco / Solution via endpoint `/iclock/cdata`, `/iclock/ping`, `/iclock/getrequest`.
+- **Integrasi Mesin Fingerprint (Solution X609 / ADMS):**
+  - **Alur Clock-In & Clock-Out Otomatis:** Scan pertama di hari yang sama otomatis dicatat sebagai `clock_in`. Scan berikutnya dengan selisih waktu minimal 2 menit secara otomatis dicatat dan diperbarui sebagai `clock_out` paling akhir hari itu (tanpa batas jam kaku & tanpa mengharuskan karyawan menekan tombol khusus di keypad mesin).
+  - **Tarik Seluruh Riwayat Mesin (ADMS OTA Query):** Rute `POST /attendance/sync-adms-history` (`attendance.adms.syncHistory`) mengaktifkan antrean Cache `adms_query_history`. Saat mesin melakukan heartbeat berikutnya, server merespon dengan perintah `C:{ID}:DATA QUERY ATTLOG` dan handshake `ATTLOGStamp=0`, memicu mesin mengirimkan seluruh rekaman data lampau di memori internalnya ke server secara over-the-air.
+  - **Impor Cadangan File USB Log Mesin:** Rute `POST /attendance/import-log-file` (`attendance.importLogFile`) memungkinkan HR & Direktur mengunggah berkas `1_attlog.dat` / `.txt` / `.csv` dari flashdisk mesin Solution X609 untuk langsung diproses dan disinkronkan ke basis data presensi.
+  - **Validasi Fail-Closed SN:** Menggunakan konfigurasi `.env` `ADMS_ALLOWED_SN` (default `SOLUTION_X609`). Perangkat tidak sah ditolak dengan status HTTP 403 Forbidden.
 - **Filter Log Absensi:** Mendukung filter rentang tanggal (maksimal 31 hari/1 bulan) di view `attendance/index.blade.php`.
 - **Akses HR:** Khusus akun departemen HR & Direktur dapat melihat log presensi **seluruh karyawan**, sedangkan karyawan biasa melihat riwayat presensi miliknya sendiri.
 - **Audit Trail Presensi Manual / Presensi Cepat:**
@@ -719,6 +723,13 @@ hris_app/
 - **2026-11-04:** Penyelarasan REST API XAMPP & Redesain UI Mobile App (Tema Merah & Silver):
   1. *Sinkronisasi Apache XAMPP:* Memperbaiki perizinan write permission folder `storage/logs/laravel.log` dan `storage/framework/cache/` untuk user `daemon` Apache XAMPP (`chmod -R 777`), serta menyesuaikan URL default mobile app ke endpoint Apache XAMPP (`/hris_app/public/api`) pada port 80.
   2. *Redesain Visual Mobile App (Red & Silver Executive):* Mengubah seluruh sistem warna aplikasi Android dari hijau-putih menjadi palet premium **Crimson/Ruby Red (`#C81E1E`, `#881337`, `#EF4444`) dan Metallic Brushed Silver (`#CBD5E1`, `#E2E8F0`, `#F8FAFC`, `#64748B`)**. Pembaruan mencakup Splash Screen, Login Screen, Hero Card Presensi Dashboard, Tab Navigation, Riwayat, Form Cuti, dan Notifikasi.
+
+- **2026-11-05:** Perbaikan Penanganan Absen Pulang Mesin Fingerprint & Fitur Sinkronisasi Riwayat Data Lampau:
+  1. *Perbaikan Clock Out ADMS:* Menghapus batasan waktu kaku (`hour >= 15`). Setiap scan berikutnya pada hari yang sama dengan selisih waktu minimal 2 menit secara otomatis dicatat dan diperbarui sebagai `clock_out` paling akhir, terlepas apakah karyawan memencet tombol Status di mesin atau tidak.
+  2. *Sinkronisasi Riwayat Lampau (ADMS OTA Query):* Menyediakan tombol trigger "Tarik Seluruh Riwayat Mesin Finger" di modal ADMS presensi yang mengirimkan instruksi `DATA QUERY ATTLOG` & `ATTLOGStamp=0` ke mesin Solution X609 via polling endpoint `/iclock/getrequest`.
+  3. *Impor Berkas Log USB Mesin:* Menambahkan fitur unggah berkas log USB (`1_attlog.dat`, `.txt`, `.csv`) langsung di UI presensi web untuk sinkronisasi cadangan saat offline atau rekonsiliasi riwayat lampau.
+  4. *Multi-format Parser:* Parser `processAttlogContent` kini mendukung pemisahan berbasis Tab, multi-space, koma, maupun single-space ZKTeco format.
+  5. *Automated Test Suite ADMS:* Menambahkan file pengujian `tests/Feature/AdmsAttendanceTest.php` untuk memvalidasi alur handshake, pengiriman perintah OTA query, dan pembaruan dinamis `clock_out` saat karyawan pulang.
 
 - **2026-11-05:** Security Hardening & Vulnerability Remediation (Paket 1 & Paket 3):
   1. *Remediasi Zip Slip:* Mengamankan ekstraksi file `.zip` pada `FinanceDispatchController.php` dan `FinanceController.php` menggunakan sanitasi traversal (`str_contains('..')`, ignore slash/backslash, `basename()`, dan whitelist ekstensi `.pdf`). Ekstraksi menggunakan `ZipArchive::getStream()` langsung ke target flat filename yang disanitasi sehingga mustahil melompat ke luar direktori tujuan.

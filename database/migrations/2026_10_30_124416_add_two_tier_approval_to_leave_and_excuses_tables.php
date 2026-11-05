@@ -13,7 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Modifikasi tabel leave_requests
-        DB::statement("ALTER TABLE leave_requests MODIFY COLUMN status VARCHAR(30) DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE leave_requests MODIFY COLUMN status VARCHAR(30) DEFAULT 'pending'");
+        }
 
         Schema::table('leave_requests', function (Blueprint $table) {
             $table->foreignId('manager_approved_by')->nullable()->after('status')->constrained('employees')->nullOnDelete();
@@ -22,7 +24,9 @@ return new class extends Migration
         });
 
         // 2. Modifikasi tabel attendance_excuses
-        DB::statement("ALTER TABLE attendance_excuses MODIFY COLUMN status VARCHAR(30) DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE attendance_excuses MODIFY COLUMN status VARCHAR(30) DEFAULT 'pending'");
+        }
 
         Schema::table('attendance_excuses', function (Blueprint $table) {
             $table->foreignId('manager_approved_by')->nullable()->after('status')->constrained('employees')->nullOnDelete();
@@ -46,7 +50,9 @@ return new class extends Migration
             $table->dropColumn(['manager_approved_by', 'manager_approved_at', 'manager_note']);
         });
 
-        DB::statement("ALTER TABLE leave_requests MODIFY COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
-        DB::statement("ALTER TABLE attendance_excuses MODIFY COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE leave_requests MODIFY COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
+            DB::statement("ALTER TABLE attendance_excuses MODIFY COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
+        }
     }
 };

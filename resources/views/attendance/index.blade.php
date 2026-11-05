@@ -565,14 +565,67 @@
 
                 <!-- Jalur URL & Format Data -->
                 <div class="p-3.5 bg-surface-container-low rounded-xl border border-[#282a2e]/70 space-y-2 font-sans">
-                    <span class="text-emerald-400 font-mono font-semibold block uppercase">2. Cara Kerja Pencatatan Real-Time</span>
+                    <span class="text-emerald-400 font-mono font-semibold block uppercase">2. Cara Kerja Pencatatan Real-Time & Absen Pulang</span>
                     <ul class="list-disc list-inside space-y-1.5 text-tertiary text-xs">
                         <li><strong>ID Pegawai (PIN) di Mesin:</strong> Pastikan ID Karyawan yang didaftarkan di mesin Solution X609 sesuai dengan <strong>NIP</strong> atau <strong>ID Karyawan</strong> di sistem HRIS.</li>
                         <li><strong>Auto-Push:</strong> Saat karyawan menempelkan sidik jari/fingerprint, mesin Solution X609 secara otomatis mengirim data HTTP POST ke <code class="text-amber-400 font-mono text-[11px]">/iclock/cdata</code>.</li>
-                        <li><strong>Jam Kerja:</strong> Jam masuk adalah <strong>09:00 WIB</strong> (dengan toleransi 15 menit hingga <strong>09:15 WIB</strong>) dan jam pulang adalah <strong>18:00 WIB</strong>.</li>
-                        <li><strong>Auto Status:</strong> Jika absen masuk dilakukan sebelum/tepat jam <strong>09:15 WIB</strong> otomatis berstatus <strong>Tepat Waktu</strong>, dan di atas jam <strong>09:15 WIB</strong> otomatis <strong>Terlambat</strong>.</li>
-                        <li>Absen scan pertama hari itu otomatis tercatat sebagai <strong>Clock In</strong>, dan scan berikutnya saat jam pulang (mendekati/setelah jam 18:00 WIB atau saat checkout) otomatis memperbarui <strong>Clock Out</strong>.</li>
+                        <li><strong>Pencatatan Masuk & Pulang Otomatis:</strong> Scan pertama di hari yang sama otomatis tercatat sebagai <strong>Clock In</strong>. Scan berikutnya yang dilakukan di atas selisih 2 menit otomatis dicatat dan diperbarui sebagai <strong>Clock Out</strong> (termasuk jika karyawan lupa menekan tombol Out di mesin).</li>
+                        <li><strong>Toleransi Keterlambatan:</strong> Jam masuk adalah <strong>09:00 WIB</strong> (toleransi s/d <strong>09:15 WIB</strong>). Scan setelah 09:15 WIB otomatis berstatus <strong>Terlambat</strong>.</li>
                     </ul>
+                </div>
+
+                <!-- Fitur 1: Tarik Seluruh Riwayat Mesin (ADMS OTA Query) -->
+                <div class="p-4 bg-surface-container-low rounded-xl border border-sky-500/30 space-y-3 font-sans">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <span class="text-sky-400 font-mono font-semibold block uppercase text-xs flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-base">history</span>
+                                3. Tarik Seluruh Riwayat Mesin Finger (OTA Sync)
+                            </span>
+                            <p class="text-tertiary text-xs mt-1">
+                                Gunakan fitur ini jika ada data absen kemarin atau tadi yang belum masuk ke web. Sistem akan mengirim instruksi ke mesin finger untuk membaca memori internal dan mengirim ulang seluruh log presensi ke server secara otomatis via jaringan.
+                            </p>
+                        </div>
+                    </div>
+
+                    @if(\Illuminate\Support\Facades\Cache::get('adms_query_history'))
+                        <div class="p-2.5 rounded-lg bg-sky-950/60 border border-sky-500/40 text-sky-300 text-xs flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm animate-spin">sync</span>
+                            <span><strong>Status Antrean Aktif:</strong> Mesin finger sedang dipicu untuk mengirim seluruh riwayat data saat siklus heartbeat berikutnya.</span>
+                        </div>
+                    @else
+                        <form method="POST" action="{{ route('attendance.adms.syncHistory') }}" onsubmit="return confirm('Kirim perintah ke mesin Solution X609 untuk menarik dan memproses seluruh riwayat log di memori mesin?');">
+                            @csrf
+                            <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                <span class="material-symbols-outlined text-base">cloud_download</span>
+                                <span>Tarik Seluruh Riwayat dari Mesin Finger</span>
+                            </button>
+                        </form>
+                    @endif
+                </div>
+
+                <!-- Fitur 2: Impor Manual File Log USB (Flashdisk) -->
+                <div class="p-4 bg-surface-container-low rounded-xl border border-amber-500/30 space-y-3 font-sans">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <span class="text-amber-400 font-mono font-semibold block uppercase text-xs flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-base">usb</span>
+                                4. Impor Cadangan Log USB Mesin (.dat / .txt / .csv)
+                            </span>
+                            <p class="text-tertiary text-xs mt-1">
+                                Jika mesin sedang offline atau data ingin disinkronkan manual lewat flashdisk: Unduh log presensi dari mesin finger ke flashdisk (biasanya bernama file <code class="text-amber-300 font-mono">1_attlog.dat</code>), lalu upload di sini.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('attendance.importLogFile') }}" enctype="multipart/form-data" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+                        @csrf
+                        <input type="file" name="log_file" accept=".dat,.txt,.csv" required class="flex-1 text-xs text-tertiary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-1 bg-surface-container">
+                        <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap">
+                            <span class="material-symbols-outlined text-base">upload_file</span>
+                            <span>Proses & Sinkronkan</span>
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Test Connection -->

@@ -13,7 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Modifikasi kolom 'role' pada tabel 'users' menjadi VARCHAR(30) agar mendukung role 'asisten_manager'
-        DB::statement("ALTER TABLE users MODIFY COLUMN role VARCHAR(30) NOT NULL DEFAULT 'karyawan'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role VARCHAR(30) NOT NULL DEFAULT 'karyawan'");
+        }
 
         // 2. Tambahkan kolom 'sub_department' pada tabel 'users' jika belum ada
         if (!Schema::hasColumn('users', 'sub_department')) {
@@ -118,6 +120,8 @@ return new class extends Migration
             });
         }
 
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('direktur', 'manager', 'karyawan') NOT NULL DEFAULT 'karyawan'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('direktur', 'manager', 'karyawan') NOT NULL DEFAULT 'karyawan'");
+        }
     }
 };

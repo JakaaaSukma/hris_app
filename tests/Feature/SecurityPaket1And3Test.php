@@ -10,9 +10,11 @@ use App\Models\OutgoingLetter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class SecurityPaket1And3Test extends TestCase
 {
+    use RefreshDatabase;
     protected function setUp(): void
     {
         parent::setUp();
@@ -93,7 +95,10 @@ class SecurityPaket1And3Test extends TestCase
     {
         $karyawan = User::where('role', 'karyawan')->where('department', '!=', 'Executive')->first();
         if (!$karyawan) {
-            $this->markTestSkipped('No regular karyawan user found');
+            $karyawan = User::factory()->create([
+                'role' => 'karyawan',
+                'department' => 'IT & Engineering',
+            ]);
         }
 
         $letter = OutgoingLetter::first();
