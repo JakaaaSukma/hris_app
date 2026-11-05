@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class SalarySlip extends Model
 {
@@ -38,5 +39,22 @@ class SalarySlip extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function hasPdf(): bool
+    {
+        return !empty($this->pdf_path) && (
+            Storage::disk('public')->exists($this->pdf_path) || 
+            file_exists(storage_path('app/public/' . $this->pdf_path)) || 
+            file_exists(public_path('storage/' . $this->pdf_path))
+        );
+    }
+
+    public function getPdfUrlAttribute(): ?string
+    {
+        if (empty($this->pdf_path)) {
+            return null;
+        }
+        return asset('storage/' . ltrim($this->pdf_path, '/'));
     }
 }

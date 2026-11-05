@@ -44,3 +44,4 @@ class FinanceSalarySlipDeleteTest extends TestCase
         $response->assertStatus(403);
     }
 }
+

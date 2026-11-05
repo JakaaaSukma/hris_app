@@ -20,6 +20,12 @@
         @endif
 
         <div class="flex items-center gap-2">
+            @if(!empty($slip->pdf_path))
+                <a href="{{ route('finance.salarySlips.downloadPdf', $slip->id) }}" target="_blank" class="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
+                    <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+                    <span>Unduh PDF Asli</span>
+                </a>
+            @endif
             @if($authUser->canDeleteSalarySlips())
                 <form action="{{ route('finance.salarySlips.destroy', $slip->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus slip gaji {{ $slip->slip_number }} ini? Data yang terhapus tidak dapat dikembalikan.')">
                     @csrf
@@ -226,6 +232,27 @@
         </div>
 
     </div>
+
+    @if(!empty($slip->pdf_path))
+        <div class="p-6 bg-[#151922] rounded-2xl border border-slate-800 print:hidden space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-emerald-400 text-xl">picture_as_pdf</span>
+                    <div>
+                        <h3 class="font-headline font-bold text-sm text-white">Lampiran Dokumen PDF Asli</h3>
+                        <p class="font-mono text-[10px] text-slate-400">Nama file: {{ $slip->original_filename ?: basename($slip->pdf_path) }}</p>
+                    </div>
+                </div>
+                <a href="{{ route('finance.salarySlips.downloadPdf', $slip->id) }}" target="_blank" class="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-mono font-semibold flex items-center gap-1.5 transition-all">
+                    <span>Buka Layar Penuh</span>
+                    <span class="material-symbols-outlined text-xs">open_in_new</span>
+                </a>
+            </div>
+            <div class="rounded-xl overflow-hidden border border-slate-800 bg-white shadow-inner">
+                <iframe src="{{ asset('storage/' . $slip->pdf_path) }}" class="w-full h-[650px] border-0" title="PDF Slip Gaji"></iframe>
+            </div>
+        </div>
+    @endif
 
 </div>
 

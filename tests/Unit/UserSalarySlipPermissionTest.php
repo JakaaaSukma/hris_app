@@ -43,3 +43,4 @@ class UserSalarySlipPermissionTest extends TestCase
         $this->assertFalse($user->canDeleteSalarySlips());
     }
 }
+

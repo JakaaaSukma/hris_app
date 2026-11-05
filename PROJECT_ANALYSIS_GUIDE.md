@@ -696,6 +696,22 @@ hris_app/
   2. *Hak Akses Read-Only KPI & Kinerja (Tanpa Pengambil Keputusan):* Sekretaris Direktur memiliki akses penuh melihat grafik indeks KPI harian/mingguan/bulanan dan metrik analitis performa seluruh 4 departemen perusahaan (HR, Finance, Bisnis Development, GA) di Dashboard dan Laporan PDF (`DashboardController` & `ReportExportController`), namun **sama sekali tidak memiliki wewenang pengambilan keputusan operasional** (`canApproveLeaves`, `canApproveReimbursements`, `canApproveInventoryRequests`, `canManageEmployees` bernilai `false`, antrean pending approval cuti/izin dinonaktifkan).
   3. *Protokol Gatekeeping Jadwal Direktur:* Karyawan maupun Manager dilarang keras langsung menjadwalkan agenda ke Direktur Utama. Seluruh permohonan jadwal ke Direksi (`target_departments = ['Executive']`) berstatus `pending` dan wajib diverifikasi serta disetujui terlebih dahulu oleh **Sekretaris Direktur** sebelum resmi masuk dan tampil di kalender Direktur (`CalendarController`).
   4. *Restriksi Fitur Chat Manager:* Saluran chat komunikasi eksekutif pada akun Manager dialihkan secara ketat **HANYA ke Sekretaris Direktur** (`tab=direksi`), memblokir pesan langsung ke Direktur. Sekretaris Direktur bertindak sebagai jembatan eksekutif (*Executive Communication Hub* - `chat.sekretaris`) yang menghubungkan para Manager dan Direktur Utama secara privat dan terstruktur (`DepartmentChatController`).
+- **2026-11-05:** **Implementasi Penerbitan Slip Gaji Menggunakan Arsip ZIP / Dokumen PDF Langsung (Smart Upload & Auto-Match):**
+  1. *Database & Model (`SalarySlip.php` & Migration `2026_11_05_110000_add_pdf_path_to_salary_slips_table.php`):* Menambahkan kolom `pdf_path` dan `original_filename` untuk menyimpan referensi dokumen PDF resmi, beserta helper method `hasPdf(): bool` dan accessor `pdf_url`.
+  2. *Smart Matching & Parser Backend (`FinanceController.php`):*
+     - Menambahkan method `uploadPdfOrZipSalarySlips()`: mendukung penerbitan slip gaji via file `.zip` (mengekstrak secara rekursif dan memproses seluruh file PDF) maupun file `.pdf` langsung.
+     - Mengintegrasikan mesin pencocokan cerdas multi-tingkat (`matchEmployeeForPdf`): otomatis mendeteksi NIP (contoh: `NEX-00001`), email, atau nama pegawai dari nama file maupun isi teks PDF via `Smalot\PdfParser\Parser`.
+     - Smart Salary Extraction (`parseSalaryFromText`): otomatis membaca nominal Take Home Pay / Gaji Bersih dari teks PDF.
+     - Penyimpanan permanen di `public/storage/salary_slips/` terproteksi validasi keamanan MIME dan magic bytes (`ValidatesFileUpload`).
+     - Menambahkan endpoint unduh/stream dokumen PDF asli `downloadSalarySlipPdf()` (`GET /finance/salary-slips/{id}/download-pdf`).
+  3. *Routing (`routes/web.php`):* Mendaftarkan route `POST /finance/salary-slips/upload-pdf-zip` (`finance.salarySlips.uploadPdfZip`) dan `GET /finance/salary-slips/{id}/download-pdf` (`finance.salarySlips.downloadPdf`).
+  4. *Tampilan Antarmuka Pengguna (`index.blade.php` & `salary_slip_detail.blade.php`):*
+     - Modal Terbitkan Slip Gaji kini menyediakan 3 tab pilihan: **Upload ZIP / PDF (Smart Match)**, **1 Orang (Manual)**, dan **Masal (Manual)**.
+     - Area drag-and-drop modern untuk file ZIP / PDF dengan live size preview dan opsi penargetan karyawan spesifik.
+     - Tabel daftar slip gaji kini menampilkan badge "PDF Terlampir" dan tombol aksi langsung untuk mengunduh PDF asli.
+     - Halaman detail slip gaji menyematkan tombol unduh PDF resmi serta viewer pratinjau PDF interaktif.
+  5. *Automated Testing:* Menambahkan test suite `tests/Feature/FinanceSalarySlipUploadTest.php` untuk memvalidasi proteksi otorisasi dan penolakan file berbahaya.
+
 - **2026-11-05:** **Implementasi Fitur Hapus Slip Gaji (Delete Salary Slip) untuk Akun Manager Finance & Direktur:**
   1. *Helper Otorisasi Model User (`User.php`):* Menambahkan method `User::canDeleteSalarySlips(): bool` yang membatasi hak hapus slip gaji secara ketat hanya untuk Manager Finance (`role = manager` dan `department = Finance`) dan Direktur Utama (`role = direktur`). Karyawan Finance atau departemen lain dilarang keras menghapus slip gaji.
   2. *Controller & Validasi (`FinanceController.php`):* Menambahkan method `destroySalarySlip($id)` untuk menghapus slip satuan (menggunakan SoftDeletes bawaan model) dan `bulkDestroySalarySlips(Request $request)` untuk penghapusan massal slip yang dipilih.

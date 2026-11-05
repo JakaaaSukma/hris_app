@@ -170,7 +170,13 @@
                                     </td>
                                 @endif
                                 <td class="px-5 py-4 font-mono font-bold text-slate-300">
-                                    {{ $slip->slip_number }}
+                                    <div>{{ $slip->slip_number }}</div>
+                                    @if(!empty($slip->pdf_path))
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-normal mt-0.5">
+                                            <span class="material-symbols-outlined text-[10px]">attachment</span>
+                                            <span>PDF Terlampir</span>
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-4 flex items-center gap-3">
                                     <img src="{{ $slip->employee->avatar_url ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' }}" class="w-8 h-8 rounded-full object-cover ring-1 ring-slate-700"/>
@@ -203,6 +209,12 @@
                                 </td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="flex items-center justify-end gap-1.5">
+                                        @if(!empty($slip->pdf_path))
+                                            <a href="{{ route('finance.salarySlips.downloadPdf', $slip->id) }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white font-mono text-xs font-semibold transition-all border border-emerald-500/25 active:scale-95" title="Buka / Unduh Dokumen PDF Asli">
+                                                <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                                                <span class="hidden sm:inline">PDF</span>
+                                            </a>
+                                        @endif
                                         <a href="{{ route('finance.salarySlips.show', $slip->id) }}" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-mono text-xs font-semibold transition-all border border-slate-700 active:scale-95" title="Lihat & Cetak Slip Gaji">
                                             <span class="material-symbols-outlined text-sm text-emerald-400">visibility</span>
                                             <span>Lihat</span>
@@ -460,7 +472,7 @@
     @if(auth()->user()->canApproveReimbursements())
         <div x-cloak x-show="openSlipModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
              x-data="{
-                 isBatchMode: false,
+                 slipMode: 'upload',
                  searchEmp: '',
                  filterDept: '',
                  selectedEmpIds: [],
@@ -479,7 +491,7 @@
                         <span class="material-symbols-outlined text-emerald-400 text-xl">payments</span>
                         <div>
                             <h3 class="font-headline font-bold text-base text-white">Terbitkan Slip Gaji Karyawan / Manager</h3>
-                            <p class="text-[11px] font-mono text-slate-400">Penerbitan slip gaji tunggal atau masal secara bersamaan</p>
+                            <p class="text-[11px] font-mono text-slate-400">Penerbitan via upload arsip ZIP / file PDF atau pengisian manual</p>
                         </div>
                     </div>
                     <button @click="openSlipModal = false" class="text-slate-400 hover:text-white">
@@ -487,31 +499,133 @@
                     </button>
                 </div>
 
-                <form action="{{ route('finance.salarySlips.store') }}" method="POST" class="mt-4 space-y-4">
+                <!-- Mode Selector: Upload ZIP/PDF vs 1 Orang Manual vs Masal Manual -->
+                <div class="p-1 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center gap-1 font-mono text-xs mt-4">
+                    <button type="button" 
+                            @click="slipMode = 'upload'"
+                            :class="slipMode === 'upload' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-white'"
+                            class="flex-1 py-1.5 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">folder_zip</span>
+                        <span>Upload ZIP / PDF</span>
+                    </button>
+                    <button type="button" 
+                            @click="slipMode = 'single'"
+                            :class="slipMode === 'single' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-white'"
+                            class="flex-1 py-1.5 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">person</span>
+                        <span>1 Orang (Manual)</span>
+                    </button>
+                    <button type="button" 
+                            @click="slipMode = 'batch'; if(selectedEmpIds.length === 0) selectedEmpIds = [{{ $employees->first()->id ?? 0 }}];"
+                            :class="slipMode === 'batch' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-white'"
+                            class="flex-1 py-1.5 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">groups</span>
+                        <span>Masal (Manual)</span>
+                    </button>
+                </div>
+
+                <!-- FORM 1: Upload File ZIP Berisi PDF atau PDF Langsung -->
+                <form x-show="slipMode === 'upload'" action="{{ route('finance.salarySlips.uploadPdfZip') }}" method="POST" enctype="multipart/form-data" class="mt-4 space-y-4">
                     @csrf
 
-                    <!-- Mode Selector: Satuan vs Lebih dari 1 Orang (Masal) -->
-                    <div class="p-1 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center gap-1 font-mono text-xs">
-                        <button type="button" 
-                                @click="isBatchMode = false"
-                                :class="!isBatchMode ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-white'"
-                                class="flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
-                            <span class="material-symbols-outlined text-sm">person</span>
-                            <span>1 Orang Karyawan</span>
-                        </button>
-                        <button type="button" 
-                                @click="isBatchMode = true; if(selectedEmpIds.length === 0) selectedEmpIds = [{{ $employees->first()->id ?? 0 }}];"
-                                :class="isBatchMode ? 'bg-emerald-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-white'"
-                                class="flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5">
-                            <span class="material-symbols-outlined text-sm">groups</span>
-                            <span>Lebih Dari 1 Orang (Masal)</span>
-                        </button>
+                    <!-- Area Dropzone Upload -->
+                    <div>
+                        <label class="block text-xs font-mono uppercase tracking-wider text-slate-300 mb-1.5">
+                            File Slip Gaji (ZIP Berisi PDF atau PDF Langsung) *
+                        </label>
+                        <div class="relative border-2 border-dashed border-slate-700 hover:border-emerald-500/80 rounded-2xl p-6 text-center bg-slate-900/60 transition-colors group">
+                            <input type="file" name="slip_file" required accept=".zip,.pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="slip_file_input" onchange="document.getElementById('slip_file_chosen').textContent = this.files[0] ? this.files[0].name + ' (' + (this.files[0].size / 1024 / 1024).toFixed(2) + ' MB)' : ''"/>
+                            <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+                                    <span class="material-symbols-outlined text-2xl">upload_file</span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Klik atau seret file ZIP / PDF ke sini</div>
+                                    <div class="text-[10px] font-mono text-slate-400 mt-0.5">Mendukung file .ZIP (berisi arsip PDF slip gaji) atau file .PDF langsung (Max 100MB)</div>
+                                </div>
+                                <div id="slip_file_chosen" class="font-mono text-xs text-emerald-400 font-semibold mt-1"></div>
+                            </div>
+                        </div>
                     </div>
 
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-mono text-slate-400 mb-1">Periode Slip Gaji *</label>
+                            <input type="text" name="period_month" required value="{{ now()->translatedFormat('F Y') }}" placeholder="Contoh: November 2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"/>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-mono text-slate-400 mb-1">Tanggal Pembayaran *</label>
+                            <input type="date" name="payment_date" required value="{{ now()->format('Y-m-d') }}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"/>
+                        </div>
+                    </div>
+
+                    <!-- Target Karyawan Spesifik (Opsional) -->
+                    <div>
+                        <label class="block text-xs font-mono text-slate-400 mb-1">
+                            Penerima Karyawan Spesifik (Opsional)
+                        </label>
+                        <select name="employee_id" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                            <option value="">-- Otomatis Cocokkan NIP / Nama / Email (Direkomendasikan untuk ZIP / Batch PDF) --</option>
+                            @foreach($employees as $emp)
+                                <option value="{{ $emp->id }}">
+                                    {{ $emp->name }} ({{ $emp->nip }}) - {{ $emp->department }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-[10px] font-mono text-slate-500 mt-1">
+                            *Pilih karyawan jika mengunggah 1 PDF khusus untuk orang tersebut. Biarkan opsi pertama untuk file ZIP atau deteksi cerdas otomatis.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-mono text-slate-400 mb-1">Metode Pembayaran</label>
+                            <select name="payment_method" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                                <option value="Bank Transfer BCA">Bank Transfer BCA</option>
+                                <option value="Bank Transfer Mandiri">Bank Transfer Mandiri</option>
+                                <option value="Bank Transfer BNI">Bank Transfer BNI</option>
+                                <option value="Bank Transfer BRI">Bank Transfer BRI</option>
+                                <option value="Cash / Tunai">Cash / Tunai</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-mono text-slate-400 mb-1">Nominal THP / Gaji Bersih (Opsional)</label>
+                            <input type="number" name="net_salary" min="0" placeholder="Otomatis dibaca dari PDF" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"/>
+                        </div>
+                    </div>
+
+                    <!-- Info Card Smart Matching -->
+                    <div class="p-3 bg-emerald-950/30 border border-emerald-500/20 rounded-xl space-y-1 text-xs">
+                        <div class="flex items-center gap-1.5 text-emerald-400 font-bold font-mono text-[11px]">
+                            <span class="material-symbols-outlined text-sm">smart_toy</span>
+                            <span>Fitur Smart Auto-Match & Smart Parser</span>
+                        </div>
+                        <ul class="text-[10.5px] text-slate-300 font-mono list-disc list-inside space-y-0.5">
+                            <li>Sistem otomatis mendeteksi <strong>NIP</strong> (misal: <em>NEX-00001</em>), <strong>Email</strong>, atau <strong>Nama Karyawan</strong> di dalam file ZIP / PDF.</li>
+                            <li>Sistem membaca angka <em>Take Home Pay / Gaji Bersih</em> dari teks PDF secara otomatis.</li>
+                            <li>Seluruh dokumen PDF asli disimpan permanen dan dapat diunduh oleh Karyawan & Finance.</li>
+                        </ul>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                        <button type="button" @click="openSlipModal = false" class="px-4 py-2 bg-slate-800 text-xs text-slate-300 rounded-xl hover:bg-slate-700 transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all active:scale-95">
+                            <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                            <span>Proses & Terbitkan Slip Gaji</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- FORM 2: Input Manual (1 Orang / Masal) -->
+                <form x-show="slipMode !== 'upload'" action="{{ route('finance.salarySlips.store') }}" method="POST" class="mt-4 space-y-4">
+                    @csrf
+
                     <!-- Single Mode: Dropdown 1 Orang -->
-                    <div x-show="!isBatchMode">
+                    <div x-show="slipMode === 'single'">
                         <label class="block text-xs font-mono text-slate-400 mb-1">Pilih Karyawan / Manager</label>
-                        <select name="employee_id" :disabled="isBatchMode" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                        <select name="employee_id" :disabled="slipMode !== 'single'" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
                             @foreach($employees as $emp)
                                 <option value="{{ $emp->id }}">
                                     {{ $emp->name }} ({{ $emp->nip }}) - {{ $emp->role_title }} [{{ $emp->department }}]
@@ -521,7 +635,7 @@
                     </div>
 
                     <!-- Batch Mode: Clean Multi-Select Dropdown Component -->
-                    <div x-show="isBatchMode" class="space-y-1.5" x-data="{ openDropdown: false }">
+                    <div x-show="slipMode === 'batch'" class="space-y-1.5" x-data="{ openDropdown: false }">
                         <label class="block text-xs font-mono text-slate-400">
                             Pilih Penerima Slip Gaji Masal:
                         </label>
@@ -702,7 +816,7 @@
                         <button type="button" @click="openSlipModal = false" class="px-4 py-2 bg-slate-800 text-xs text-slate-300 rounded-xl">Batal</button>
                         <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all active:scale-95">
                             <span class="material-symbols-outlined text-sm">send</span>
-                            <span x-text="isBatchMode ? 'Terbitkan ' + selectedEmpIds.length + ' Slip Gaji Masal' : 'Terbitkan & Simpan Slip'"></span>
+                            <span x-text="slipMode === 'batch' ? 'Terbitkan ' + selectedEmpIds.length + ' Slip Gaji Masal' : 'Terbitkan & Simpan Slip'"></span>
                         </button>
                     </div>
                 </form>

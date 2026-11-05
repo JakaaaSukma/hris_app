@@ -11,9 +11,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 use App\Models\SalarySlip;
+use App\Traits\ValidatesFileUpload;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Smalot\PdfParser\Parser;
+use ZipArchive;
 
 class FinanceController extends Controller
 {
+    use ValidatesFileUpload;
     public function index(Request $request)
     {
         $tab = $request->query('tab', 'slips'); // Default ke tab slip gaji / reimbursements
@@ -251,6 +258,381 @@ class FinanceController extends Controller
 
         return redirect()->route('finance.index', ['tab' => 'slips'])
             ->with('success', "Berhasil menghapus {$count} slip gaji yang dipilih dari sistem.");
+    }
+
+    /**
+     * Terbitkan Slip Gaji melalui Upload File PDF Langsung atau Arsip ZIP Berisi PDF
+     */
+    public function uploadPdfOrZipSalarySlips(Request $request)
+    {
+        $authUser = Auth::user();
+        if (!$authUser->canApproveReimbursements()) {
+            abort(403, 'Akses Ditolak: Hanya Departemen Finance atau Direktur yang dapat menerbitkan slip gaji.');
+        }
+
+        set_time_limit(300);
+
+        $request->validate([
+            'slip_file' => 'required|file|mimes:pdf,zip|max:102400', // Maksimal 100MB
+            'period_month' => 'required|string',
+            'payment_date' => 'required|date',
+            'employee_id' => 'nullable|exists:employees,id', // Opsi jika upload PDF satuan untuk 1 karyawan tertentu
+            'payment_method' => 'nullable|string',
+            'net_salary' => 'nullable|numeric|min:0',
+        ]);
+
+        $file = $request->file('slip_file');
+        $securityCheck = $this->validateUploadSecurity($file, 'any', 100);
+        if (!$securityCheck['safe']) {
+            return back()->with('error', $securityCheck['message']);
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension());
+        $periodMonth = $request->input('period_month');
+        $paymentDate = $request->input('payment_date');
+
+        // Pastikan direktori public storage ada
+        if (!Storage::disk('public')->exists('salary_slips')) {
+            Storage::disk('public')->makeDirectory('salary_slips');
+        }
+
+        $hasPdfColumn = Schema::hasColumn('salary_slips', 'pdf_path');
+        $hasOriginalFilenameColumn = Schema::hasColumn('salary_slips', 'original_filename');
+
+        // KASUS 1: File PDF Satuan & User memilih karyawan spesifik dari form
+        if ($extension === 'pdf' && $request->filled('employee_id')) {
+            $emp = Employee::findOrFail($request->input('employee_id'));
+            $originalName = $file->getClientOriginalName();
+            $storedFilename = 'slip_' . date('Ymd_His') . '_' . $emp->id . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.pdf';
+            $storedPath = 'salary_slips/' . $storedFilename;
+
+            // Simpan file ke storage public
+            Storage::disk('public')->put($storedPath, file_get_contents($file->getRealPath()));
+
+            // Coba ekstrak nominal gaji dari PDF jika tidak diisi manual
+            $netSalary = (float) $request->input('net_salary', 0);
+            if ($netSalary <= 0) {
+                try {
+                    $parser = new Parser();
+                    $parsed = $parser->parseFile($file->getRealPath());
+                    $netSalary = $this->parseSalaryFromText($parsed->getText());
+                } catch (\Exception $e) {
+                    Log::warning("PdfParser error for {$originalName}: " . $e->getMessage());
+                }
+                if ($netSalary <= 0) {
+                    $netSalary = (float) ($emp->basic_salary ?? 0);
+                }
+            }
+
+            $slipNumber = 'SLIP-' . date('Ym', strtotime($paymentDate)) . '-' . str_pad($emp->id, 4, '0', STR_PAD_LEFT) . '-' . rand(10, 99);
+
+            $data = [
+                'slip_number' => $slipNumber,
+                'employee_id' => $emp->id,
+                'period_month' => $periodMonth,
+                'payment_date' => $paymentDate,
+                'basic_salary' => $netSalary,
+                'allowance_position' => 0,
+                'allowance_transport' => 0,
+                'allowance_meal' => 0,
+                'overtime_pay' => 0,
+                'bonus' => 0,
+                'deduction_bpjs_tk' => 0,
+                'deduction_bpjs_kes' => 0,
+                'deduction_tax_pph21' => 0,
+                'deduction_absence' => 0,
+                'deduction_other' => 0,
+                'total_earnings' => $netSalary,
+                'total_deductions' => 0,
+                'net_salary' => $netSalary,
+                'status' => 'paid',
+                'payment_method' => $request->input('payment_method', 'Bank Transfer'),
+                'notes' => 'Diterbitkan melalui upload dokumen PDF resmi: ' . $originalName,
+                'created_by' => $authUser->id,
+            ];
+
+            if ($hasPdfColumn) {
+                $data['pdf_path'] = $storedPath;
+            }
+            if ($hasOriginalFilenameColumn) {
+                $data['original_filename'] = $originalName;
+            }
+
+            SalarySlip::create($data);
+
+            return redirect()->route('finance.index', ['tab' => 'slips'])
+                ->with('success', "Slip gaji untuk {$emp->name} berhasil diterbitkan dengan dokumen PDF '{$originalName}'.");
+        }
+
+        // KASUS 2: Upload ZIP atau Upload PDF Massal/Auto-Match
+        $tempDir = storage_path('app/temp/slip_pkg_' . time() . '_' . Str::random(8));
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        try {
+            if ($extension === 'zip') {
+                $zip = new ZipArchive;
+                if ($zip->open($file->getRealPath()) === true) {
+                    $zip->extractTo($tempDir);
+                    $zip->close();
+                } else {
+                    return back()->with('error', 'Gagal mengekstrak arsip ZIP. Pastikan file ZIP tidak terenkripsi atau rusak.');
+                }
+            } else {
+                // PDF tunggal tanpa spesifik karyawan -> dicocokkan otomatis
+                $file->move($tempDir, $file->getClientOriginalName());
+            }
+
+            // Temukan seluruh file PDF di direktori sementara secara rekursif
+            $pdfFiles = [];
+            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($tempDir));
+            foreach ($iterator as $item) {
+                if ($item->isFile() && strtolower($item->getExtension()) === 'pdf') {
+                    // Hindari file metadata MacOS __MACOSX / ._
+                    if (!str_contains($item->getPathname(), '__MACOSX') && !str_starts_with($item->getFilename(), '._')) {
+                        $pdfFiles[] = $item->getPathname();
+                    }
+                }
+            }
+
+            if (empty($pdfFiles)) {
+                $this->cleanupDirectory($tempDir);
+                return back()->with('error', 'Tidak ditemukan file PDF valid di dalam file upload/ZIP.');
+            }
+
+            $allEmployees = Employee::with('user')->get();
+            $successCount = 0;
+            $unmatchedFiles = [];
+            $parser = new Parser();
+
+            foreach ($pdfFiles as $pdfPath) {
+                $originalName = basename($pdfPath);
+                $extractedText = '';
+
+                try {
+                    $parsed = $parser->parseFile($pdfPath);
+                    $extractedText = $parsed->getText();
+                } catch (\Exception $e) {
+                    Log::warning("PdfParser failed for {$originalName}: " . $e->getMessage());
+                }
+
+                // 1. Pencocokan Cerdas (Smart Matching)
+                $matchedEmployee = $this->matchEmployeeForPdf($originalName, $extractedText, $allEmployees);
+
+                if (!$matchedEmployee) {
+                    $unmatchedFiles[] = $originalName;
+                    continue;
+                }
+
+                // Ekstrak gaji bersih dari teks PDF (jika ditemukan angka Take Home Pay / Gaji Bersih)
+                $netSalary = $this->parseSalaryFromText($extractedText);
+                if ($netSalary <= 0) {
+                    $netSalary = (float) ($matchedEmployee->basic_salary ?? 0);
+                }
+
+                // Simpan file PDF ke direktori public storage
+                $cleanSlug = Str::slug(pathinfo($originalName, PATHINFO_FILENAME));
+                $storedFilename = 'slip_' . date('Ymd_His') . '_' . $matchedEmployee->id . '_' . $cleanSlug . '.pdf';
+                $storedPath = 'salary_slips/' . $storedFilename;
+                Storage::disk('public')->put($storedPath, file_get_contents($pdfPath));
+
+                $slipNumber = 'SLIP-' . date('Ym', strtotime($paymentDate)) . '-' . str_pad($matchedEmployee->id, 4, '0', STR_PAD_LEFT) . '-' . rand(10, 99);
+
+                $slipData = [
+                    'slip_number' => $slipNumber,
+                    'employee_id' => $matchedEmployee->id,
+                    'period_month' => $periodMonth,
+                    'payment_date' => $paymentDate,
+                    'basic_salary' => $netSalary,
+                    'allowance_position' => 0,
+                    'allowance_transport' => 0,
+                    'allowance_meal' => 0,
+                    'overtime_pay' => 0,
+                    'bonus' => 0,
+                    'deduction_bpjs_tk' => 0,
+                    'deduction_bpjs_kes' => 0,
+                    'deduction_tax_pph21' => 0,
+                    'deduction_absence' => 0,
+                    'deduction_other' => 0,
+                    'total_earnings' => $netSalary,
+                    'total_deductions' => 0,
+                    'net_salary' => $netSalary,
+                    'status' => 'paid',
+                    'payment_method' => $request->input('payment_method', 'Bank Transfer'),
+                    'notes' => 'Diterbitkan otomatis dari arsip: ' . $originalName,
+                    'created_by' => $authUser->id,
+                ];
+
+                if ($hasPdfColumn) {
+                    $slipData['pdf_path'] = $storedPath;
+                }
+                if ($hasOriginalFilenameColumn) {
+                    $slipData['original_filename'] = $originalName;
+                }
+
+                SalarySlip::create($slipData);
+                $successCount++;
+            }
+
+            $this->cleanupDirectory($tempDir);
+
+            if ($successCount === 0) {
+                $unmatchedList = implode(', ', array_slice($unmatchedFiles, 0, 5));
+                return back()->with('error', "Gagal menerbitkan slip gaji: Tidak ada file PDF yang cocok dengan data karyawan (NIP/Nama/Email). Contoh file: {$unmatchedList}");
+            }
+
+            $msg = "Berhasil menerbitkan {$successCount} slip gaji untuk periode {$periodMonth}.";
+            if (!empty($unmatchedFiles)) {
+                $unmatchedCount = count($unmatchedFiles);
+                $unmatchedSample = implode(', ', array_slice($unmatchedFiles, 0, 3));
+                $msg .= " ({$unmatchedCount} file tidak dapat dicocokkan otomatis: {$unmatchedSample}" . ($unmatchedCount > 3 ? ' dll.' : '') . ")";
+            }
+
+            return redirect()->route('finance.index', ['tab' => 'slips'])->with('success', $msg);
+
+        } catch (\Exception $e) {
+            $this->cleanupDirectory($tempDir);
+            Log::error("Zip/PDF Slip Upload Error: " . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan saat memproses slip gaji: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download atau Tampilkan File PDF Asli Slip Gaji
+     */
+    public function downloadSalarySlipPdf($id)
+    {
+        $authUser = Auth::user();
+        $currentUser = $authUser->employee;
+        $slip = SalarySlip::findOrFail($id);
+
+        // Otorisasi: Karyawan biasa hanya bisa mengunduh slip miliknya sendiri
+        if (!$authUser->canApproveReimbursements() && $currentUser && $slip->employee_id !== $currentUser->id) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengunduh slip gaji karyawan lain.');
+        }
+
+        if (empty($slip->pdf_path) || !Storage::disk('public')->exists($slip->pdf_path)) {
+            return back()->with('error', 'File dokumen PDF asli tidak ditemukan pada penyimpanan server.');
+        }
+
+        $fullPath = storage_path('app/public/' . $slip->pdf_path);
+        $downloadName = $slip->original_filename ?: ($slip->slip_number . '.pdf');
+
+        return response()->file($fullPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $downloadName . '"',
+        ]);
+    }
+
+    /**
+     * Pencocokan Cerdas Karyawan berdasarkan NIP, Email, atau Nama
+     */
+    protected function matchEmployeeForPdf(string $filename, string $text, $allEmployees): ?Employee
+    {
+        $cleanFilename = strtolower(pathinfo($filename, PATHINFO_FILENAME));
+        $cleanText = strtolower($text);
+
+        // 1. Cocokkan berdasarkan NIP (contoh: NEX-00001, 00001, dsb.)
+        foreach ($allEmployees as $emp) {
+            if ($emp->nip) {
+                $cleanNip = strtolower($emp->nip);
+                $numericPart = preg_replace('/\D/', '', $emp->nip);
+
+                // Cek NIP di nama file
+                if (str_contains($cleanFilename, $cleanNip)) {
+                    return $emp;
+                }
+                if ($numericPart && strlen($numericPart) >= 3 && str_contains($cleanFilename, $numericPart)) {
+                    return $emp;
+                }
+                // Cek NIP di teks PDF
+                if (str_contains($cleanText, $cleanNip)) {
+                    return $emp;
+                }
+            }
+        }
+
+        // 2. Cocokkan berdasarkan Email
+        if (preg_match('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/', $text, $matches)) {
+            $detectedEmail = strtolower($matches[0]);
+            foreach ($allEmployees as $emp) {
+                if (strtolower($emp->email ?? '') === $detectedEmail) {
+                    return $emp;
+                }
+                if ($emp->user && strtolower($emp->user->email ?? '') === $detectedEmail) {
+                    return $emp;
+                }
+            }
+        }
+
+        // 3. Cocokkan berdasarkan Nama Lengkap di Nama File
+        foreach ($allEmployees as $emp) {
+            $empName = strtolower(trim($emp->name));
+            if (empty($empName)) continue;
+
+            $slugName = Str::slug($empName, '_');
+
+            if (str_contains($cleanFilename, $slugName) || str_contains($cleanFilename, str_replace('_', '', $slugName))) {
+                return $emp;
+            }
+            if (str_contains($cleanFilename, strtolower(str_replace(' ', '', $empName)))) {
+                return $emp;
+            }
+        }
+
+        // 4. Cocokkan berdasarkan Nama Lengkap di Teks PDF
+        foreach ($allEmployees as $emp) {
+            $empName = strtolower(trim($emp->name));
+            if (strlen($empName) > 3 && str_contains($cleanText, $empName)) {
+                return $emp;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Ekstraksi Nominal Gaji Bersih dari Teks PDF
+     */
+    protected function parseSalaryFromText(string $text): float
+    {
+        if (empty($text)) return 0;
+
+        $patterns = [
+            '/(?:Take\s*Home\s*Pay|Gaji\s*Bersih|Total\s*Diterima|THP)\s*[:=]?\s*(?:Rp\.?|IDR)?\s*([\d\.,]+)/iu',
+            '/(?:Total\s*Pendapatan|Total\s*Gaji)\s*[:=]?\s*(?:Rp\.?|IDR)?\s*([\d\.,]+)/iu',
+            '/(?:Gaji\s*Pokok|Basic\s*Salary)\s*[:=]?\s*(?:Rp\.?|IDR)?\s*([\d\.,]+)/iu',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $text, $m)) {
+                $raw = trim($m[1]);
+                // Bersihkan titik ribuan Indonesia
+                $clean = str_replace('.', '', $raw);
+                $clean = str_replace(',', '.', $clean);
+                $val = (float) $clean;
+                if ($val > 10000) {
+                    return $val;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Hapus direktori sementara secara rekursif
+     */
+    protected function cleanupDirectory(string $dir): void
+    {
+        if (!file_exists($dir)) return;
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = "$dir/$file";
+            is_dir($path) ? $this->cleanupDirectory($path) : @unlink($path);
+        }
+        @rmdir($dir);
     }
 
     public function store(Request $request)
