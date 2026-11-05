@@ -282,7 +282,7 @@
                 <div class="min-w-0">
                     <div class="flex items-center gap-2">
                         <h3 class="font-headline font-bold text-xs sm:text-sm text-white truncate">
-                            {{ $director->name ?? 'Hendra Wijaya (Direktur)' }}
+                            {{ $director->name ?? 'Direktur Utama' }}
                         </h3>
                         <span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                             Direktur Utama

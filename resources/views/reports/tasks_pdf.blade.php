@@ -502,7 +502,7 @@
                 <div style="font-size: 9.5px; color: #475569;">Mengetahui & Menyetujui:</div>
                 <div style="font-size: 10px; font-weight: bold; margin-top: 1px;">Direktur Utama Perusahaan</div>
                 <div class="sig-line"></div>
-                <div style="font-weight: bold; font-size: 10.5px;">Prakoso S.T., M.M.</div>
+                <div style="font-weight: bold; font-size: 10.5px;">{{ $directorName ?? ($director?->name ?? 'Direktur Utama') }}</div>
                 <div style="font-size: 8.5px; color: #64748b;">PT GYOKAI GLOBAL INDONESIA</div>
             </td>
         </tr>

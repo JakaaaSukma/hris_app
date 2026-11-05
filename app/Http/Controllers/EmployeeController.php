@@ -960,10 +960,12 @@ class EmployeeController extends Controller
         $reportTitle = 'Laporan Master Data & Direktori Karyawan';
         $reportCode = 'RPT-EMP-' . date('Ymd-His');
         $generatedAt = \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') . ' WIB';
+        $director = \App\Models\User::getDirector();
 
         return view('reports.employees_pdf', compact(
             'employees',
             'authUser',
+            'director',
             'totalEmployees',
             'totalActive',
             'totalPermanent',

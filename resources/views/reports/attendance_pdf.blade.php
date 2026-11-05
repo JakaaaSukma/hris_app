@@ -238,7 +238,7 @@
             </div>
             <div>
                 <div class="sign-title">Mengetahui (Pimpinan Divisi):</div>
-                <div class="sign-name">Siti Rahmawati, M.Psi.</div>
+                <div class="sign-name">{{ $hrManager?->name ?? ($director?->name ?? 'Head of Human Capital') }}</div>
                 <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Head of Human Capital • Gyokai Corp</div>
             </div>
         </div>

@@ -432,7 +432,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-mono text-slate-300 mb-1 font-semibold">Pejabat Penandatangan <span class="text-rose-400">*</span></label>
-                        <input type="text" name="signer_name" value="Hendra Wijaya" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-semibold"/>
+                        <input type="text" name="signer_name" value="{{ $directorName }}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-semibold"/>
                         <input type="hidden" name="signer_title" value="Direktur Utama"/>
                     </div>
                 </div>
@@ -607,7 +607,7 @@
                     </div>
                     <div class="grid grid-cols-3 gap-1">
                         <span class="text-slate-600 font-medium">Pengirim:</span>
-                        <span class="col-span-2 text-slate-800" x-text="(receiptData?.signer_name || 'Hendra Wijaya') + ' (' + (receiptData?.signer_title || 'Direktur Utama') + ')'"></span>
+                        <span class="col-span-2 text-slate-800" x-text="(receiptData?.signer_name || '{{ $directorName }}') + ' (' + (receiptData?.signer_title || 'Direktur Utama') + ')'"></span>
                     </div>
                 </div>
 

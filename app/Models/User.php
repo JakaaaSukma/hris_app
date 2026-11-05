@@ -57,6 +57,23 @@ class User extends Authenticatable
         return $this->role === 'direktur';
     }
 
+    /**
+     * Dapatkan akun Direktur Utama yang aktif di sistem.
+     */
+    public static function getDirector(): ?self
+    {
+        return static::where('role', 'direktur')->first();
+    }
+
+    /**
+     * Dapatkan nama Direktur Utama yang aktif di sistem (dengan fallback).
+     */
+    public static function getDirectorName(string $fallback = 'Direktur Utama'): string
+    {
+        $director = static::getDirector();
+        return $director && !empty($director->name) ? $director->name : $fallback;
+    }
+
     public function isSekretaris(): bool
     {
         return in_array($this->role, ['sekretaris', 'sekretaris_direktur']);

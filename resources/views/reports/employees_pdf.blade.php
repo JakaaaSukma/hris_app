@@ -266,7 +266,7 @@
             </div>
             <div>
                 <div class="sign-title">Mengetahui & Menyetujui:</div>
-                <div class="sign-name">Hendra Wijaya</div>
+                <div class="sign-name">{{ $director?->name ?? 'Direktur Utama' }}</div>
                 <div class="sign-role">Direktur Utama PT GYOKAI GLOBAL INDONESIA</div>
             </div>
         </div>

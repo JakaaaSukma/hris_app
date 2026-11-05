@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Task;
 use App\Models\Employee;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -440,6 +441,8 @@ class TaskController extends Controller
             'kpiGrade' => $kpiGrade,
             'picStats' => $picStats,
             'authUser' => $authUser,
+            'director' => User::getDirector(),
+            'directorName' => User::getDirectorName('Direktur Utama'),
             'reportTitle' => 'Laporan Tugas, Progres & KPI Departemen',
         ];
     }

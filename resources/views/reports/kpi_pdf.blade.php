@@ -511,7 +511,7 @@
             </div>
             <div>
                 <div class="sign-title">Divalidasi & Disahkan Oleh:</div>
-                <div class="sign-name">Hendra Wijaya, S.E., M.M.</div>
+                <div class="sign-name">{{ $director?->name ?? 'Direktur Utama' }}</div>
                 <div class="sign-nip">Direktur Utama • PT. Gyokai Indonesia</div>
             </div>
         </div>

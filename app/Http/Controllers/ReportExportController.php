@@ -13,6 +13,7 @@ use App\Models\InventoryItem;
 use App\Models\LeadProject;
 use App\Models\Candidate;
 use App\Models\Task;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -189,12 +190,14 @@ class ReportExportController extends Controller
 
         $reportTitle = 'Laporan Eksekutif Kinerja & Key Performance Indicator (KPI)';
         $reportCode = 'RPT-KPI-' . strtoupper(date('Ymd-His'));
+        $director = User::getDirector();
 
         return view('reports.kpi_pdf', compact(
             'individualKpi',
             'departmentKpis',
             'currentUser',
             'authUser',
+            'director',
             'period',
             'reportTitle',
             'reportCode',
@@ -271,11 +274,15 @@ class ReportExportController extends Controller
 
         $reportTitle = 'Laporan Presensi & Log Kehadiran Karyawan';
         $reportCode = 'RPT-ATT-' . Carbon::parse($startDate)->format('Ymd') . ($isRange ? '-' . Carbon::parse($endDate)->format('Ymd') : '');
+        $director = User::getDirector();
+        $hrManager = User::where('department', 'HR')->where('role', 'manager')->first();
 
         return view('reports.attendance_pdf', compact(
             'attendances',
             'authUser',
             'currentUser',
+            'director',
+            'hrManager',
             'date',
             'startDate',
             'endDate',

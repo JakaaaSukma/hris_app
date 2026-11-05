@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\OutgoingLetter;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
@@ -78,9 +79,14 @@ class OutgoingLetterController extends Controller
             array_unshift($availableYears, $currentYear);
         }
 
+        $director = User::getDirector();
+        $directorName = User::getDirectorName('Direktur Utama');
+
         return view('secretary.letters.index', compact(
             'letters',
             'authUser',
+            'director',
+            'directorName',
             'search',
             'category',
             'status',
@@ -160,6 +166,13 @@ class OutgoingLetterController extends Controller
             $cat = $request->input('letter_category', 'SK');
             $org = $request->input('organization_code', 'DIR-GYOKAI');
             $request->merge(['letter_number' => OutgoingLetter::formatLetterNumber($request->sequence_number, $cat, $org, $monthRoman, $year)]);
+        }
+
+        if (!$request->filled('signer_name')) {
+            $request->merge(['signer_name' => User::getDirectorName('Direktur Utama')]);
+        }
+        if (!$request->filled('signer_title')) {
+            $request->merge(['signer_title' => 'Direktur Utama']);
         }
 
         $validated = $request->validate([

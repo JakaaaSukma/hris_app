@@ -358,7 +358,7 @@
                             <option value="GA">GA (General Affairs)</option>
                             <option value="Resepsionis">Resepsionis (Mandiri)</option>
                             <option value="Trainer">Trainer (Mandiri)</option>
-                            <option value="Executive">Executive (Sekretariat Direksi)</option>
+                            <option value="Executive">Executive (Sekretariat Direksi / Sekretaris Direktur)</option>
                         </select>
                     </div>
                 </div>
@@ -682,7 +682,7 @@
                         <option value="GA">GA (General Affairs)</option>
                         <option value="Resepsionis">Resepsionis (Mandiri)</option>
                         <option value="Trainer">Trainer (Mandiri)</option>
-                        <option value="Executive">Executive (Sekretariat Direksi)</option>
+                        <option value="Executive">Executive (Sekretariat Direksi / Sekretaris Direktur)</option>
                     </select>
                 </div>
 
@@ -765,7 +765,7 @@
                             <option value="GA">GA (General Affairs)</option>
                             <option value="Resepsionis">Resepsionis (Mandiri)</option>
                             <option value="Trainer">Trainer (Mandiri)</option>
-                            <option value="Executive">Executive (Sekretariat Direksi)</option>
+                            <option value="Executive">Executive (Sekretariat Direksi / Sekretaris Direktur)</option>
                         </select>
                     </div>
                 </div>

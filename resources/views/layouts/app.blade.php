@@ -784,7 +784,7 @@
                     @csrf
                     <input type="hidden" name="employee_id" value="{{ $currentUser->id ?? 1 }}">
                     <div class="text-xs text-tertiary">
-                        Selesai jam kantor untuk <span class="text-on-surface font-semibold">{{ $currentUser->name ?? 'Siti Rahmawati' }}</span>?
+                        Selesai jam kantor untuk <span class="text-on-surface font-semibold">{{ $currentUser->name ?? (auth()->user()->name ?? 'Karyawan') }}</span>?
                     </div>
                     <button type="submit" class="py-1.5 px-3 bg-surface-container-high hover:bg-surface-bright text-xs text-on-surface rounded-lg border border-[#333539] transition-all flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-sm text-amber-400">logout</span>
