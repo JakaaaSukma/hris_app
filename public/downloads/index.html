@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download HRIS Mobile - LPK Gyokai Indonesia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #C81E1E;
+            --primary-dark: #881337;
+            --silver: #CBD5E1;
+            --silver-light: #F8FAFC;
+            --silver-dark: #64748B;
+            --text-main: #0F172A;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #334155;
+        }
+        .container {
+            background: #FFFFFF;
+            width: 100%;
+            max-width: 440px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        .header-bg {
+            background: linear-gradient(135deg, #881337 0%, #C81E1E 50%, #991B1B 100%);
+            padding: 36px 24px 28px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+        .app-icon {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 22px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+            border: 3px solid rgba(255, 255, 255, 0.9);
+        }
+        .app-icon svg {
+            width: 44px;
+            height: 44px;
+            fill: #C81E1E;
+        }
+        .header-bg h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        .header-bg p {
+            font-size: 13px;
+            color: #FECACA;
+            font-weight: 500;
+        }
+        .badge-version {
+            display: inline-block;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .content {
+            padding: 28px 24px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .info-card {
+            background: var(--silver-light);
+            border: 1px solid var(--silver);
+            padding: 12px 14px;
+            border-radius: 12px;
+        }
+        .info-label {
+            font-size: 11px;
+            color: var(--silver-dark);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        .info-value {
+            font-size: 13px;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+        .highlights {
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 24px;
+        }
+        .highlights-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #991B1B;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .highlights ul {
+            list-style: none;
+            font-size: 12px;
+            color: #7F1D1D;
+            line-height: 1.6;
+        }
+        .highlights li::before {
+            content: "✓ ";
+            font-weight: bold;
+            color: #DC2626;
+        }
+        .btn-download {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #C81E1E 0%, #991B1B 100%);
+            color: white;
+            text-decoration: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            box-shadow: 0 10px 20px rgba(200, 30, 30, 0.35);
+            transition: all 0.2s ease;
+        }
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px rgba(200, 30, 30, 0.45);
+        }
+        .btn-download svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        .install-guide {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--silver-dark);
+            line-height: 1.5;
+        }
+        .footer {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 11px;
+            color: #94A3B8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-bg">
+            <div class="app-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                </svg>
+            </div>
+            <h1>HRIS Gyokai Mobile</h1>
+            <p>LPK Gyokai Indonesia</p>
+            <span class="badge-version">Rilis Terbaru v1.0.0</span>
+        </div>
+
+        <div class="content">
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-label">Format File</div>
+                    <div class="info-value">Android (.APK)</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Ukuran File</div>
+                    <div class="info-value">58.3 MB</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Koneksi Server</div>
+                    <div class="info-value">HTTPS Cloud Resmi</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Pembaruan</div>
+                    <div class="info-value">4 Nov 2026</div>
+                </div>
+            </div>
+
+            <div class="highlights">
+                <div class="highlights-title">
+                    <span>✨ Fitur & Pembaruan Rilis:</span>
+                </div>
+                <ul>
+                    <li>Terhubung langsung ke server resmi <code>hris.lpkgyokai.com</code></li>
+                    <li>Desain antarmuka baru: Red & Silver Executive</li>
+                    <li>Form konfigurasi server telah dihapus (Langsung Login)</li>
+                    <li>Presensi Biometrik Face ID kamera depan & GPS Anti-Fake</li>
+                    <li>Pengajuan izin/cuti online & ringkasan dashboard real-time</li>
+                </ul>
+            </div>
+
+            <a href="hris-gyokai.apk" download class="btn-download">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                </svg>
+                Download APK Sekarang
+            </a>
+
+            <div class="install-guide">
+                💡 <strong>Catatan Instalasi:</strong> Jika muncul peringatan keamanan <em>"File might be harmful"</em> pada browser Android Anda, pilih <strong>"Download anyway"</strong> lalu izinkan pemasangan dari browser.
+            </div>
+
+            <div class="footer">
+                &copy; 2026 LPK Gyokai Indonesia. All rights reserved.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

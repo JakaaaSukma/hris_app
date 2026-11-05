@@ -98,7 +98,7 @@ class EmployeeController extends Controller
 
         $request->validate([
             'email' => 'required|email|max:255|unique:users,email,' . ($user?->id ?? 'NULL'),
-            'role' => 'required|in:karyawan,asisten_manager,manager,direktur',
+            'role' => 'required|in:karyawan,asisten_manager,sekretaris,manager,direktur',
             'department' => 'required|string',
             'sub_department' => 'nullable|string',
             'password' => 'nullable|string|min:6',
@@ -116,6 +116,8 @@ class EmployeeController extends Controller
             $subDept = $request->input('sub_department', $employee->sub_department);
             if ($request->department === 'HR' && !$subDept) {
                 $subDept = ($targetRole === 'asisten_manager' || str_contains(strtolower($employee->role_title), 'ga')) ? 'GA' : 'HR';
+            } elseif ($request->department === 'Executive' && !$subDept) {
+                $subDept = ($targetRole === 'sekretaris') ? 'Sekretariat' : 'Direksi';
             }
             $user = User::create([
                 'name' => $employee->name,
@@ -145,6 +147,8 @@ class EmployeeController extends Controller
         $subDept = $request->input('sub_department', $user->sub_department);
         if ($request->department === 'HR' && !$subDept) {
             $subDept = ($targetRole === 'asisten_manager' || str_contains(strtolower($employee->role_title), 'ga')) ? 'GA' : 'HR';
+        } elseif ($request->department === 'Executive' && !$subDept) {
+            $subDept = ($targetRole === 'sekretaris') ? 'Sekretariat' : 'Direksi';
         }
 
         $updateData = [
@@ -171,7 +175,13 @@ class EmployeeController extends Controller
 
                 // Beri notifikasi ke seluruh Manager HR terkait perubahan status akun ini
                 $hrManagers = User::where('department', 'HR')->where('role', 'manager')->get();
-                $directionText = ($targetRole === 'manager') ? 'promosi menjadi MANAGER' : 'penyesuaian status menjadi KARYAWAN';
+                $directionText = match($targetRole) {
+                    'manager' => 'promosi menjadi MANAGER',
+                    'sekretaris' => 'penugasan menjadi SEKRETARIS DIREKTUR',
+                    'asisten_manager' => 'penugasan menjadi ASISTEN MANAGER',
+                    'direktur' => 'pengangkatan menjadi DIREKTUR',
+                    default => 'penyesuaian status menjadi KARYAWAN',
+                };
                 foreach ($hrManagers as $hrManager) {
                     $hrManager->notify(new GeneralNotification(
                         'Pembaruan Status Akun oleh Direktur',
@@ -230,7 +240,13 @@ class EmployeeController extends Controller
 
                 // Kirim notifikasi ke Direktur Utama
                 $directors = User::where('role', 'direktur')->get();
-                $actionLabel = ($targetRole === 'manager') ? 'Promosi ke Manager' : 'Demosi ke Karyawan';
+                $actionLabel = match($targetRole) {
+                    'manager' => 'Promosi ke Manager',
+                    'sekretaris' => 'Penugasan Sekretaris Direktur',
+                    'asisten_manager' => 'Penugasan Asisten Manager',
+                    'direktur' => 'Pengangkatan Direktur',
+                    default => 'Penyesuaian ke Karyawan',
+                };
                 foreach ($directors as $dir) {
                     $dir->notify(new GeneralNotification(
                         'Persetujuan Perubahan Status Akun',
@@ -418,7 +434,7 @@ class EmployeeController extends Controller
             'employment_type' => 'required|string',
             'join_date' => 'required|date',
             'location' => 'nullable|string',
-            'account_role' => 'nullable|in:karyawan,asisten_manager,manager,direktur',
+            'account_role' => 'nullable|in:karyawan,asisten_manager,sekretaris,manager,direktur',
             'status' => 'nullable|in:active,on_leave,probation,inactive',
         ]);
 
@@ -439,6 +455,8 @@ class EmployeeController extends Controller
 
         if ($validated['department'] === 'HR' && empty($validated['sub_department'])) {
             $validated['sub_department'] = ($role === 'asisten_manager' || str_contains(strtolower($validated['role_title']), 'ga')) ? 'GA' : 'HR';
+        } elseif ($validated['department'] === 'Executive' && empty($validated['sub_department'])) {
+            $validated['sub_department'] = ($role === 'sekretaris') ? 'Sekretariat' : 'Direksi';
         }
 
         $validated['avatar_url'] = 'https://ui-avatars.com/api/?name=' . urlencode($validated['name']) . '&background=random&color=fff&size=150';
@@ -487,7 +505,7 @@ class EmployeeController extends Controller
             'rows.*.no_id' => 'required|numeric',
             'rows.*.name' => 'required|string|max:255',
             'rows.*.department' => 'required|string',
-            'rows.*.role' => 'required|in:karyawan,manager',
+            'rows.*.role' => 'required|in:karyawan,asisten_manager,sekretaris,manager,direktur',
             'rows.*.employment_type' => 'nullable|string',
             'rows.*.status' => 'nullable|string',
             'rows.*.location' => 'nullable|string',
@@ -517,7 +535,20 @@ class EmployeeController extends Controller
                 $location = !empty($item['location']) ? ucfirst(strtolower($item['location'])) : 'Jakarta';
                 $empType = !empty($item['employment_type']) ? (strtoupper($item['employment_type']) === 'TETAP' ? 'Tetap (FTE)' : $item['employment_type']) : 'Tetap (FTE)';
                 $status = !empty($item['status']) ? strtolower($item['status']) : 'active';
-                $roleTitle = ($role === 'manager') ? "{$dept} Manager" : "{$dept} Staff";
+                $roleTitle = match($role) {
+                    'manager' => "{$dept} Manager",
+                    'sekretaris' => 'Sekretaris Direktur',
+                    'asisten_manager' => "Asisten Manager {$dept}",
+                    'direktur' => 'Direktur',
+                    default => "{$dept} Staff",
+                };
+
+                $subDept = null;
+                if ($dept === 'HR') {
+                    $subDept = ($role === 'asisten_manager' || str_contains(strtolower($roleTitle), 'ga')) ? 'GA' : 'HR';
+                } elseif ($dept === 'Executive') {
+                    $subDept = ($role === 'sekretaris') ? 'Sekretariat' : 'Direksi';
+                }
 
                 $isNew = !Employee::where('email', $email)->exists() && !Employee::where('nip', $nip)->exists();
 
@@ -529,6 +560,7 @@ class EmployeeController extends Controller
                         'phone' => $phone,
                         'role_title' => $roleTitle,
                         'department' => $dept,
+                        'sub_department' => $subDept,
                         'employment_type' => $empType,
                         'status' => $status,
                         'location' => $location,
@@ -546,6 +578,7 @@ class EmployeeController extends Controller
                         'password' => $defaultPasswordHash,
                         'role' => $role,
                         'department' => $dept,
+                        'sub_department' => $subDept,
                         'employee_id' => $employee->id,
                     ]
                 );

@@ -189,8 +189,8 @@
 
                         <div class="flex items-center gap-1.5">
                             @if($emp->user)
-                                <span class="px-2 py-0.5 rounded font-mono text-[9px] uppercase font-bold {{ $emp->user->role === 'direktur' ? 'bg-purple-950/60 text-purple-400 border border-purple-500/20' : ($emp->user->role === 'manager' ? 'bg-blue-950/60 text-blue-400 border border-blue-500/20' : ($emp->user->role === 'asisten_manager' ? 'bg-violet-950/60 text-violet-400 border border-violet-500/20' : 'bg-surface-container-highest text-tertiary')) }}">
-                                    {{ $emp->user->role === 'asisten_manager' ? 'ASISTEN MGR' : strtoupper($emp->user->role) }}
+                                <span class="px-2 py-0.5 rounded font-mono text-[9px] uppercase font-bold {{ $emp->user->role === 'direktur' ? 'bg-purple-950/60 text-purple-400 border border-purple-500/20' : ($emp->user->role === 'sekretaris' ? 'bg-amber-950/60 text-amber-400 border border-amber-500/20' : ($emp->user->role === 'manager' ? 'bg-blue-950/60 text-blue-400 border border-blue-500/20' : ($emp->user->role === 'asisten_manager' ? 'bg-violet-950/60 text-violet-400 border border-violet-500/20' : 'bg-surface-container-highest text-tertiary'))) }}">
+                                    {{ $emp->user->role === 'asisten_manager' ? 'ASISTEN MGR' : ($emp->user->role === 'sekretaris' ? 'SEKRETARIS' : strtoupper($emp->user->role)) }}
                                 </span>
                             @endif
                             <span class="px-2 py-0.5 rounded font-mono text-[10px] {{ $emp->status === 'active' ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/20' : 'bg-surface-container text-tertiary' }}">
@@ -358,6 +358,7 @@
                             <option value="GA">GA (General Affairs)</option>
                             <option value="Resepsionis">Resepsionis (Mandiri)</option>
                             <option value="Trainer">Trainer (Mandiri)</option>
+                            <option value="Executive">Executive (Sekretariat Direksi)</option>
                         </select>
                     </div>
                 </div>
@@ -391,6 +392,7 @@
                             <select name="account_role" class="w-full bg-surface-container border border-[#333539] rounded-lg px-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-primary-container">
                                 <option value="karyawan" selected>Karyawan (Staf)</option>
                                 <option value="asisten_manager">Asisten Manager</option>
+                                <option value="sekretaris">Sekretaris Direktur</option>
                                 <option value="manager">Manager Departemen</option>
                                 @if(auth()->user()->isDirektur())
                                     <option value="direktur">Direktur</option>
@@ -550,11 +552,14 @@
                                             <option value="GA">GA</option>
                                             <option value="Resepsionis">Resepsionis</option>
                                             <option value="Trainer">Trainer</option>
+                                            <option value="Executive">Executive</option>
                                         </select>
                                     </td>
                                     <td class="p-2">
                                         <select :name="'rows[' + index + '][role]'" x-model="row.role" class="w-full bg-surface-container border border-[#333539] rounded px-2 py-1 text-xs text-on-surface focus:outline-none focus:border-emerald-500">
                                             <option value="karyawan">Karyawan</option>
+                                            <option value="asisten_manager">Asisten Manager</option>
+                                            <option value="sekretaris">Sekretaris</option>
                                             <option value="manager">Manager</option>
                                         </select>
                                     </td>
@@ -635,6 +640,7 @@
                     <select name="role" x-model="selectedAccount.role" class="w-full bg-surface-container-low border border-[#333539] rounded-lg px-3 py-2 text-xs text-on-surface focus:outline-none focus:border-primary-container">
                         <option value="karyawan">👤 Karyawan (Staf Operasional)</option>
                         <option value="asisten_manager">💼 Asisten Manager (Pendamping Manager)</option>
+                        <option value="sekretaris">📋 Sekretaris Direktur (Sekretariat Eksekutif)</option>
                         <option value="manager">👔 Manager Departemen (Pengelola Tim)</option>
                         @if(auth()->user()->isDirektur())
                             <option value="direktur">👑 Direktur (Hak Akses Penuh / Eksekutif)</option>
@@ -676,6 +682,7 @@
                         <option value="GA">GA (General Affairs)</option>
                         <option value="Resepsionis">Resepsionis (Mandiri)</option>
                         <option value="Trainer">Trainer (Mandiri)</option>
+                        <option value="Executive">Executive (Sekretariat Direksi)</option>
                     </select>
                 </div>
 
@@ -758,6 +765,7 @@
                             <option value="GA">GA (General Affairs)</option>
                             <option value="Resepsionis">Resepsionis (Mandiri)</option>
                             <option value="Trainer">Trainer (Mandiri)</option>
+                            <option value="Executive">Executive (Sekretariat Direksi)</option>
                         </select>
                     </div>
                 </div>

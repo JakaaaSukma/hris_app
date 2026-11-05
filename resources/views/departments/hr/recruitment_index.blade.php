@@ -370,6 +370,7 @@
                             <option value="Finance">Finance & Keuangan</option>
                             <option value="Bisnis Development">Bisnis Development</option>
                             <option value="GA">General Affairs (GA)</option>
+                            <option value="Executive">Executive (Sekretariat Direksi)</option>
                         </select>
                     </div>
                     <div>

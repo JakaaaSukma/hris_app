@@ -23,6 +23,21 @@
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
     });
 
+    // Route Download Mobile App Android (.APK)
+    Route::get('/download-app', function () {
+        $path = public_path('downloads/hris-gyokai.apk');
+        if (file_exists($path)) {
+            return response()->download($path, 'hris-gyokai.apk', [
+                'Content-Type' => 'application/vnd.android.package-archive',
+            ]);
+        }
+        return abort(404, 'File APK belum tersedia.');
+    })->name('mobile.download');
+
+    Route::get('/app', function () {
+        return redirect('/downloads/');
+    });
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
     // Protected Routes (Wajib Login)

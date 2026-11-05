@@ -627,11 +627,13 @@
                                     $role = auth()->user()->role ?? 'karyawan';
                                     $badgeColor = match($role) {
                                         'direktur' => 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+                                        'sekretaris', 'sekretaris_direktur' => 'bg-amber-400/20 text-amber-300 border-amber-400/40',
                                         'manager' => 'bg-rose-500/20 text-rose-300 border-rose-500/30',
                                         'asisten_manager', 'asisten manager' => 'bg-violet-500/20 text-violet-300 border-violet-500/30',
                                         default => 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
                                     };
                                     $roleLabel = match($role) {
+                                        'sekretaris', 'sekretaris_direktur' => 'Sekretaris',
                                         'asisten_manager', 'asisten manager' => 'Asisten Mgr',
                                         default => $role,
                                     };
