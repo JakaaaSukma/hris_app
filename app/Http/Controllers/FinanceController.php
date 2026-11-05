@@ -211,6 +211,48 @@ class FinanceController extends Controller
         return redirect()->route('finance.index', ['tab' => 'slips'])->with('success', $message);
     }
 
+    /**
+     * Hapus Slip Gaji (Khusus Akun Manager Finance & Direktur Utama)
+     */
+    public function destroySalarySlip($id)
+    {
+        $authUser = Auth::user();
+        if (!$authUser->canDeleteSalarySlips()) {
+            abort(403, 'Akses Ditolak: Hanya Manager Finance atau Direktur yang memiliki wewenang untuk menghapus slip gaji.');
+        }
+
+        $slip = SalarySlip::with('employee')->findOrFail($id);
+        $slipNumber = $slip->slip_number;
+        $employeeName = $slip->employee?->name ?? 'Karyawan';
+        $period = $slip->period_month;
+
+        $slip->delete();
+
+        return redirect()->route('finance.index', ['tab' => 'slips'])
+            ->with('success', "Slip gaji {$slipNumber} ({$employeeName} - Periode {$period}) berhasil dihapus dari sistem.");
+    }
+
+    /**
+     * Hapus Banyak Slip Gaji Sekaligus / Mass Delete (Khusus Akun Manager Finance & Direktur Utama)
+     */
+    public function bulkDestroySalarySlips(Request $request)
+    {
+        $authUser = Auth::user();
+        if (!$authUser->canDeleteSalarySlips()) {
+            abort(403, 'Akses Ditolak: Hanya Manager Finance atau Direktur yang memiliki wewenang untuk menghapus slip gaji.');
+        }
+
+        $request->validate([
+            'slip_ids' => 'required|array|min:1',
+            'slip_ids.*' => 'exists:salary_slips,id',
+        ]);
+
+        $count = SalarySlip::whereIn('id', $request->slip_ids)->delete();
+
+        return redirect()->route('finance.index', ['tab' => 'slips'])
+            ->with('success', "Berhasil menghapus {$count} slip gaji yang dipilih dari sistem.");
+    }
+
     public function store(Request $request)
     {
         $authUser = Auth::user();

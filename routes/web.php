@@ -122,6 +122,8 @@
             // Pelaporan & Penerbitan Slip Gaji (Salary Slips)
             Route::get('/salary-slips/{id}', [FinanceController::class, 'showSalarySlip'])->name('salarySlips.show');
             Route::post('/salary-slips', [FinanceController::class, 'storeSalarySlip'])->name('salarySlips.store');
+            Route::delete('/salary-slips/{id}', [FinanceController::class, 'destroySalarySlip'])->name('salarySlips.destroy');
+            Route::post('/salary-slips/bulk-delete', [FinanceController::class, 'bulkDestroySalarySlips'])->name('salarySlips.bulkDestroy');
 
             // Pengiriman Slip Gaji Massal (Email Dispatch & Multi-SMTP Sync Gyokai02)
             // Hanya dapat diakses oleh Departemen Finance & Direktur

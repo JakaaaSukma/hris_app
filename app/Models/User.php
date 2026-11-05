@@ -151,6 +151,12 @@ class User extends Authenticatable
         return $this->isDirektur() || (strtolower($this->department ?? '') === 'finance');
     }
 
+    public function canDeleteSalarySlips(): bool
+    {
+        // Hak Hapus Slip Gaji: Khusus Akun Manager Finance dan Direktur Utama
+        return $this->isDirektur() || ($this->isFinance() && $this->isManager());
+    }
+
     public function canApproveInventoryRequests(): bool
     {
         // Pengajuan penambahan / perbaikan inventaris GA di-approve oleh Tim Finance, Manager HR, atau Direktur Utama

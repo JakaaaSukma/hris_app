@@ -6,7 +6,16 @@
 <div class="flex flex-col gap-6" x-data="{ 
     currentTab: '{{ $tab ?? 'slips' }}',
     openClaimModal: false,
-    openSlipModal: false
+    openSlipModal: false,
+    selectedSlips: [],
+    selectAllSlips: false,
+    toggleAllSlips() {
+        if (this.selectAllSlips) {
+            this.selectedSlips = [{{ $salarySlips->pluck('id')->implode(',') }}];
+        } else {
+            this.selectedSlips = [];
+        }
+    }
 }">
 
     <!-- Header Actions -->
@@ -103,22 +112,45 @@
                     </span>
                 </div>
 
-                <!-- Filter Periode Bulan -->
-                <form action="{{ route('finance.index') }}" method="GET" class="flex items-center gap-2">
-                    <input type="hidden" name="tab" value="slips">
-                    <select name="period" onchange="this.form.submit()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-                        <option value="">Semua Periode</option>
-                        @foreach($availablePeriods as $p)
-                            <option value="{{ $p }}" {{ $period === $p ? 'selected' : '' }}>{{ $p }}</option>
-                        @endforeach
-                    </select>
-                </form>
+                <div class="flex items-center gap-3">
+                    @if(auth()->user()->canDeleteSalarySlips())
+                        <div x-show="selectedSlips.length > 0" x-cloak class="flex items-center gap-2 bg-rose-950/60 border border-rose-500/40 px-3 py-1 rounded-xl text-xs font-mono text-rose-300">
+                            <span><strong x-text="selectedSlips.length"></strong> dipilih</span>
+                            <form action="{{ route('finance.salarySlips.bulkDestroy') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus ' + selectedSlips.length + ' slip gaji yang dipilih? Tindakan ini tidak dapat dibatalkan.')">
+                                @csrf
+                                <template x-for="id in selectedSlips" :key="id">
+                                    <input type="hidden" name="slip_ids[]" :value="id">
+                                </template>
+                                <button type="submit" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-bold flex items-center gap-1 transition-all">
+                                    <span class="material-symbols-outlined text-xs">delete</span>
+                                    <span>Hapus</span>
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+
+                    <!-- Filter Periode Bulan -->
+                    <form action="{{ route('finance.index') }}" method="GET" class="flex items-center gap-2">
+                        <input type="hidden" name="tab" value="slips">
+                        <select name="period" onchange="this.form.submit()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="">Semua Periode</option>
+                            @foreach($availablePeriods as $p)
+                                <option value="{{ $p }}" {{ $period === $p ? 'selected' : '' }}>{{ $p }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                </div>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead>
                         <tr class="border-b border-slate-800 text-slate-400 font-mono text-[11px] uppercase bg-slate-900/60">
+                            @if(auth()->user()->canDeleteSalarySlips())
+                                <th class="px-4 py-3.5 w-10 text-center">
+                                    <input type="checkbox" x-model="selectAllSlips" @change="toggleAllSlips()" class="rounded bg-slate-900 border-slate-700 text-rose-600 focus:ring-0">
+                                </th>
+                            @endif
                             <th class="px-5 py-3.5">Nomor Slip</th>
                             <th class="px-5 py-3.5">Karyawan / Manager</th>
                             <th class="px-5 py-3.5">Periode Gaji</th>
@@ -132,6 +164,11 @@
                     <tbody class="divide-y divide-slate-800/80 font-body">
                         @forelse($salarySlips as $slip)
                             <tr class="hover:bg-slate-800/40 transition-colors">
+                                @if(auth()->user()->canDeleteSalarySlips())
+                                    <td class="px-4 py-4 text-center">
+                                        <input type="checkbox" :value="{{ $slip->id }}" x-model="selectedSlips" class="rounded bg-slate-900 border-slate-700 text-rose-600 focus:ring-0">
+                                    </td>
+                                @endif
                                 <td class="px-5 py-4 font-mono font-bold text-slate-300">
                                     {{ $slip->slip_number }}
                                 </td>
@@ -165,15 +202,27 @@
                                     </span>
                                 </td>
                                 <td class="px-5 py-4 text-right">
-                                    <a href="{{ route('finance.salarySlips.show', $slip->id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-mono text-xs font-semibold transition-all border border-slate-700 active:scale-95">
-                                        <span class="material-symbols-outlined text-sm text-emerald-400">visibility</span>
-                                        <span>Lihat & Cetak</span>
-                                    </a>
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <a href="{{ route('finance.salarySlips.show', $slip->id) }}" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-mono text-xs font-semibold transition-all border border-slate-700 active:scale-95" title="Lihat & Cetak Slip Gaji">
+                                            <span class="material-symbols-outlined text-sm text-emerald-400">visibility</span>
+                                            <span>Lihat</span>
+                                        </a>
+                                        @if(auth()->user()->canDeleteSalarySlips())
+                                            <form action="{{ route('finance.salarySlips.destroy', $slip->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus slip gaji {{ $slip->slip_number }} untuk {{ $slip->employee->name ?? 'Karyawan' }}? Tindakan ini tidak dapat dibatalkan.')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white font-mono text-xs font-semibold transition-all border border-rose-500/25 active:scale-95" title="Hapus Slip Gaji">
+                                                    <span class="material-symbols-outlined text-sm">delete</span>
+                                                    <span class="hidden sm:inline">Hapus</span>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-5 py-12 text-center text-slate-400 font-mono">
+                                <td colspan="{{ auth()->user()->canDeleteSalarySlips() ? 9 : 8 }}" class="px-5 py-12 text-center text-slate-400 font-mono">
                                     Belum ada data slip gaji untuk filter ini.
                                 </td>
                             </tr>

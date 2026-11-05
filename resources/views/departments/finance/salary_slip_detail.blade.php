@@ -20,6 +20,16 @@
         @endif
 
         <div class="flex items-center gap-2">
+            @if($authUser->canDeleteSalarySlips())
+                <form action="{{ route('finance.salarySlips.destroy', $slip->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus slip gaji {{ $slip->slip_number }} ini? Data yang terhapus tidak dapat dikembalikan.')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="flex items-center gap-1.5 px-3.5 py-2 bg-rose-500/15 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold border border-rose-500/30 transition-all shadow-sm active:scale-95">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                        <span>Hapus Slip Gaji</span>
+                    </button>
+                </form>
+            @endif
             <button onclick="window.print()" class="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
                 <span class="material-symbols-outlined text-base">print</span>
                 <span>Cetak / Simpan PDF</span>
