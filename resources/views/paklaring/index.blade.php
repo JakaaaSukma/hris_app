@@ -306,7 +306,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <span>Nama Direktur:</span>
-                        <span class="text-white">{{ $defaults['signatory_name'] ?? 'Direktur Utama' }}</span>
+                        <span class="text-white">ANITA SANDRA DEWI</span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span>Lembaga:</span>

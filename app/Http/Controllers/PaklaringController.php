@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Paklaring;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
@@ -63,7 +62,6 @@ class PaklaringController extends Controller
         }
 
         // Default initial values matching user template
-        $directorName = User::getDirectorName('Direktur Utama');
         $defaults = [
             'recipient_name' => 'Rida Rapika Saragi',
             'program_or_position' => 'Program Pemagangan Kejuruan QC',
@@ -72,8 +70,8 @@ class PaklaringController extends Controller
             'city' => 'Tangerang',
             'issue_date' => Carbon::now()->format('Y-m-d'),
             'formatted_issue_date' => Carbon::now()->locale('id')->translatedFormat('d F Y'),
-            'signatory_name' => $directorName,
-            'signatory_title' => 'Direktur Utama',
+            'signatory_name' => 'ANITA SANDRA DEWI',
+            'signatory_title' => 'Direktur',
         ];
 
         $templateUrl = self::getTemplateUrl();
@@ -102,7 +100,6 @@ class PaklaringController extends Controller
 
         $year = Carbon::parse($validated['issue_date'])->format('Y');
         $certNumber = 'PKL/GYK/' . $year . '/' . strtoupper(substr(uniqid(), -5));
-        $directorName = User::getDirectorName('Direktur Utama');
 
         $paklaring = Paklaring::create([
             'certificate_number' => $certNumber,
@@ -113,8 +110,8 @@ class PaklaringController extends Controller
             'company_unit' => $validated['company_unit'],
             'city' => !empty($validated['city']) ? $validated['city'] : 'Tangerang',
             'issue_date' => $validated['issue_date'],
-            'signatory_name' => $request->input('signatory_name') ?: $directorName,
-            'signatory_title' => $request->input('signatory_title') ?: 'Direktur Utama',
+            'signatory_name' => $request->input('signatory_name') ?: 'ANITA SANDRA DEWI',
+            'signatory_title' => $request->input('signatory_title') ?: 'Direktur',
             'created_by' => $user->id,
         ]);
 
@@ -147,7 +144,6 @@ class PaklaringController extends Controller
             abort(403, 'Akses terbatas untuk Departemen HR dan Direktur.');
         }
 
-        $directorName = User::getDirectorName('Direktur Utama');
         $recipient_name = $request->query('recipient_name', 'Rida Rapika Saragi');
         $program_or_position = $request->query('program_or_position', 'Program Pemagangan Kejuruan QC');
         $period_text = $request->query('period_text', 'Periode Tanggal 20 Juni 2021 s/d 31 Desember 2025');
@@ -155,8 +151,8 @@ class PaklaringController extends Controller
         $city = $request->query('city', 'Tangerang');
         $issue_date = $request->query('issue_date', Carbon::now()->toDateString());
         $issueDateFormatted = Carbon::parse($issue_date)->locale('id')->translatedFormat('d F Y');
-        $signatory_name = $request->query('signatory_name', $directorName);
-        $signatory_title = $request->query('signatory_title', 'Direktur Utama');
+        $signatory_name = $request->query('signatory_name', 'ANITA SANDRA DEWI');
+        $signatory_title = $request->query('signatory_title', 'Direktur');
 
         $paklaring = (object)[
             'recipient_name' => $recipient_name,
