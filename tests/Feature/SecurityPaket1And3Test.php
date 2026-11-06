@@ -80,15 +80,23 @@ class SecurityPaket1And3Test extends TestCase
 
     public function test_adms_rejects_unregistered_serial_number()
     {
+        putenv('ADMS_ALLOWED_SN=MY_SECURE_SN');
+        $_ENV['ADMS_ALLOWED_SN'] = 'MY_SECURE_SN';
+        $_SERVER['ADMS_ALLOWED_SN'] = 'MY_SECURE_SN';
+
         $response = $this->get('/iclock/cdata?SN=HACKER_DEVICE_999');
         $response->assertStatus(403);
     }
 
     public function test_adms_allows_registered_solution_x609_serial_number()
     {
-        $response = $this->get('/iclock/cdata?SN=SOLUTION_X609');
+        putenv('ADMS_ALLOWED_SN=MY_SECURE_SN');
+        $_ENV['ADMS_ALLOWED_SN'] = 'MY_SECURE_SN';
+        $_SERVER['ADMS_ALLOWED_SN'] = 'MY_SECURE_SN';
+
+        $response = $this->get('/iclock/cdata?SN=MY_SECURE_SN');
         $response->assertStatus(200);
-        $this->assertStringContainsString('GET OPTION FROM: SOLUTION_X609', $response->getContent());
+        $this->assertStringContainsString('GET OPTION FROM: MY_SECURE_SN', $response->getContent());
     }
 
     public function test_regular_karyawan_cannot_download_outgoing_letters()

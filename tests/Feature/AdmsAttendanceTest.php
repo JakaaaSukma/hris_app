@@ -20,7 +20,8 @@ class AdmsAttendanceTest extends TestCase
         // Normal handshake
         $res = $this->get('/iclock/cdata?SN=SOLUTION_X609');
         $res->assertStatus(200);
-        $this->assertStringContainsString('ATTLOGStamp=None', $res->getContent());
+        $this->assertStringContainsString('ServerName=GyokaiHR-Cloud', $res->getContent());
+        $this->assertStringNotContainsString('ATTLOGStamp=0', $res->getContent());
 
         // When sync history is active
         Cache::put('adms_query_history', true, now()->addHour());

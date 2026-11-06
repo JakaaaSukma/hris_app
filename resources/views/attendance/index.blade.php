@@ -628,6 +628,38 @@
                     </form>
                 </div>
 
+                <!-- Status Koneksi & Diagnostik Perangkat Terakhir -->
+                <div class="p-3.5 bg-surface-container-low rounded-xl border border-[#333539] space-y-2 font-sans">
+                    <div class="flex items-center justify-between">
+                        <span class="text-on-surface font-semibold text-xs flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base text-amber-400">fingerprint</span>
+                            Status Koneksi Mesin Fingerprint Terakhir
+                        </span>
+                        @php
+                            $detectedSn = \Illuminate\Support\Facades\Cache::get('adms_last_detected_sn');
+                            $detectedIp = \Illuminate\Support\Facades\Cache::get('adms_last_detected_ip');
+                            $detectedTime = \Illuminate\Support\Facades\Cache::get('adms_last_detected_time');
+                        @endphp
+                        @if($detectedSn)
+                            <span class="px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold font-mono">
+                                TERHUBUNG
+                            </span>
+                        @else
+                            <span class="px-2 py-0.5 rounded bg-amber-950/70 text-amber-300 border border-amber-500/30 text-[10px] font-mono">
+                                Menunggu Sinyal...
+                            </span>
+                        @endif
+                    </div>
+                    <div class="text-xs text-tertiary">
+                        @if($detectedSn)
+                            <p>Mesin kantor terdeteksi dengan Serial Number: <strong class="text-emerald-400 font-mono text-[11px]">{{ $detectedSn }}</strong></p>
+                            <p class="text-[11px] text-tertiary mt-0.5">IP Mesin: <span class="font-mono text-on-surface">{{ $detectedIp ?? '-' }}</span> | Waktu Sinyal: <span class="font-mono text-on-surface">{{ $detectedTime ?? '-' }}</span></p>
+                        @else
+                            <p>Belum ada rekaman sinyal masuk sejak server restart. Pastikan parameter ADMS di mesin Solution X609 sudah diisi sesuai alamat IP server di atas.</p>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- Test Connection -->
                 <div class="p-3 bg-surface-container-highest/40 rounded-xl border border-[#333539] flex items-center justify-between">
                     <div>

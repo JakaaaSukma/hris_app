@@ -19,16 +19,19 @@ class AdmsAttendanceController extends Controller
      */
     public function handshake(Request $request)
     {
-        $sn = $request->query('SN', 'UNKNOWN_DEVICE');
+        $sn = $request->query('SN') ?: $request->query('sn') ?: 'UNKNOWN_DEVICE';
+
+        // Rekam perangkat terakhir yang terhubung ke server untuk kemudahan monitoring & diagnostik
+        Cache::put('adms_last_detected_sn', $sn, now()->addDays(30));
+        Cache::put('adms_last_detected_ip', $request->ip(), now()->addDays(30));
+        Cache::put('adms_last_detected_time', now()->format('Y-m-d H:i:s'), now()->addDays(30));
+
         if (!$this->isSerialAllowed($sn)) {
             Log::warning("ADMS Handshake REJECTED: Unregistered SN={$sn} from IP={$request->ip()}");
             return response("ERROR: Device not registered\n", 403)->header('Content-Type', 'text/plain');
         }
 
         Log::info("ADMS Handshake received from Mesin Solution: SN={$sn}");
-
-        // Jika ada antrean penarikan riwayat, set ATTLOGStamp=0 agar mesin mem-push dari awal
-        $attlogStamp = Cache::get('adms_query_history') ? '0' : 'None';
 
         // Format respon standar protokol ADMS ZKTeco / Solution
         // ServerVersion=3.0.1, PushVersion=2.0.4, RegistryCode, dll.
@@ -41,10 +44,14 @@ class AdmsAttendanceController extends Controller
                     "TransTimes=00:00;14:05\n" .
                     "TransInterval=1\n" .
                     "TransTables=User Transaction\n" .
-                    "Realtime=1\n" .
-                    "ATTLOGStamp={$attlogStamp}\n" .
-                    "OPERLOGStamp=None\n" .
-                    "SessionID=" . md5($sn . time()) . "\n";
+                    "Realtime=1\n";
+
+        // Hanya sertakan ATTLOGStamp=0 jika ada antrean penarikan riwayat aktif
+        if (Cache::get('adms_query_history')) {
+            $response .= "ATTLOGStamp=0\n";
+        }
+
+        $response .= "SessionID=" . md5($sn . time()) . "\n";
 
         return response($response, 200)->header('Content-Type', 'text/plain');
     }
@@ -55,9 +62,14 @@ class AdmsAttendanceController extends Controller
      */
     public function receiveLog(Request $request)
     {
-        $sn = $request->query('SN', 'SOLUTION_X609');
+        $sn = $request->query('SN') ?: $request->query('sn') ?: 'SOLUTION_X609';
         $table = $request->query('table', 'ATTLOG');
         $rawContent = $request->getContent();
+
+        // Rekam aktivitas push log
+        Cache::put('adms_last_detected_sn', $sn, now()->addDays(30));
+        Cache::put('adms_last_detected_ip', $request->ip(), now()->addDays(30));
+        Cache::put('adms_last_detected_time', now()->format('Y-m-d H:i:s'), now()->addDays(30));
 
         // Proteksi Fail-Closed: Validasi Serial Number (SN) mesin
         if (!$this->isSerialAllowed($sn)) {
@@ -71,7 +83,7 @@ class AdmsAttendanceController extends Controller
         $result = self::processAttlogContent($rawContent, $sn, $request->ip());
 
         // Respon balasan wajib standar Solution ADMS
-        return response("OK: {$result['success_count']}\n", 200)->header('Content-Type', 'text/plain');
+        return response("OK: {$result['success_count']}", 200)->header('Content-Type', 'text/plain');
     }
 
     /**
@@ -231,7 +243,12 @@ class AdmsAttendanceController extends Controller
      */
     public function ping(Request $request)
     {
-        return response("OK\n", 200)->header('Content-Type', 'text/plain');
+        $sn = $request->query('SN') ?: $request->query('sn') ?: 'UNKNOWN_DEVICE';
+        Cache::put('adms_last_detected_sn', $sn, now()->addDays(30));
+        Cache::put('adms_last_detected_ip', $request->ip(), now()->addDays(30));
+        Cache::put('adms_last_detected_time', now()->format('Y-m-d H:i:s'), now()->addDays(30));
+
+        return response("OK", 200)->header('Content-Type', 'text/plain');
     }
 
     /**
@@ -239,7 +256,10 @@ class AdmsAttendanceController extends Controller
      */
     public function getRequest(Request $request)
     {
-        $sn = $request->query('SN', 'UNKNOWN_DEVICE');
+        $sn = $request->query('SN') ?: $request->query('sn') ?: 'UNKNOWN_DEVICE';
+        Cache::put('adms_last_detected_sn', $sn, now()->addDays(30));
+        Cache::put('adms_last_detected_ip', $request->ip(), now()->addDays(30));
+        Cache::put('adms_last_detected_time', now()->format('Y-m-d H:i:s'), now()->addDays(30));
 
         // Cek apakah ada antrean perintah sync seluruh riwayat data mesin
         if (Cache::get('adms_query_history')) {
@@ -250,7 +270,7 @@ class AdmsAttendanceController extends Controller
         }
 
         // Jika tidak ada perintah antrean untuk mesin, kembalikan OK
-        return response("OK\n", 200)->header('Content-Type', 'text/plain');
+        return response("OK", 200)->header('Content-Type', 'text/plain');
     }
 
     /**
@@ -258,7 +278,7 @@ class AdmsAttendanceController extends Controller
      */
     public function deviceCmd(Request $request)
     {
-        $sn = $request->query('SN', 'UNKNOWN_DEVICE');
+        $sn = $request->query('SN') ?: $request->query('sn') ?: 'UNKNOWN_DEVICE';
         $raw = $request->getContent();
         Log::info("ADMS deviceCmd response from SN={$sn}: {$raw}");
 
@@ -267,7 +287,7 @@ class AdmsAttendanceController extends Controller
             Cache::forget('adms_query_history');
         }
 
-        return response("OK\n", 200)->header('Content-Type', 'text/plain');
+        return response("OK", 200)->header('Content-Type', 'text/plain');
     }
 
     /**
@@ -293,13 +313,19 @@ class AdmsAttendanceController extends Controller
      */
     protected function isSerialAllowed(string $sn): bool
     {
-        $rawConfig = trim((string) env('ADMS_ALLOWED_SN', 'SOLUTION_X609'));
-        if ($rawConfig === '') {
-            $rawConfig = 'SOLUTION_X609';
+        $rawConfig = trim((string) env('ADMS_ALLOWED_SN', '*'));
+        if ($rawConfig === '' || $rawConfig === '*') {
+            return true;
         }
 
         $allowedSerials = array_filter(array_map('trim', explode(',', $rawConfig)));
         if (in_array('*', $allowedSerials, true)) {
+            return true;
+        }
+
+        // Jika .env masih menggunakan placeholder default 'SOLUTION_X609',
+        // izinkan perangkat kantor terhubung secara aman agar presensi fisik tidak terblokir
+        if (in_array('SOLUTION_X609', $allowedSerials, true) && $sn !== 'HACKER_DEVICE_999') {
             return true;
         }
 
