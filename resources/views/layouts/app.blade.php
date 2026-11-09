@@ -412,6 +412,33 @@
                         </div>
                     </a>
                 @endif
+
+                <!-- 7. Manajemen & Pemantauan Kontrak/MoU Klien (Sekretaris Direktur & Direktur Utama) -->
+                @if(auth()->user() && auth()->user()->canManageClientContracts())
+                    @php
+                        $expiringContractsCount = \Illuminate\Support\Facades\Schema::hasTable('client_contracts') 
+                            ? \App\Models\ClientContract::where('status', 'active')
+                                ->whereBetween('end_date', [now()->toDateString(), now()->addDays(30)->toDateString()])
+                                ->count()
+                            : 0;
+                    @endphp
+                    <a href="{{ route('secretary.contracts.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('secretary.contracts.*') ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-600/25 border border-amber-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('secretary.contracts.*') ? 'text-white' : 'text-amber-400' }}">handshake</span>
+                        <div class="flex items-center justify-between flex-1">
+                            <span>Kontrak & MoU Klien</span>
+                            @if($expiringContractsCount > 0)
+                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse font-bold" title="{{ $expiringContractsCount }} Kontrak/MoU akan berakhir dalam 30 hari">
+                                    {{ $expiringContractsCount }} Expiring
+                                </span>
+                            @else
+                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    {{ auth()->user()->isSekretaris() ? 'Sekretaris' : 'Direksi' }}
+                                </span>
+                            @endif
+                        </div>
+                    </a>
+                @endif
             </nav>
         </div>
 

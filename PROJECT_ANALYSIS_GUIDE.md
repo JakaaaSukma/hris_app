@@ -171,6 +171,27 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
   - **Fitur Interaktif Lanjutan:** Pencarian pesan & filter pengirim secara real-time, balasan pesan kontekstual (Quote/Reply context banner), pemilih quick emoji (`👍 ❤️ 🔥 👏 🎯 🚀 ✅ 😂`), tombol salin pesan ke clipboard, serta pencarian anggota tim di sidebar.
   - **Layout Fleksibel & Anti-Squish:** Menggunakan container CSS flexbox full-width (`flex: 1 1 0%; min-width: 0;` dan sidebar `320px`) yang responsif dan kokoh.
 
+### H. Modul Manajemen & Pemantauan Kontrak / MoU Klien (Sekretaris Direktur & Direktur Utama)
+- **Controller:** `App\Http\Controllers\ClientContractController.php`
+- **Model:** `App\Models\ClientContract.php`
+- **Tabel Database:** `client_contracts`
+  - Kolom: `contract_number`, `title`, `client_name`, `client_category`, `contract_type`, `client_pic_name`, `client_pic_phone`, `client_pic_email`, `client_address`, `start_date`, `end_date`, `status`, `auto_renewal`, `contract_value`, `currency`, `draft_file_path`, `signed_file_path`, `notes`, `created_by`, `signed_at`, `timestamps`.
+- **Fitur & Alur Bisnis:**
+  - **Hak Akses Khusus:** Modul ini hanya dapat diakses oleh **Sekretaris Direktur** (`role: sekretaris`) dan **Direktur Utama** (`role: direktur`) via helper `canManageClientContracts()`. Karyawan/manager divisi lain diblokir dengan HTTP 403 Forbidden.
+  - **Penyimpanan Draft & Berkas Signed:** Mendukung penyimpanan dua berkas fisik: berkas draft MoU (Word `.doc`, `.docx` / `.pdf`) untuk proses review/penyusunan, serta berkas resmi bertanda tangan & bermeterai (`.pdf`). Validasi keamanan upload menggunakan trait `ValidatesFileUpload` (magic bytes inspection) dan disimpan di `storage/app/public/client_contracts/`.
+  - **Streaming File Aman Bypassing cPanel Symlink:** Endpoint `GET /secretary/contracts/{id}/download/{type}` mengalirkan konten berkas langsung melalui response stream PHP ber-Content-Disposition inline, menjamin keandalan akses berkas di shared hosting tanpa ketergantungan symlink.
+  - **Sistem Monitoring & Early Warning Habisnya Kontrak:**
+    - Perhitungan sisa hari otomatis (`days_remaining`) dan status terhitung dinamis (`computed_status`):
+      - **Aktif Berjalan:** Masa berlaku sah (> 30 hari).
+      - **Segera Berakhir (&le; 30 Hari):** Badge peringatan kuning/oranye berkedip (*Warning*).
+      - **Kritis (&le; 14 Hari):** Banner alert merah di header halaman dan badge peringatan kritis agar Sekretaris segera menyiapkan draf adendum perpanjangan.
+      - **Kedaluwarsa (Expired):** Melewati tanggal `end_date`.
+      - **Draft / Review Direktur:** Tahap penyusunan sebelum penandatanganan.
+    - **Badge Sidebar Real-Time:** Menampilkan indikator angka merah berkedip `X Expiring` pada menu navigasi sidebar jika terdapat kontrak yang akan berakhir dalam 30 hari.
+  - **Fitur Perpanjangan Cepat (Renewal / Addendum):**
+    - Modal perpanjangan kontrak (`POST /secretary/contracts/{id}/renew`) memungkinkan Sekretaris memperbarui tanggal berakhir baru, mencatat nomor/klausul addendum, dan mengunggah berkas scan addendum bertanda tangan secara instan dengan pencatatan audit trail otomatis.
+  - **Filter Komprehensif & 5 Kartu Metrik:** Menyediakan filter status, kategori klien, jenis perjanjian, pencarian cepat, serta 5 kartu ringkasan metrik statistik.
+
 ---
 
 ## 4. Peta File Kunci Proyek (Directory Sitemap)
@@ -188,6 +209,7 @@ hris_app/
 │   │   ├── AttendanceController.php         # Absensi Web, Clock-In/Out, Filter Rentang Tanggal
 │   │   ├── AuthController.php               # Login/Logout & Multi-Role Redirect
 │   │   ├── CalendarController.php           # Kalender, Jadwal Kerja, Multi-Scope & Approval
+│   │   ├── ClientContractController.php     # Manajemen & Pemantauan Kontrak/MoU Klien (Sekretaris & Direktur)
 │   │   ├── DashboardController.php          # Dashboard Analitik per Role & Departemen
 │   │   ├── DepartmentChatController.php     # Komunikasi Chat Departemen (Manager & Karyawan)
 │   │   ├── EmployeeController.php           # Master Data Karyawan (HR & Direktur)
@@ -209,6 +231,7 @@ hris_app/
 │       ├── Attendance.php                   # Record Log Presensi
 │       ├── CalendarSchedule.php             # Jadwal Kalender, Scope & Status Approval
 │       ├── CalendarScheduleApproval.php     # Log Approver Jadwal Departemen/Antar-Dept
+│       ├── ClientContract.php               # Kontrak & MoU Klien, Tracking Sisa Hari & Status Masa Berlaku
 │       ├── DepartmentMessage.php            # Pesan Chat Internal Departemen
 │       ├── Employee.php                     # Detail Karyawan (NIP, Posisi, Gaji, dll.)
 │       ├── LeaveRequest.php                 # Pengajuan Cuti
@@ -236,8 +259,8 @@ hris_app/
 │       ├── reports/                         # Template PDF Siap Cetak (KPI & Absensi)
 │       ├── departments/                     # View khusus HR, Finance, GA, BizDev
 │       └── secretary/                       # View khusus Sekretaris Direktur & Direksi
+│           ├── contracts/index.blade.php    # UI Monitoring Kontrak & MoU Klien, Sisa Hari & Berkas
 │           └── letters/index.blade.php      # UI Buku Agenda Surat Keluar & Penomoran Resmi
-└── routes/
     ├── api.php                              # REST API terproteksi Bearer Token Sanctum (Mobile Android)
     └── web.php                              # Seluruh route web & endpoint ADMS iclock
 ```
@@ -700,6 +723,13 @@ hris_app/
   2. *Hak Akses Read-Only KPI & Kinerja (Tanpa Pengambil Keputusan):* Sekretaris Direktur memiliki akses penuh melihat grafik indeks KPI harian/mingguan/bulanan dan metrik analitis performa seluruh 4 departemen perusahaan (HR, Finance, Bisnis Development, GA) di Dashboard dan Laporan PDF (`DashboardController` & `ReportExportController`), namun **sama sekali tidak memiliki wewenang pengambilan keputusan operasional** (`canApproveLeaves`, `canApproveReimbursements`, `canApproveInventoryRequests`, `canManageEmployees` bernilai `false`, antrean pending approval cuti/izin dinonaktifkan).
   3. *Protokol Gatekeeping Jadwal Direktur:* Karyawan maupun Manager dilarang keras langsung menjadwalkan agenda ke Direktur Utama. Seluruh permohonan jadwal ke Direksi (`target_departments = ['Executive']`) berstatus `pending` dan wajib diverifikasi serta disetujui terlebih dahulu oleh **Sekretaris Direktur** sebelum resmi masuk dan tampil di kalender Direktur (`CalendarController`).
   4. *Restriksi Fitur Chat Manager:* Saluran chat komunikasi eksekutif pada akun Manager dialihkan secara ketat **HANYA ke Sekretaris Direktur** (`tab=direksi`), memblokir pesan langsung ke Direktur. Sekretaris Direktur bertindak sebagai jembatan eksekutif (*Executive Communication Hub* - `chat.sekretaris`) yang menghubungkan para Manager dan Direktur Utama secara privat dan terstruktur (`DepartmentChatController`).
+- **2026-11-06:** Integrasi Firebase Cloud Messaging (FCM) & Google Services Gradle Plugin:
+  1. *Konfigurasi Google Services Gradle:* Menambahkan Google Services Gradle Plugin (`com.google.gms.google-services:4.4.2`) pada `android/build.gradle.kts` dan `android/app/build.gradle.kts` serta memvalidasi keberadaan `google-services.json` (Project ID: `hris-gyokai-mobile`, Package: `com.gyokai.hris_mobile`).
+  2. *Instalasi Firebase Flutter SDK:* Menambahkan dependencies `firebase_core` (v5.1.0) dan `firebase_messaging` (v17.0.1) pada `mobile app hris/pubspec.yaml`.
+  3. *Background Message Handler:* Menerapkan `@pragma('vm:entry-point') firebaseMessagingBackgroundHandler` pada `notification_service.dart` dan `main.dart` untuk menerima dan membunyikan notifikasi status bar saat aplikasi ditutup total / smartphone dalam keadaan terkunci.
+  4. *Sinkronisasi Token FCM:* Menambahkan kolom `fcm_token` pada tabel `users`, endpoint `POST /api/auth/fcm-token` pada `AuthApiController.php`, serta auto-sync token pada `AuthProvider.dart` dan `NotificationService.dart`.
+  5. *Kompilasi Biner APK Release:* Berhasil mengompilasi rilis biner APK terbaru dengan dukungan Firebase Cloud Messaging dan mendistribusikannya di `public/downloads/hris-gyokai.apk`.
+
 - **2026-11-05:** Pembaruan Titik Geofencing Presensi Face ID Kantor Pusat (SMK & LPK Gyokai Cisoka):
   1. *Penyelarasan Titik Lokasi Presensi Baru:* Memperbarui koordinat patokan kantor pusat dari default Jakarta ke lokasi resmi **SMK & LPK Gyokai Indonesia** (Jl. Pesona Wibawa Praja, Jeungjing, Kec. Cisoka, Kab. Tangerang, Banten 15730; Google Maps: `https://maps.app.goo.gl/1GNqHLACQaGw61oU6`).
   2. *Konfigurasi Titik Presisi:* Koordinat disetel secara permanen pada `OFFICE_LATITUDE=-6.2614075` dan `OFFICE_LONGITUDE=106.4433519` dengan radius toleransi `500` meter.
@@ -724,11 +754,33 @@ hris_app/
   1. *Sinkronisasi Apache XAMPP:* Memperbaiki perizinan write permission folder `storage/logs/laravel.log` dan `storage/framework/cache/` untuk user `daemon` Apache XAMPP (`chmod -R 777`), serta menyesuaikan URL default mobile app ke endpoint Apache XAMPP (`/hris_app/public/api`) pada port 80.
   2. *Redesain Visual Mobile App (Red & Silver Executive):* Mengubah seluruh sistem warna aplikasi Android dari hijau-putih menjadi palet premium **Crimson/Ruby Red (`#C81E1E`, `#881337`, `#EF4444`) dan Metallic Brushed Silver (`#CBD5E1`, `#E2E8F0`, `#F8FAFC`, `#64748B`)**. Pembaruan mencakup Splash Screen, Login Screen, Hero Card Presensi Dashboard, Tab Navigation, Riwayat, Form Cuti, dan Notifikasi.
 
+- **2026-11-09:** Implementasi Modul Pemantauan Kontrak & MoU Klien (Sekretariat Direksi):
+  1. *Model & Skema Database:* Membuat migrasi `2026_11_09_120000_create_client_contracts_table.php` dan Model `ClientContract.php`. Mendukung data nomor kontrak, judul, nama klien, kategori (swasta, kampus/SMK, mitra Jepang, instansi), jenis perjanjian (MoU, PKS, SPK, NDA, addendum), PIC klien, tanggal mulai & berakhir, status dokumen, klausul perpanjangan otomatis (*auto-renewal*), nilai kontrak, dan catatan perpanjangan.
+  2. *Controller & Otorisasi Eksekutif:* Membuat `ClientContractController.php` terproteksi helper `canManageClientContracts()` (khusus Sekretaris Direktur & Direktur Utama). Dilengkapi aksi CRUD lengkap, filter status terhitung, kategori, jenis perjanjian, pencarian teks, dan pagination.
+  3. *Penyimpanan Berkas Draft & Signed Resmi:* Mendukung pengunggahan dan penyimpanan file draft berkas (.docx / .doc / .pdf) serta berkas scan bertanda tangan & bermeterai (.pdf) dengan sanitasi nama berkas dan inspeksi *magic bytes* via trait `ValidatesFileUpload`. Berkas dialirkan secara aman melalui endpoint download stream langsung tanpa ketergantungan symlink cPanel.
+  4. *Sistem Early Warning & Perhitungan Sisa Masa Berlaku:* Logika otomatis `days_remaining` dan `computed_status` menghitung sisa hari secara real-time. Menampilkan banner peringatan kritis di header halaman (&le; 14 hari), indikator peringatan dini (&le; 30 hari), dan badge counter berkedip `X Expiring` pada menu navigasi sidebar.
+  5. *Aksi Perpanjangan Cepat (Renewal / Addendum):* Menyediakan modal perpanjangan masa berlaku dengan input tanggal berakhir baru, catatan perpanjangan, serta unggah scan addendum dengan audit trail otomatis.
+  6. *Antarmuka & Komponen Modal Tanpa Backdrop-Blur:* Membangun tampilan modern `resources/views/secretary/contracts/index.blade.php` dengan 5 kartu metrik, tabel data interaktif, dan modal pop-up (Tambah, Edit, Perpanjang, Detail) tanpa properti CSS `backdrop-blur` sesuai pedoman performa GPU proyek.
+  7. *Automated Feature Test Suite:* Menambahkan file pengujian `tests/Feature/ClientContractTest.php` mencakup 6 skenario verifikasi (blokir akses karyawan non-eksekutif, otorisasi sekretaris & direktur, pembuatan & unggah berkas, perhitungan status kedaluwarsa & sisa hari, perpanjangan masa berlaku, dan proteksi unduhan berkas) dengan tingkat kelulusan 100% (25 assertions).
+
 - **2026-11-06:** Remediasi & Pemulihan Koneksi Presensi Mesin Fingerprint (ADMS Whitelist Bypass & Diagnostic):
   1. *Akar Masalah:* Pasca audit keamanan, penegakan whitelist Serial Number (`ADMS_ALLOWED_SN=SOLUTION_X609`) memblokir mesin fingerprint fisik di kantor yang mengirimkan Serial Number asli hardware (misal `TEST609123` / SN pabrikan). Mesin menerima HTTP `403 Forbidden` pada endpoint `handshake` dan `receiveLog` sehingga mesin gagal terhubung dan tidak dapat membaca presensi.
   2. *Pemulihan Koneksi & Fallback Fleksibel:* Mengubah `ADMS_ALLOWED_SN=*,SOLUTION_X609` secara default pada `.env` dan `.env.example`. Memperbarui `isSerialAllowed()` agar secara aman mengizinkan semua mesin kantor jika konfigurasi bernilai `*`, kosong, atau masih menggunakan placeholder default template. Whitelist ketat tetap dapat diaktifkan jika admin mengisi Serial Number spesifik.
   3. *Protokol Handshake Standar:* Menghapus header `ATTLOGStamp=None` dan `OPERLOGStamp=None` dari respon handshake reguler yang sempat membuat bingung parser firmware Solution X609, mengembalikan respon handshake persis ke format awal yang terbukti stabil.
   4. *Panel Diagnostik & Pemantauan Perangkat:* Menambahkan box diagnostik real-time pada modal "Setup Finger (ADMS)" di web presensi (`attendance/index.blade.php`), menampilkan Serial Number mesin terakhir yang terdeteksi, alamat IP mesin, serta waktu kontak terakhir.
+
+- **2026-11-06 (v1.2.2):** Optimasi Notifikasi Instan (Zero Delay FCM) & Fitur Auto-Read Notifikasi:
+  1. *Notifikasi Langsung Terbaca & Pop-up Modal:* Saat pengguna mengetuk notifikasi di bilah status smartphone maupun di dalam daftar notifikasi aplikasi (`NotificationsScreen`), sistem otomatis memanggil endpoint `POST /api/dashboard/notifications/{id}/read`, menandai pesan sebagai sudah dibaca, menutup notifikasi di status bar Android (`cancelNotification`), menurunkan angka badge merah pada lonceng beranda secara real-time, dan menampilkan modal detail isi pesan.
+  2. *Optimasi Delay FCM (High Priority Notification Channel):* Mendaftarkan konfigurasi `com.google.firebase.messaging.default_notification_channel_id` pada `AndroidManifest.xml` serta membuat channel Android `hris_gyokai_channel` dengan level `Importance.max`, suara, dan getar agar pesan FCM langsung tembus (*heads-up alert*) tanpa terhambat oleh Doze Mode sistem Android.
+  3. *Penanganan Klik Notifikasi Background:* Menambahkan listener `FirebaseMessaging.onMessageOpenedApp` dan `getNotificationAppLaunchDetails` di `NotificationService.dart` sehingga membuka aplikasi dari notifikasi otomatis menyelaraskan status dibaca ke server backend.
+  4. *Rilis Binary APK v1.2.2:* Berhasil dikompilasi (`60.4MB`) dan diunggah ke `public/downloads/hris-gyokai.apk` serta memperbarui halaman unduh di `public/downloads/index.html`.
+
+- **2026-11-06:** Integrasi Google Analytics & Firebase Cloud Messaging (FCM) pada Mobile App:
+  1. *Google Analytics for Firebase:* Menambahkan library `firebase_analytics: ^13.0.1` ke Flutter, mengaktifkan `logAppOpen()`, `setAnalyticsCollectionEnabled(true)`, dan rute observer `FirebaseAnalyticsObserver` di `main.dart` agar metrik aktif harian (Daily Active Users) dan sesi app terlacak langsung di Firebase Console.
+  2. *Firebase Cloud Messaging (FCM) & Broadcast Topics:* Menambahkan `firebase_messaging: ^17.0.1`, background messaging handler (`@pragma('vm:entry-point')`), dan auto-subscription ke topic `all_users` di `NotificationService.dart` untuk kemudahan broadcast notifikasi dari Firebase Console tanpa perlu mendaftarkan token manual.
+  3. *Sinkronisasi FCM Token ke Backend:* Menambahkan migrasi `2026_11_06_100000_add_fcm_token_to_users_table.php`, method `updateFcmToken` di `AuthApiController.php`, dan endpoint `POST /api/auth/fcm-token`.
+  4. *Pembaruan GPS Kantor Pusat:* Memperbarui koordinat GPS presensi Face ID mobile ke lokasi SMK & LPK Gyokai Indonesia di Cisoka, Tangerang (`-6.2614075, 106.4433519`).
+  5. *Rilis APK v1.2.1:* Mengompilasi binary release APK (`60.4MB`) dan menempatkannya di direktori publik `public/downloads/hris-gyokai.apk` beserta halaman download web interaktif di `public/downloads/index.html`.
 
 - **2026-11-05:** Perbaikan Penanganan Absen Pulang Mesin Fingerprint & Fitur Sinkronisasi Riwayat Data Lampau:
   1. *Perbaikan Clock Out ADMS:* Menghapus batasan waktu kaku (`hour >= 15`). Setiap scan berikutnya pada hari yang sama dengan selisih waktu minimal 2 menit secara otomatis dicatat dan diperbarui sebagai `clock_out` paling akhir, terlepas apakah karyawan memencet tombol Status di mesin atau tidak.

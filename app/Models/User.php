@@ -25,6 +25,7 @@ class User extends Authenticatable
         'department',
         'sub_department',
         'employee_id',
+        'fcm_token',
     ];
 
     /**
@@ -80,6 +81,11 @@ class User extends Authenticatable
     }
 
     public function canManageExecutiveLetters(): bool
+    {
+        return $this->isSekretaris() || $this->isDirektur();
+    }
+
+    public function canManageClientContracts(): bool
     {
         return $this->isSekretaris() || $this->isDirektur();
     }

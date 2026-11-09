@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::get('/me', [AuthApiController::class, 'me'])->name('api.auth.me');
         Route::post('/update-profile', [AuthApiController::class, 'updateProfile'])->name('api.auth.updateProfile');
+        Route::post('/fcm-token', [AuthApiController::class, 'updateFcmToken'])->name('api.auth.updateFcmToken');
         Route::post('/logout', [AuthApiController::class, 'logout'])->name('api.auth.logout');
     });
 

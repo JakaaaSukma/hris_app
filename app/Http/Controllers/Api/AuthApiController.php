@@ -155,6 +155,26 @@ class AuthApiController extends Controller
     }
 
     /**
+     * Store or Update FCM Device Token for Push Notifications
+     */
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'fcm_token' => $request->fcm_token,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Token FCM berhasil diperbarui.',
+        ]);
+    }
+
+    /**
      * Logout and Revoke Current Sanctum Token
      */
     public function logout(Request $request)

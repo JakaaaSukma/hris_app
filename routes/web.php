@@ -264,6 +264,16 @@
             Route::get('/{id}/download', [\App\Http\Controllers\OutgoingLetterController::class, 'downloadFile'])->name('download');
         });
 
+        // 7. MODUL MANAJEMEN & PEMANTAUAN KONTRAK / MOU KLIEN (SEKRETARIS DIREKTUR & DIREKTUR)
+        Route::prefix('secretary/contracts')->name('secretary.contracts.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ClientContractController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\ClientContractController::class, 'store'])->name('store');
+            Route::put('/{id}', [\App\Http\Controllers\ClientContractController::class, 'update'])->name('update');
+            Route::post('/{id}/renew', [\App\Http\Controllers\ClientContractController::class, 'renew'])->name('renew');
+            Route::delete('/{id}', [\App\Http\Controllers\ClientContractController::class, 'destroy'])->name('destroy');
+            Route::get('/{id}/download/{type}', [\App\Http\Controllers\ClientContractController::class, 'downloadFile'])->name('download');
+        });
+
     });
 
     // =========================================================================
