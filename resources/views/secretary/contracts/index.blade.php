@@ -419,11 +419,11 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- MODAL 1: DAFTARKAN KONTRAK / MOU BARU (Strictly No backdrop-blur) -->
+    <!-- MODAL 1: DAFTARKAN KONTRAK / MOU BARU (Compact 2-Kolom & Strictly No backdrop-blur) -->
     <!-- ========================================================================= -->
-    <div x-cloak x-show="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="bg-surface-container rounded-2xl border border-amber-500/30 w-full max-w-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto" @click.away="showCreateModal = false">
-            <div class="flex items-start justify-between pb-3.5 border-b border-[#282a2e]">
+    <div x-cloak x-show="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80">
+        <div class="bg-surface-container rounded-2xl border border-amber-500/30 w-full max-w-5xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto" @click.away="showCreateModal = false">
+            <div class="flex items-start justify-between pb-3 border-b border-[#282a2e]">
                 <div class="flex items-center gap-2.5">
                     <span class="p-2 rounded-xl bg-amber-950/60 text-amber-400 border border-amber-500/30">
                         <span class="material-symbols-outlined text-xl">handshake</span>
@@ -438,201 +438,226 @@
                 </button>
             </div>
 
-            <form action="{{ route('secretary.contracts.store') }}" method="POST" enctype="multipart/form-data" class="mt-4 space-y-4">
+            <form action="{{ route('secretary.contracts.store') }}" method="POST" enctype="multipart/form-data" class="mt-4">
                 @csrf
 
-                <!-- Nomor Kontrak & Jenis Perjanjian -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                    <div class="space-y-1 md:col-span-2">
-                        <label class="block text-xs font-medium text-tertiary">Nomor Kontrak / MoU Resmi <span class="text-rose-400">*</span></label>
-                        <input type="text" 
-                               name="contract_number" 
-                               required 
-                               placeholder="Contoh: 012/MOU-GYK/XI/2026" 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <!-- KOLOM KIRI: IDENTITAS PERJANJIAN & KLIEN -->
+                    <div class="space-y-3">
+                        <div class="text-[11px] font-mono font-semibold uppercase text-amber-400 tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#282a2e]/60">
+                            <span class="material-symbols-outlined text-sm">badge</span>
+                            <span>1. Identitas Kontrak & Klien</span>
+                        </div>
+
+                        <!-- Nomor Kontrak & Jenis Perjanjian -->
+                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                            <div class="sm:col-span-3 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Nomor Kontrak / MoU Resmi <span class="text-rose-400">*</span></label>
+                                <input type="text" 
+                                       name="contract_number" 
+                                       required 
+                                       placeholder="Contoh: 012/MOU-GYK/XI/2026" 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+
+                            <div class="sm:col-span-2 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Jenis Perjanjian <span class="text-rose-400">*</span></label>
+                                <select name="contract_type" required class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                    @foreach($types as $key => $lbl)
+                                        <option value="{{ $key }}">{{ $lbl }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Judul Kerjasama -->
+                        <div class="space-y-1">
+                            <label class="block text-[11px] font-medium text-tertiary">Judul / Perihal Kerjasama <span class="text-rose-400">*</span></label>
+                            <input type="text" 
+                                   name="title" 
+                                   required 
+                                   placeholder="Contoh: Kerjasama Penyaluran Tenaga Kerja Magang Jepang Batch 2026" 
+                                   class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                        </div>
+
+                        <!-- Nama Klien & Kategori Klien -->
+                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                            <div class="sm:col-span-3 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Nama Perusahaan Klien / Mitra <span class="text-rose-400">*</span></label>
+                                <input type="text" 
+                                       name="client_name" 
+                                       required 
+                                       placeholder="Contoh: PT Asahi Seimitsu Indonesia" 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-semibold">
+                            </div>
+
+                            <div class="sm:col-span-2 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Kategori Klien <span class="text-rose-400">*</span></label>
+                                <select name="client_category" required class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                    @foreach($categories as $key => $lbl)
+                                        <option value="{{ $key }}">{{ $lbl }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Box Kontak PIC Klien -->
+                        <div class="p-3 bg-surface-container-low rounded-xl border border-[#282a2e]/60 space-y-2">
+                            <span class="text-[10px] font-mono uppercase text-tertiary font-semibold block">Kontak Penanggung Jawab (PIC Klien)</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div class="space-y-0.5">
+                                    <label class="block text-[10px] text-tertiary">Nama PIC</label>
+                                    <input type="text" 
+                                           name="client_pic_name" 
+                                           placeholder="Nama Penanggung Jawab" 
+                                           class="w-full px-2 py-1 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                </div>
+                                <div class="space-y-0.5">
+                                    <label class="block text-[10px] text-tertiary">No. Telp / WA PIC</label>
+                                    <input type="text" 
+                                           name="client_pic_phone" 
+                                           placeholder="0812-xxxx-xxxx" 
+                                           class="w-full px-2 py-1 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                                </div>
+                                <div class="space-y-0.5">
+                                    <label class="block text-[10px] text-tertiary">Email PIC</label>
+                                    <input type="email" 
+                                           name="client_pic_email" 
+                                           placeholder="pic@klien.com" 
+                                           class="w-full px-2 py-1 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                </div>
+                                <div class="space-y-0.5">
+                                    <label class="block text-[10px] text-tertiary">Alamat Domisili Klien</label>
+                                    <input type="text" 
+                                           name="client_address" 
+                                           placeholder="Kota / Alamat Instansi" 
+                                           class="w-full px-2 py-1 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Jenis Perjanjian <span class="text-rose-400">*</span></label>
-                        <select name="contract_type" required class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                            @foreach($types as $key => $lbl)
-                                <option value="{{ $key }}">{{ $lbl }}</option>
-                            @endforeach
-                        </select>
+                    <!-- KOLOM KANAN: MASA BERLAKU, NILAI, BERKAS & CATATAN -->
+                    <div class="space-y-3">
+                        <div class="text-[11px] font-mono font-semibold uppercase text-amber-400 tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#282a2e]/60">
+                            <span class="material-symbols-outlined text-sm">calendar_month</span>
+                            <span>2. Masa Berlaku & Berkas Dokumen</span>
+                        </div>
+
+                        <!-- Masa Berlaku Kontrak -->
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div class="space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Mulai Berlaku <span class="text-rose-400">*</span></label>
+                                <input type="date" 
+                                       name="start_date" 
+                                       value="{{ date('Y-m-d') }}" 
+                                       required 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Tanggal Berakhir <span class="text-rose-400">*</span></label>
+                                <input type="date" 
+                                       name="end_date" 
+                                       value="{{ date('Y-m-d', strtotime('+1 year')) }}" 
+                                       required 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono font-bold text-amber-400">
+                            </div>
+                        </div>
+
+                        <!-- Status & Tanggal Ditandatangani -->
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div class="space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Status Dokumen <span class="text-rose-400">*</span></label>
+                                <select name="status" required class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                    <option value="active">Aktif Berjalan</option>
+                                    <option value="review_direktur">Review Direktur</option>
+                                    <option value="draft">Draft Penyusunan</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Tgl Ditandatangani</label>
+                                <input type="date" 
+                                       name="signed_at" 
+                                       value="{{ date('Y-m-d') }}" 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+                        </div>
+
+                        <!-- Nilai Kontrak & Auto-Renewal -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 items-end">
+                            <div class="space-y-1 sm:col-span-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Mata Uang & Nilai</label>
+                                <select name="currency" class="w-full px-2 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                                    <option value="IDR">IDR (Rp)</option>
+                                    <option value="JPY">JPY (¥)</option>
+                                    <option value="USD">USD ($)</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-1 sm:col-span-2">
+                                <input type="number" 
+                                       name="contract_value" 
+                                       step="any" 
+                                       placeholder="Nominal (opsional)" 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-0.5">
+                            <input type="checkbox" id="auto_renewal" name="auto_renewal" value="1" class="rounded bg-surface-container-low border-[#333539] text-amber-600 focus:ring-0">
+                            <label for="auto_renewal" class="text-xs text-on-surface font-medium cursor-pointer">
+                                Klausul Perpanjangan Otomatis (Auto-Renewal)
+                            </label>
+                        </div>
+
+                        <!-- Box Berkas Dokumen -->
+                        <div class="p-3 bg-surface-container-low rounded-xl border border-[#282a2e]/60 space-y-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div class="space-y-1">
+                                    <label class="block text-[11px] font-medium text-sky-400 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">draft</span>
+                                        <span>Draft MoU (.docx/.pdf)</span>
+                                    </label>
+                                    <input type="file" 
+                                           name="draft_file" 
+                                           accept=".pdf,.doc,.docx" 
+                                           class="w-full text-[11px] text-tertiary file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-0.5 bg-surface-container">
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label class="block text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">verified</span>
+                                        <span>Signed MoU (.pdf)</span>
+                                    </label>
+                                    <input type="file" 
+                                           name="signed_file" 
+                                           accept=".pdf" 
+                                           class="w-full text-[11px] text-tertiary file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-0.5 bg-surface-container">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catatan / Klausul -->
+                        <div class="space-y-1">
+                            <label class="block text-[11px] font-medium text-tertiary">Klausul Khusus / Catatan</label>
+                            <textarea name="notes" 
+                                      rows="2" 
+                                      placeholder="Klausul terminasi, jadwal evaluasi, atau catatan khusus..." 
+                                      class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs"></textarea>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Judul Kerjasama -->
-                <div class="space-y-1">
-                    <label class="block text-xs font-medium text-tertiary">Judul / Perihal Kerjasama <span class="text-rose-400">*</span></label>
-                    <input type="text" 
-                           name="title" 
-                           required 
-                           placeholder="Contoh: Kerjasama Penyaluran Tenaga Kerja Magang Jepang Batch 2026" 
-                           class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                </div>
-
-                <!-- Nama Klien & Kategori Klien -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                    <div class="space-y-1 md:col-span-2">
-                        <label class="block text-xs font-medium text-tertiary">Nama Perusahaan Klien / Lembaga Mitra <span class="text-rose-400">*</span></label>
-                        <input type="text" 
-                               name="client_name" 
-                               required 
-                               placeholder="Contoh: PT Asahi Seimitsu Indonesia" 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-semibold">
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Kategori Klien <span class="text-rose-400">*</span></label>
-                        <select name="client_category" required class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                            @foreach($categories as $key => $lbl)
-                                <option value="{{ $key }}">{{ $lbl }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Kontak PIC Klien -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 p-3.5 bg-surface-container-low rounded-xl border border-[#282a2e]/50">
-                    <div class="space-y-1">
-                        <label class="block text-[11px] font-medium text-tertiary">Nama PIC / Kontak Klien</label>
-                        <input type="text" 
-                               name="client_pic_name" 
-                               placeholder="Nama Penanggung Jawab" 
-                               class="w-full px-2.5 py-1.5 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-[11px] font-medium text-tertiary">No. Telepon / WhatsApp PIC</label>
-                        <input type="text" 
-                               name="client_pic_phone" 
-                               placeholder="Contoh: 0812-xxxx-xxxx" 
-                               class="w-full px-2.5 py-1.5 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-[11px] font-medium text-tertiary">Alamat Email PIC</label>
-                        <input type="email" 
-                               name="client_pic_email" 
-                               placeholder="pic@klien.com" 
-                               class="w-full px-2.5 py-1.5 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                    </div>
-                    <div class="md:col-span-3 space-y-1 pt-1">
-                        <label class="block text-[11px] font-medium text-tertiary">Alamat Kantor / Domisili Klien</label>
-                        <input type="text" 
-                               name="client_address" 
-                               placeholder="Alamat lengkap instansi/perusahaan klien" 
-                               class="w-full px-2.5 py-1.5 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                    </div>
-                </div>
-
-                <!-- Masa Berlaku Kontrak & Status Awal -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3.5">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Tanggal Mulai Berlaku <span class="text-rose-400">*</span></label>
-                        <input type="date" 
-                               name="start_date" 
-                               value="{{ date('Y-m-d') }}" 
-                               required 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Tanggal Berakhir <span class="text-rose-400">*</span></label>
-                        <input type="date" 
-                               name="end_date" 
-                               value="{{ date('Y-m-d', strtotime('+1 year')) }}" 
-                               required 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Status Dokumen <span class="text-rose-400">*</span></label>
-                        <select name="status" required class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                            <option value="active">Aktif Berjalan</option>
-                            <option value="review_direktur">Review Direktur</option>
-                            <option value="draft">Draft Penyusunan</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Tgl Ditandatangani</label>
-                        <input type="date" 
-                               name="signed_at" 
-                               value="{{ date('Y-m-d') }}" 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-                </div>
-
-                <!-- Nilai Kontrak & Auto-Renewal -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Mata Uang</label>
-                        <select name="currency" class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                            <option value="IDR">IDR (Rupiah)</option>
-                            <option value="JPY">JPY (Yen Jepang)</option>
-                            <option value="USD">USD (Dolar)</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Nilai Kontrak (Opsional)</label>
-                        <input type="number" 
-                               name="contract_value" 
-                               step="any" 
-                               placeholder="Contoh: 150000000" 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-
-                    <div class="flex items-center gap-2.5 pt-6">
-                        <input type="checkbox" id="auto_renewal" name="auto_renewal" value="1" class="rounded bg-surface-container-low border-[#333539] text-amber-600 focus:ring-0">
-                        <label for="auto_renewal" class="text-xs text-on-surface font-medium cursor-pointer">
-                            Klausul Perpanjangan Otomatis (Auto-Renewal)
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Unggah Berkas: Draft & Signed MoU -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 p-3.5 bg-surface-container-low rounded-xl border border-[#282a2e]/50">
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-sky-400 flex items-center gap-1.5">
-                            <span class="material-symbols-outlined text-base">draft</span>
-                            <span>Unggah Draft Berkas MoU (.docx / .doc / .pdf)</span>
-                        </label>
-                        <p class="text-[11px] text-tertiary">Untuk penyimpanan draft kerja sebelum penandatanganan final.</p>
-                        <input type="file" 
-                               name="draft_file" 
-                               accept=".pdf,.doc,.docx" 
-                               class="w-full text-xs text-tertiary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-1 bg-surface-container">
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-emerald-400 flex items-center gap-1.5">
-                            <span class="material-symbols-outlined text-base">verified</span>
-                            <span>Unggah Berkas Resmi Bertanda Tangan (.pdf)</span>
-                        </label>
-                        <p class="text-[11px] text-tertiary">Scan dokumen MoU/Kontrak yang telah bertanda tangan & bermeterai.</p>
-                        <input type="file" 
-                               name="signed_file" 
-                               accept=".pdf" 
-                               class="w-full text-xs text-tertiary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-1 bg-surface-container">
-                    </div>
-                </div>
-
-                <!-- Catatan / Klausul Penting -->
-                <div class="space-y-1">
-                    <label class="block text-xs font-medium text-tertiary">Klausul Khusus / Catatan Tambahan</label>
-                    <textarea name="notes" 
-                              rows="2" 
-                              placeholder="Klausul penalti, batas permohonan terminasi, jadwal evaluasi berkala, dsb..." 
-                              class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs"></textarea>
-                </div>
-
-                <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-[#282a2e]">
+                <!-- Footer Action Buttons -->
+                <div class="flex items-center justify-end gap-2.5 pt-3.5 border-t border-[#282a2e] mt-4">
                     <button type="button" @click="showCreateModal = false" class="px-4 py-2 bg-surface-container-high hover:bg-surface-bright text-xs text-on-surface rounded-lg transition-colors">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 text-white font-semibold text-xs rounded-lg transition-all shadow-md">
-                        Simpan Kontrak / MoU
+                    <button type="submit" class="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 text-white font-semibold text-xs rounded-lg transition-all shadow-md flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">save</span>
+                        <span>Simpan Kontrak / MoU</span>
                     </button>
                 </div>
             </form>
@@ -712,9 +737,9 @@
     <!-- ========================================================================= -->
     <!-- MODAL 3: EDIT DATA KONTRAK / MOU (Strictly No backdrop-blur) -->
     <!-- ========================================================================= -->
-    <div x-cloak x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="bg-surface-container rounded-2xl border border-amber-500/30 w-full max-w-3xl p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto" @click.away="showEditModal = false">
-            <div class="flex items-start justify-between pb-3.5 border-b border-[#282a2e]">
+    <div x-cloak x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80">
+        <div class="bg-surface-container rounded-2xl border border-amber-500/30 w-full max-w-5xl p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto" @click.away="showEditModal = false">
+            <div class="flex items-start justify-between pb-3 border-b border-[#282a2e]">
                 <div class="flex items-center gap-2.5">
                     <span class="p-2 rounded-xl bg-amber-950/60 text-amber-400 border border-amber-500/30">
                         <span class="material-symbols-outlined text-xl">edit_note</span>
@@ -729,196 +754,235 @@
                 </button>
             </div>
 
-            <form :action="'{{ url('/secretary/contracts') }}/' + editForm.id" method="POST" enctype="multipart/form-data" class="mt-4 space-y-4">
+            <form :action="'{{ url('/secretary/contracts') }}/' + editForm.id" method="POST" enctype="multipart/form-data" class="mt-4">
                 @csrf
                 @method('PUT')
 
-                <!-- Nomor Kontrak & Jenis Perjanjian -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                    <div class="space-y-1 md:col-span-2">
-                        <label class="block text-xs font-medium text-tertiary">Nomor Kontrak / MoU <span class="text-rose-400">*</span></label>
-                        <input type="text" 
-                               name="contract_number" 
-                               x-model="editForm.contract_number" 
-                               required 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <!-- KOLOM KIRI: IDENTITAS PERJANJIAN & KLIEN -->
+                    <div class="space-y-3">
+                        <div class="text-[11px] font-mono font-semibold uppercase text-amber-400 tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#282a2e]/60">
+                            <span class="material-symbols-outlined text-sm">badge</span>
+                            <span>1. Identitas Kontrak & Klien</span>
+                        </div>
+
+                        <!-- Nomor Kontrak & Jenis Perjanjian -->
+                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                            <div class="sm:col-span-3 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Nomor Kontrak / MoU <span class="text-rose-400">*</span></label>
+                                <input type="text" 
+                                       name="contract_number" 
+                                       x-model="editForm.contract_number" 
+                                       required 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+
+                            <div class="sm:col-span-2 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Jenis Perjanjian <span class="text-rose-400">*</span></label>
+                                <select name="contract_type" x-model="editForm.contract_type" required class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                    @foreach($types as $key => $lbl)
+                                        <option value="{{ $key }}">{{ $lbl }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Judul Kerjasama -->
+                        <div class="space-y-1">
+                            <label class="block text-[11px] font-medium text-tertiary">Judul / Perihal Kerjasama <span class="text-rose-400">*</span></label>
+                            <input type="text" 
+                                   name="title" 
+                                   x-model="editForm.title" 
+                                   required 
+                                   class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                        </div>
+
+                        <!-- Nama Klien & Kategori Klien -->
+                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                            <div class="sm:col-span-3 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Nama Perusahaan Klien / Mitra <span class="text-rose-400">*</span></label>
+                                <input type="text" 
+                                       name="client_name" 
+                                       x-model="editForm.client_name" 
+                                       required 
+                                       placeholder="Contoh: PT Asahi Seimitsu Indonesia" 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-semibold">
+                            </div>
+
+                            <div class="sm:col-span-2 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Kategori Klien <span class="text-rose-400">*</span></label>
+                                <select name="client_category" x-model="editForm.client_category" required class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                    @foreach($categories as $key => $lbl)
+                                        <option value="{{ $key }}">{{ $lbl }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Box Kontak PIC Klien -->
+                        <div class="p-3 bg-surface-container-low rounded-xl border border-[#282a2e]/60 space-y-2">
+                            <span class="text-[10px] font-mono uppercase text-tertiary font-semibold block">Kontak Penanggung Jawab (PIC Klien)</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div class="space-y-0.5">
+                                    <label class="block text-[10px] text-tertiary">Nama PIC</label>
+                                    <input type="text" 
+                                           name="client_pic_name" 
+                                           x-model="editForm.client_pic_name" 
+                                           class="w-full px-2 py-1 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                </div>
+                                <div class="space-y-0.5">
+                                    <label class="block text-[10px] text-tertiary">No. Telp / WA PIC</label>
+                                    <input type="text" 
+                                           name="client_pic_phone" 
+                                           x-model="editForm.client_pic_phone" 
+                                           class="w-full px-2 py-1 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                                </div>
+                                <div class="space-y-0.5 sm:col-span-2">
+                                    <label class="block text-[10px] text-tertiary">Email PIC</label>
+                                    <input type="email" 
+                                           name="client_pic_email" 
+                                           x-model="editForm.client_pic_email" 
+                                           class="w-full px-2 py-1 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                </div>
+                            </div>
+
+                            <div class="space-y-0.5 pt-1 border-t border-[#282a2e]/40">
+                                <label class="block text-[10px] text-tertiary">Alamat Kantor / Domisili Klien</label>
+                                <input type="text" 
+                                       name="client_address" 
+                                       x-model="editForm.client_address" 
+                                       class="w-full px-2 py-1 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Jenis Perjanjian <span class="text-rose-400">*</span></label>
-                        <select name="contract_type" x-model="editForm.contract_type" required class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                            @foreach($types as $key => $lbl)
-                                <option value="{{ $key }}">{{ $lbl }}</option>
-                            @endforeach
-                        </select>
+                    <!-- KOLOM KANAN: MASA BERLAKU, NILAI & BERKAS DOKUMEN -->
+                    <div class="space-y-3">
+                        <div class="text-[11px] font-mono font-semibold uppercase text-amber-400 tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#282a2e]/60">
+                            <span class="material-symbols-outlined text-sm">event_repeat</span>
+                            <span>2. Periode, Nilai & Dokumen</span>
+                        </div>
+
+                        <!-- Masa Berlaku Kontrak -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Tanggal Mulai Berlaku <span class="text-rose-400">*</span></label>
+                                <input type="date" 
+                                       name="start_date" 
+                                       x-model="editForm.start_date" 
+                                       required 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Tanggal Berakhir <span class="text-rose-400">*</span></label>
+                                <input type="date" 
+                                       name="end_date" 
+                                       x-model="editForm.end_date" 
+                                       required 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+                        </div>
+
+                        <!-- Status & Tgl Ditandatangani -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Status Dokumen <span class="text-rose-400">*</span></label>
+                                <select name="status" x-model="editForm.status" required class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
+                                    <option value="active">Aktif Berjalan</option>
+                                    <option value="review_direktur">Review Direktur</option>
+                                    <option value="draft">Draft Penyusunan</option>
+                                    <option value="renewed">Telah Diperpanjang</option>
+                                    <option value="terminated">Dihentikan / Batal</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Tgl Ditandatangani</label>
+                                <input type="date" 
+                                       name="signed_at" 
+                                       x-model="editForm.signed_at" 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+                        </div>
+
+                        <!-- Nilai & Auto-Renewal -->
+                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5 items-end">
+                            <div class="sm:col-span-2 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Mata Uang</label>
+                                <select name="currency" x-model="editForm.currency" class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                                    <option value="IDR">IDR (Rupiah)</option>
+                                    <option value="JPY">JPY (Yen Jepang)</option>
+                                    <option value="USD">USD (Dolar)</option>
+                                </select>
+                            </div>
+
+                            <div class="sm:col-span-3 space-y-1">
+                                <label class="block text-[11px] font-medium text-tertiary">Nilai Kontrak</label>
+                                <input type="number" 
+                                       name="contract_value" 
+                                       step="any" 
+                                       x-model="editForm.contract_value" 
+                                       placeholder="Contoh: 150000000" 
+                                       class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-0.5">
+                            <input type="checkbox" id="edit_auto_renewal" name="auto_renewal" value="1" x-model="editForm.auto_renewal" class="rounded bg-surface-container-low border-[#333539] text-amber-600 focus:ring-0">
+                            <label for="edit_auto_renewal" class="text-[11px] text-on-surface font-medium cursor-pointer">
+                                Klausul Perpanjangan Otomatis (Auto-Renewal)
+                            </label>
+                        </div>
+
+                        <!-- Box Upload Berkas -->
+                        <div class="p-3 bg-surface-container-low rounded-xl border border-[#282a2e]/60 space-y-2">
+                            <span class="text-[10px] font-mono uppercase text-tertiary font-semibold block">Ganti Berkas Dokumen (Opsional)</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div class="space-y-1">
+                                    <label class="block text-[11px] font-medium text-sky-400 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">draft</span>
+                                        <span>Ganti Draft (.docx / .pdf)</span>
+                                    </label>
+                                    <input type="file" 
+                                           name="draft_file" 
+                                           accept=".pdf,.doc,.docx" 
+                                           class="w-full text-[11px] text-tertiary file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-0.5 bg-surface-container">
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label class="block text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">verified</span>
+                                        <span>Ganti Signed (.pdf)</span>
+                                    </label>
+                                    <input type="file" 
+                                           name="signed_file" 
+                                           accept=".pdf" 
+                                           class="w-full text-[11px] text-tertiary file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-0.5 bg-surface-container">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catatan / Klausul -->
+                        <div class="space-y-1">
+                            <label class="block text-[11px] font-medium text-tertiary">Klausul Khusus / Catatan Tambahan</label>
+                            <textarea name="notes" 
+                                      rows="2" 
+                                      x-model="editForm.notes" 
+                                      placeholder="Klausul terminasi, jadwal evaluasi, atau catatan khusus..." 
+                                      class="w-full px-2.5 py-1.5 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs"></textarea>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Judul Kerjasama -->
-                <div class="space-y-1">
-                    <label class="block text-xs font-medium text-tertiary">Judul / Perihal Kerjasama <span class="text-rose-400">*</span></label>
-                    <input type="text" 
-                           name="title" 
-                           x-model="editForm.title" 
-                           required 
-                           class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                </div>
-
-                <!-- Nama Klien & Kategori Klien -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                    <div class="space-y-1 md:col-span-2">
-                        <label class="block text-xs font-medium text-tertiary">Nama Klien / Lembaga Mitra <span class="text-rose-400">*</span></label>
-                        <input type="text" 
-                               name="client_name" 
-                               x-model="editForm.client_name" 
-                               required 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-semibold">
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Kategori Klien <span class="text-rose-400">*</span></label>
-                        <select name="client_category" x-model="editForm.client_category" required class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                            @foreach($categories as $key => $lbl)
-                                <option value="{{ $key }}">{{ $lbl }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Kontak PIC Klien -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 p-3.5 bg-surface-container-low rounded-xl border border-[#282a2e]/50">
-                    <div class="space-y-1">
-                        <label class="block text-[11px] font-medium text-tertiary">Nama PIC Klien</label>
-                        <input type="text" 
-                               name="client_pic_name" 
-                               x-model="editForm.client_pic_name" 
-                               class="w-full px-2.5 py-1.5 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-[11px] font-medium text-tertiary">No. Telp / WA PIC</label>
-                        <input type="text" 
-                               name="client_pic_phone" 
-                               x-model="editForm.client_pic_phone" 
-                               class="w-full px-2.5 py-1.5 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="block text-[11px] font-medium text-tertiary">Email PIC</label>
-                        <input type="email" 
-                               name="client_pic_email" 
-                               x-model="editForm.client_pic_email" 
-                               class="w-full px-2.5 py-1.5 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                    </div>
-                    <div class="md:col-span-3 space-y-1 pt-1">
-                        <label class="block text-[11px] font-medium text-tertiary">Alamat Klien</label>
-                        <input type="text" 
-                               name="client_address" 
-                               x-model="editForm.client_address" 
-                               class="w-full px-2.5 py-1.5 bg-surface-container rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                    </div>
-                </div>
-
-                <!-- Masa Berlaku Kontrak & Status -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3.5">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Tanggal Mulai <span class="text-rose-400">*</span></label>
-                        <input type="date" 
-                               name="start_date" 
-                               x-model="editForm.start_date" 
-                               required 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Tanggal Berakhir <span class="text-rose-400">*</span></label>
-                        <input type="date" 
-                               name="end_date" 
-                               x-model="editForm.end_date" 
-                               required 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Status <span class="text-rose-400">*</span></label>
-                        <select name="status" x-model="editForm.status" required class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs">
-                            <option value="active">Aktif Berjalan</option>
-                            <option value="review_direktur">Review Direktur</option>
-                            <option value="draft">Draft Penyusunan</option>
-                            <option value="renewed">Telah Diperpanjang</option>
-                            <option value="terminated">Dihentikan / Batal</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Tgl Ditandatangani</label>
-                        <input type="date" 
-                               name="signed_at" 
-                               x-model="editForm.signed_at" 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-                </div>
-
-                <!-- Nilai Kontrak & Auto-Renewal -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Mata Uang</label>
-                        <select name="currency" x-model="editForm.currency" class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                            <option value="IDR">IDR (Rupiah)</option>
-                            <option value="JPY">JPY (Yen Jepang)</option>
-                            <option value="USD">USD (Dolar)</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-1">
-                        <label class="block text-xs font-medium text-tertiary">Nilai Kontrak</label>
-                        <input type="number" 
-                               name="contract_value" 
-                               step="any" 
-                               x-model="editForm.contract_value" 
-                               class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs font-mono">
-                    </div>
-
-                    <div class="flex items-center gap-2.5 pt-6">
-                        <input type="checkbox" id="edit_auto_renewal" name="auto_renewal" value="1" x-model="editForm.auto_renewal" class="rounded bg-surface-container-low border-[#333539] text-amber-600 focus:ring-0">
-                        <label for="edit_auto_renewal" class="text-xs text-on-surface font-medium cursor-pointer">
-                            Perpanjangan Otomatis (Auto-Renewal)
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Ganti Berkas -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 p-3.5 bg-surface-container-low rounded-xl border border-[#282a2e]/50">
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-sky-400">Ganti Draft Berkas (.docx / .pdf)</label>
-                        <input type="file" 
-                               name="draft_file" 
-                               accept=".pdf,.doc,.docx" 
-                               class="w-full text-xs text-tertiary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-1 bg-surface-container">
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-emerald-400">Ganti Berkas Signed Resmi (.pdf)</label>
-                        <input type="file" 
-                               name="signed_file" 
-                               accept=".pdf" 
-                               class="w-full text-xs text-tertiary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-bright border border-[#333539] rounded-lg p-1 bg-surface-container">
-                    </div>
-                </div>
-
-                <!-- Catatan -->
-                <div class="space-y-1">
-                    <label class="block text-xs font-medium text-tertiary">Klausul Khusus / Catatan Tambahan</label>
-                    <textarea name="notes" 
-                              rows="2" 
-                              x-model="editForm.notes" 
-                              class="w-full px-3 py-2 bg-surface-container-low rounded-lg border border-[#333539] text-on-surface focus:outline-none focus:border-amber-500 text-xs"></textarea>
-                </div>
-
-                <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-[#282a2e]">
+                <!-- Footer Action Buttons -->
+                <div class="flex items-center justify-end gap-2.5 pt-3.5 border-t border-[#282a2e] mt-4">
                     <button type="button" @click="showEditModal = false" class="px-4 py-2 bg-surface-container-high hover:bg-surface-bright text-xs text-on-surface rounded-lg transition-colors">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 text-white font-semibold text-xs rounded-lg transition-all shadow-md">
-                        Perbarui Data Kontrak
+                    <button type="submit" class="px-5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 text-white font-semibold text-xs rounded-lg transition-all shadow-md flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">save</span>
+                        <span>Perbarui Data Kontrak</span>
                     </button>
                 </div>
             </form>
