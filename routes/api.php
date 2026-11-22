@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/face-record', [AttendanceApiController::class, 'faceRecord'])->name('api.attendance.faceRecord');
         Route::get('/history', [AttendanceApiController::class, 'history'])->name('api.attendance.history');
         Route::get('/config', [AttendanceApiController::class, 'config'])->name('api.attendance.config');
+        Route::get('/photo/{attendance}/{type?}', [\App\Http\Controllers\AttendanceController::class, 'showPhoto'])->name('api.attendance.photo');
     });
 
     // Leave & Permission Management (Two-Tier Approval)

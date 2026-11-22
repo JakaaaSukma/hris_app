@@ -445,35 +445,90 @@ class AttendanceController extends Controller
      * Tampilkan / Stream Foto Presensi Wajah (Face ID) secara Langsung
      * Menjamin foto dapat diakses di cPanel/hosting tanpa ketergantungan symlink storage:link
      */
-    public function showPhoto($attendanceId, $type = 'in')
+    public function showPhoto($attendance, $type = 'in')
     {
-        $attendance = Attendance::findOrFail($attendanceId);
+        $attendanceRecord = $attendance instanceof Attendance 
+            ? $attendance 
+            : Attendance::find($attendance);
 
-        $field = in_array(strtolower($type), ['out', 'clock_out', 'pulang']) ? 'photo_out' : 'photo_in';
-        $filePath = $attendance->{$field};
+        if (!$attendanceRecord) {
+            abort(404, 'Data presensi tidak ditemukan.');
+        }
+
+        $field = in_array(strtolower($type ?? 'in'), ['out', 'clock_out', 'pulang']) ? 'photo_out' : 'photo_in';
+        $filePath = $attendanceRecord->{$field};
 
         if (!$filePath) {
             abort(404, 'Foto presensi tidak ditemukan.');
         }
 
-        // Cek file di Storage public disk
+        // 1. Jika tersimpan sebagai Data URL Base64 langsung
+        if (str_starts_with($filePath, 'data:image')) {
+            $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $filePath);
+            $binary = base64_decode($base64Data);
+            if ($binary) {
+                return response($binary, 200, [
+                    'Content-Type' => 'image/jpeg',
+                    'Cache-Control' => 'public, max-age=86400',
+                ]);
+            }
+        }
+
+        // 2. Jika URL eksternal http/https
+        if (str_starts_with($filePath, 'http://') || str_starts_with($filePath, 'https://')) {
+            return redirect($filePath);
+        }
+
+        // 3. Bersihkan prefix jika ada 'storage/' atau '/storage/'
+        $cleanPath = ltrim($filePath, '/');
+        if (str_starts_with($cleanPath, 'storage/')) {
+            $cleanPath = substr($cleanPath, 8);
+        }
+
         $disk = Storage::disk('public');
+        
+        // 3a. Cek via Storage Disk Public (Original Path)
         if ($disk->exists($filePath)) {
-            $fileContent = $disk->get($filePath);
-            $mimeType = $disk->mimeType($filePath) ?: 'image/jpeg';
-            return response($fileContent, 200, [
-                'Content-Type' => $mimeType,
+            return response($disk->get($filePath), 200, [
+                'Content-Type' => $disk->mimeType($filePath) ?: 'image/jpeg',
                 'Cache-Control' => 'public, max-age=86400',
             ]);
         }
 
-        // Fallback: Path fisik langsung di storage/app/public
-        $fullPath = storage_path('app/public/' . $filePath);
-        if (file_exists($fullPath)) {
-            $fileContent = file_get_contents($fullPath);
-            $mimeType = mime_content_type($fullPath) ?: 'image/jpeg';
-            return response($fileContent, 200, [
-                'Content-Type' => $mimeType,
+        // 3b. Cek via Storage Disk Public (Clean Path)
+        if ($disk->exists($cleanPath)) {
+            return response($disk->get($cleanPath), 200, [
+                'Content-Type' => $disk->mimeType($cleanPath) ?: 'image/jpeg',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        // 4. Fallback path fisik storage_path('app/public/...')
+        $storageFullPath = storage_path('app/public/' . $cleanPath);
+        if (file_exists($storageFullPath)) {
+            $mime = function_exists('mime_content_type') ? mime_content_type($storageFullPath) : 'image/jpeg';
+            return response(file_get_contents($storageFullPath), 200, [
+                'Content-Type' => $mime ?: 'image/jpeg',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        // 5. Fallback public_path('storage/...') (jika di cPanel symlink atau copy folder)
+        $publicStoragePath = public_path('storage/' . $cleanPath);
+        if (file_exists($publicStoragePath)) {
+            $mime = function_exists('mime_content_type') ? mime_content_type($publicStoragePath) : 'image/jpeg';
+            return response(file_get_contents($publicStoragePath), 200, [
+                'Content-Type' => $mime ?: 'image/jpeg',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        // 6. Fallback public_path langsung
+        $directPublicPath = public_path($cleanPath);
+        if (file_exists($directPublicPath)) {
+            $mime = function_exists('mime_content_type') ? mime_content_type($directPublicPath) : 'image/jpeg';
+            return response(file_get_contents($directPublicPath), 200, [
+                'Content-Type' => $mime ?: 'image/jpeg',
                 'Cache-Control' => 'public, max-age=86400',
             ]);
         }

@@ -38,6 +38,9 @@
         return redirect('/downloads/');
     });
 
+    // Stream Foto Bukti Presensi Face ID (Bisa dimuat langsung oleh Web <img> & Mobile tanpa kendala symlink cPanel)
+    Route::get('/attendance/photo/{attendance}/{type?}', [AttendanceController::class, 'showPhoto'])->name('attendance.photo');
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
     // Protected Routes (Wajib Login)
@@ -61,7 +64,6 @@
             Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('clockIn');
             Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('clockOut');
             Route::post('/face-record', [AttendanceController::class, 'faceRecord'])->name('faceRecord');
-            Route::get('/photo/{attendance}/{type?}', [AttendanceController::class, 'showPhoto'])->name('photo');
 
             // Sinkronisasi Riwayat Mesin Fingerprint (ADMS OTA & Upload File USB)
             Route::post('/sync-adms-history', [\App\Http\Controllers\Api\AdmsAttendanceController::class, 'syncHistory'])->name('adms.syncHistory');

@@ -8,9 +8,11 @@ use App\Models\Employee;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class FaceAttendanceTest extends TestCase
 {
+    use RefreshDatabase;
     public function test_employee_can_clock_in_via_face_and_location()
     {
         $this->withoutMiddleware(\App\Http\Middleware\EnsureDeviceSessionIsValid::class);
@@ -61,5 +63,10 @@ class FaceAttendanceTest extends TestCase
         $photoResponse = $this->actingAs($user)->get($createdAttendance->photo_in_url);
         $photoResponse->assertStatus(200);
         $this->assertTrue(str_contains($photoResponse->headers->get('content-type'), 'image/'));
+
+        // Test public access to photo route without session (e.g. mobile Image.network or external img)
+        $publicResponse = $this->get($createdAttendance->photo_in_url);
+        $publicResponse->assertStatus(200);
+        $this->assertTrue(str_contains($publicResponse->headers->get('content-type'), 'image/'));
     }
 }
