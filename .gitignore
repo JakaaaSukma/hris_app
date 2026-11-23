@@ -1,6 +1,6 @@
-# ==========================================
-# 1. Environment & Secret Credentials (SANGAT KRUSIAL)
-# ==========================================
+# =========================================================================
+# 1. Environment & Secret Credentials (SANGAT KRUSIAL - TERLOCK)
+# =========================================================================
 .env
 .env.*
 !.env.example
@@ -8,27 +8,48 @@
 *.pem
 *.crt
 *.pfx
+*.p12
+*.keystore
+*.jks
 oauth-*.key
 auth.json
+*credentials*.json
+*secret*.json
+*token*.json
+*token*.txt
+google-services.json
+firebase-adminsdk*.json
+service-account*.json
+sanctum-token*
+personal-access-token*
+id_rsa*
+*.id_rsa
 
-# ==========================================
-# 2. Database Dumps, Backups & Archives (KRUSIAL)
-# ==========================================
+# =========================================================================
+# 2. Database Dumps, Backups, SQLite & Raw Tables (TERLOCK)
+# =========================================================================
 *.sql
 *.sqlite
+*.sqlite3
 *.db
 *.dump
 *.bak
 *.backup
+database/*.sqlite
+database/*.sqlite3
+database/*.sql
+database/*.db
+database/dumps/
+database/backups/
 *.zip
 *.tar
 *.tar.gz
 *.rar
 *.7z
 
-# ==========================================
-# 3. Storage, User Uploads, Dokumen & Log (KRUSIAL)
-# ==========================================
+# =========================================================================
+# 3. Storage, User Uploads, Dokumen Privasi, Foto Presensi & Log (TERLOCK)
+# =========================================================================
 /storage/app/*
 !/storage/app/public/
 /storage/app/public/*
@@ -43,28 +64,30 @@ auth.json
 !/storage/framework/testing/.gitignore
 /storage/logs/*
 !/storage/logs/.gitignore
+public/storage
+public/uploads/*
+!public/uploads/.gitkeep
 
-# ==========================================
+# =========================================================================
 # 4. Dependencies & Compiled Assets
-# ==========================================
+# =========================================================================
 /vendor
 /node_modules
 /public/build
 /public/hot
-/public/storage
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# ==========================================
+# =========================================================================
 # 5. Testing & Cache
-# ==========================================
+# =========================================================================
 /.phpunit.cache
 .phpunit.result.cache
 
-# ==========================================
+# =========================================================================
 # 6. IDE, System & OS Metadata
-# ==========================================
+# =========================================================================
 .DS_Store
 .DS_Store?
 ._*
@@ -78,19 +101,17 @@ Thumbs.db
 Homestead.json
 Homestead.yaml
 
-# ==========================================
+# =========================================================================
 # 7. Local Scratch, Temporary Scripts & Demos
-# ==========================================
+# =========================================================================
 scratch/
 test_content.js
 build_*.php
 stitch_modern_dark_hris_webapp/
 
-# ==========================================
+# =========================================================================
 # 8. AI Agent System & Guidelines (Lokal Only)
-# ==========================================
+# =========================================================================
 AGENTS.md
 GEMINI.md
 .agents/
-
-
