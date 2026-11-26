@@ -60,6 +60,8 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
 - `canQuickClock()` -> **Khusus Manager HR / Direktur** (Fitur Clock In Masuk, Clock Out Pulang, dan Presensi Cepat di web HANYA tersedia untuk Manager HR dan Direktur Utama. Semua karyawan & manager divisi lain tidak memiliki tombol clock in/out manual di web).
 - `canViewCompanyMetrics()` -> **Khusus Manager HR / Direktur** (Kartu ringkasan metrik operasional perusahaan di Dashboard: Total Karyawan, Kehadiran Hari Ini, Cuti & Dispensasi, Perlu Persetujuan HANYA ditampilkan untuk Manager HR dan Direktur. Seluruh staf/karyawan & manager divisi lain disembunyikan dari tampilan metrik global ini).
 - `canApproveReimbursements()` -> Finance / Direktur
+- `canManageInvoices()` -> **Khusus Departemen Finance (Manager & Staff Finance) / Direktur Utama** (Penerbitan invoice, pemantauan jatuh tempo pembayaran, pencatatan cicilan/pelunasan, cetak PDF invoice).
+- `canDeleteInvoices()` -> **Khusus Manager Finance / Direktur Utama** (Penghapusan permanen data invoice).
 - `canApproveInventoryRequests()` -> Finance / Manager HR / Direktur
 - `canManageEmployees()` -> HR Murni / Direktur (Karyawan GA & Asisten Manager GA dilarang mengelola pegawai)
 - `canManagePaklaring()` -> **Khusus HR Murni / Direktur** (Pembuatan dan penerbitan Surat Keterangan / Paklaring resmi LPK Gyokai Indonesia dengan template persis A4 Landscape).
@@ -192,6 +194,18 @@ Sistem mengadopsi prinsip **Segregation of Duties** ketat:
     - Modal perpanjangan kontrak (`POST /secretary/contracts/{id}/renew`) memungkinkan Sekretaris memperbarui tanggal berakhir baru, mencatat nomor/klausul addendum, dan mengunggah berkas scan addendum bertanda tangan secara instan dengan pencatatan audit trail otomatis.
   - **Filter Komprehensif & 5 Kartu Metrik:** Menyediakan filter status, kategori klien, jenis perjanjian, pencarian cepat, serta 5 kartu ringkasan metrik statistik.
 
+### I. Modul Manajemen Invoice, Terbit Tagihan & Jatuh Tempo Pembayaran (Divisi Finance & Direktur Utama)
+- **Controller:** `App\Http\Controllers\FinanceInvoiceController.php`
+- **Model:** `App\Models\FinanceInvoice.php`, `App\Models\FinanceInvoiceItem.php`, `App\Models\FinanceInvoicePayment.php`
+- **Tabel Database:** `finance_invoices`, `finance_invoice_items`, `finance_invoice_payments` (migrasi `2026_11_26_100000_create_finance_invoices_table.php`).
+- **Hak Akses Khusus:** Dilindungi middleware `department:Finance` dan helper `canManageInvoices()` (khusus Tim Finance & Direktur Utama); penghapusan permanen dibatasi oleh `canDeleteInvoices()` (Manager Finance & Direktur).
+- **Fitur & Alur Bisnis:**
+  - **Penerbitan Invoice (Draft / Terbit Resmi):** Penomoran otomatis (`INV/FIN-GYK/{YYYY}/{MM}/{NNN}`), dukungan dua jenis tagihan (`receivable`/AR Klien & `payable`/AP Vendor), penautan opsional ke Kontrak/MoU klien (`client_contracts`), rincian item dinamis, perhitungan otomatis subtotal, diskon, pajak PPN (%), serta multi-mata uang (`IDR`, `JPY`, `USD`).
+  - **Pemantauan Jatuh Tempo (*Due Date & Overdue*):** Evaluasi status real-time (`computed_status`: `draft`, `issued`, `partial`, `overdue`, `paid`, `cancelled`), hitung mundur hari jatuh tempo (`days_until_due`), banner peringatan, serta badge pulsing `X Tempo` pada sidebar.
+  - **Pencatatan Pembayaran & Cicilan:** Mendukung pembayaran bertahap (`partial`) maupun pelunasan penuh (`paid`) beserta unggahan bukti transfer dan riwayat pembayaran.
+  - **Pengingat Otomatis:** Terintegrasi ke `ReminderService.php` (pengingat H-3, Hari-H, dan Harian saat Overdue kepada Tim Finance & Direktur).
+  - **Cetak Resmi A4 & Streaming File Aman:** Template cetak A4 di `resources/views/departments/finance/invoices/show.blade.php`, dan unduh lampiran/bukti bayar melalui PHP stream response (bypass symlink cPanel).
+
 ---
 
 ## 4. Peta File Kunci Proyek (Directory Sitemap)
@@ -215,6 +229,7 @@ hris_app/
 │   │   ├── EmployeeController.php           # Master Data Karyawan (HR & Direktur)
 │   │   ├── FacilityTicketController.php     # Pengaduan Fasilitas & Helpdesk GA
 │   │   ├── FinanceController.php            # Reimbursement & Slip Gaji Karyawan
+│   │   ├── FinanceInvoiceController.php     # Manajemen Invoice, Jatuh Tempo & Pembayaran (Finance & Direktur)
 │   │   ├── GeneralAffairsController.php     # Inventaris Aset & ATK GA
 │   │   ├── GuideController.php              # Panduan Penggunaan & Diagram Alur Sistem Seluruh Akun
 │   │   ├── LeaveRequestController.php       # Pengajuan Cuti/Izin & Approval HR
@@ -234,6 +249,9 @@ hris_app/
 │       ├── ClientContract.php               # Kontrak & MoU Klien, Tracking Sisa Hari & Status Masa Berlaku
 │       ├── DepartmentMessage.php            # Pesan Chat Internal Departemen
 │       ├── Employee.php                     # Detail Karyawan (NIP, Posisi, Gaji, dll.)
+│       ├── FinanceInvoice.php               # Master Invoice Pembayaran, Status Terhitung & Jatuh Tempo
+│       ├── FinanceInvoiceItem.php           # Rincian Baris Item Tagihan Invoice
+│       ├── FinanceInvoicePayment.php        # Riwayat Pembayaran / Cicilan Invoice
 │       ├── LeaveRequest.php                 # Pengajuan Cuti
 │       ├── OfficeSupply.php                 # Master Data ATK Kantor & Ambang Batas Stok
 │       ├── OfficeSupplyUsage.php            # Log Pemakaian & Distribusi ATK Karyawan
@@ -258,6 +276,7 @@ hris_app/
 │       ├── leave/index.blade.php            # UI Pengajuan Cuti & Approval
 │       ├── reports/                         # Template PDF Siap Cetak (KPI & Absensi)
 │       ├── departments/                     # View khusus HR, Finance, GA, BizDev
+│       │   └── finance/invoices/            # UI Manajemen & Cetak Invoice Pembayaran (index.blade.php, show.blade.php)
 │       └── secretary/                       # View khusus Sekretaris Direktur & Direksi
 │           ├── contracts/index.blade.php    # UI Monitoring Kontrak & MoU Klien, Sisa Hari & Berkas
 │           └── letters/index.blade.php      # UI Buku Agenda Surat Keluar & Penomoran Resmi
@@ -753,6 +772,13 @@ hris_app/
 - **2026-11-04:** Penyelarasan REST API XAMPP & Redesain UI Mobile App (Tema Merah & Silver):
   1. *Sinkronisasi Apache XAMPP:* Memperbaiki perizinan write permission folder `storage/logs/laravel.log` dan `storage/framework/cache/` untuk user `daemon` Apache XAMPP (`chmod -R 777`), serta menyesuaikan URL default mobile app ke endpoint Apache XAMPP (`/hris_app/public/api`) pada port 80.
   2. *Redesain Visual Mobile App (Red & Silver Executive):* Mengubah seluruh sistem warna aplikasi Android dari hijau-putih menjadi palet premium **Crimson/Ruby Red (`#C81E1E`, `#881337`, `#EF4444`) dan Metallic Brushed Silver (`#CBD5E1`, `#E2E8F0`, `#F8FAFC`, `#64748B`)**. Pembaruan mencakup Splash Screen, Login Screen, Hero Card Presensi Dashboard, Tab Navigation, Riwayat, Form Cuti, dan Notifikasi.
+
+- **2026-11-26:** Implementasi Fitur Manajemen Invoice & Pembayaran Divisi Finance:
+  1. *Skema Database & Relasi:* Membuat migrasi `2026_11_26_100000_create_finance_invoices_table.php` berisi 3 tabel: `finance_invoices`, `finance_invoice_items`, dan `finance_invoice_payments`, serta Model `FinanceInvoice`, `FinanceInvoiceItem`, dan `FinanceInvoicePayment`.
+  2. *Controller & Otorisasi Finance:* Membuat `FinanceInvoiceController.php` dengan akses khusus Finance & Direktur (`canManageInvoices()`, serta `canDeleteInvoices()` untuk Manager Finance/Direktur). Mendukung pembuatan draft/penerbitan langsung, auto-numbering, multi-item repeater, kalkulasi diskon & PPN %, pembatalan wajib alasan, serta stream lampiran/bukti transfer aman tanpa ketergantungan symlink cPanel.
+  3. *Tracking Jatuh Tempo & Pembayaran Bertahap:* Menyediakan perhitungan real-time sisa tagihan (`remaining_amount`), persentase terbayar, status `overdue` otomatis jika melewati `due_date`, pencatatan cicilan hingga pelunasan penuh (`partial` -> `paid`), dan pengingat jatuh tempo otomatis (H-3, Hari-H, Overdue) di `ReminderService.php`.
+  4. *UI Dashboard, Modal Compact 2-Kolom & Cetak Invoice A4:* Menambahkan menu sidebar *Invoice & Tagihan* dengan indikator badge tempo, integrasi tombol cepat pada Finance Hub, halaman manajemen `resources/views/departments/finance/invoices/index.blade.php` (modal tanpa `backdrop-blur`), dan halaman cetak A4 `show.blade.php`.
+  5. *Automated Testing:* Menambahkan `tests/Feature/FinanceInvoiceTest.php` mencakup 5 skenario verifikasi otorisasi, penerbitan, hitung jatuh tempo, pembayaran bertahap/lunas, pembatalan wajib alasan, dan pembatasan hapus permanen (lulus 100%, 34 assertions).
 
 - **2026-11-23:** Penguncian Keamanan Kredensial, Database, dan Token (Git Ignore & Pre-Commit Hook Lock):
   1. *Penguatan .gitignore Berlapis:* Memperluas aturan pengabaian file Git untuk mengunci seluruh file environment (`.env`, `.env.*`), database dumps & SQLite (`*.sql`, `*.sqlite`, `*.db`, `database/dumps/`, `database/backups/`), token & kunci privat (`*.key`, `*.pem`, `*.crt`, `*.pfx`, `*.p12`, `*.keystore`, `*.jks`, `*credentials*.json`, `*secret*.json`, `*token*.json`, `google-services.json`, `firebase-adminsdk*.json`, `service-account*.json`), serta file upload dokumen/foto privasi (`public/uploads/*`, `storage/app/public/attendance_photos/*`).

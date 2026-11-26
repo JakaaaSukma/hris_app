@@ -144,6 +144,21 @@
                 Route::post('/send/cancel', [\App\Http\Controllers\FinanceDispatchController::class, 'cancelSending'])->name('send.cancel');
                 Route::get('/reports/{sendSession}', [\App\Http\Controllers\FinanceDispatchController::class, 'report'])->name('report');
             });
+
+            // Manajemen Invoice & Jatuh Tempo Pembayaran (Khusus Departemen Finance & Direktur)
+            Route::middleware('department:Finance')->prefix('invoices')->name('invoices.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\FinanceInvoiceController::class, 'index'])->name('index');
+                Route::get('/next-number', [\App\Http\Controllers\FinanceInvoiceController::class, 'nextNumber'])->name('nextNumber');
+                Route::post('/', [\App\Http\Controllers\FinanceInvoiceController::class, 'store'])->name('store');
+                Route::get('/{id}', [\App\Http\Controllers\FinanceInvoiceController::class, 'show'])->name('show');
+                Route::put('/{id}', [\App\Http\Controllers\FinanceInvoiceController::class, 'update'])->name('update');
+                Route::post('/{id}/issue', [\App\Http\Controllers\FinanceInvoiceController::class, 'issue'])->name('issue');
+                Route::post('/{id}/payments', [\App\Http\Controllers\FinanceInvoiceController::class, 'recordPayment'])->name('recordPayment');
+                Route::post('/{id}/cancel', [\App\Http\Controllers\FinanceInvoiceController::class, 'cancel'])->name('cancel');
+                Route::delete('/{id}', [\App\Http\Controllers\FinanceInvoiceController::class, 'destroy'])->name('destroy');
+                Route::get('/{id}/attachment', [\App\Http\Controllers\FinanceInvoiceController::class, 'downloadAttachment'])->name('downloadAttachment');
+                Route::get('/payments/{paymentId}/proof', [\App\Http\Controllers\FinanceInvoiceController::class, 'downloadPaymentProof'])->name('downloadPaymentProof');
+            });
         });
 
         // Modul Layanan Fasilitas & Kendala Kerusakan (GA Helpdesk)

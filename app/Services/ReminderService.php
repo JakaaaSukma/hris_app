@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Models\CalendarSchedule;
+use App\Models\FinanceInvoice;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\GeneralNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ReminderService
 {
@@ -189,9 +191,75 @@ class ReminderService
             }
         }
 
+        // ==========================================
+        // 3. REMINDER JATUH TEMPO INVOICE FINANCE (H-3, HARI H, & OVERDUE)
+        // ==========================================
+        $invoiceRemindersSent = 0;
+        if (Schema::hasTable('finance_invoices')) {
+            $openInvoices = FinanceInvoice::whereIn('status', ['issued', 'partial'])
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<=', $today->copy()->addDays(3)->toDateString())
+                ->get();
+
+            if ($openInvoices->isNotEmpty()) {
+                $financeRecipients = User::where(function ($q) {
+                    $q->whereRaw('LOWER(department) = ?', ['finance'])
+                      ->orWhere('role', 'direktur');
+                })->get();
+
+                if ($targetUserId) {
+                    $financeRecipients = $financeRecipients->where('id', $targetUserId);
+                }
+
+                foreach ($openInvoices as $inv) {
+                    $daysUntilDue = $inv->days_until_due;
+                    if (!in_array($daysUntilDue, [3, 1, 0], true) && $daysUntilDue >= 0) {
+                        continue;
+                    }
+                    // Jika overdue, ingatkan maksimal 1x per hari
+                    $dueDateFormatted = Carbon::parse($inv->due_date)->translatedFormat('d F Y');
+                    if ($daysUntilDue < 0) {
+                        $lateDays = abs($daysUntilDue);
+                        $urgencyTitle = "Invoice Jatuh Tempo ({$lateDays} Hari Terlambat): {$inv->invoice_number}";
+                        $urgencyBody = "Tagihan {$inv->counterparty_name} sebesar {$inv->formatCurrency($inv->remaining_amount)} telah melewati jatuh tempo ({$dueDateFormatted}).";
+                        $color = 'rose';
+                    } elseif ($daysUntilDue === 0) {
+                        $urgencyTitle = "Invoice Jatuh Tempo HARI INI: {$inv->invoice_number}";
+                        $urgencyBody = "Tagihan {$inv->counterparty_name} sebesar {$inv->formatCurrency($inv->remaining_amount)} jatuh tempo hari ini ({$dueDateFormatted}).";
+                        $color = 'rose';
+                    } else {
+                        $urgencyTitle = "Pengingat Invoice (H-{$daysUntilDue}): {$inv->invoice_number}";
+                        $urgencyBody = "Tagihan {$inv->counterparty_name} sebesar {$inv->formatCurrency($inv->remaining_amount)} akan jatuh tempo dalam {$daysUntilDue} hari ({$dueDateFormatted}).";
+                        $color = 'amber';
+                    }
+
+                    foreach ($financeRecipients as $recipient) {
+                        $tag = "invoice_reminder_{$inv->id}_{$today->toDateString()}";
+                        $alreadySent = DB::table('notifications')
+                            ->where('notifiable_id', $recipient->id)
+                            ->where('notifiable_type', User::class)
+                            ->where('data', 'like', "%{$tag}%")
+                            ->exists();
+
+                        if (!$alreadySent) {
+                            $recipient->notify(new GeneralNotification(
+                                $urgencyTitle,
+                                "{$urgencyBody} [tag:{$tag}]",
+                                route('finance.invoices.show', $inv->id),
+                                'receipt_long',
+                                $color
+                            ));
+                            $invoiceRemindersSent++;
+                        }
+                    }
+                }
+            }
+        }
+
         return [
             'calendar_reminders' => $calendarRemindersSent,
             'task_reminders' => $taskRemindersSent,
+            'invoice_reminders' => $invoiceRemindersSent,
             'processed_at' => now()->toDateTimeString(),
         ];
     }

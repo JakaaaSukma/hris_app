@@ -385,8 +385,32 @@
                     </a>
                 @endif
 
-                <!-- 5. Finance / Keuangan (Kirim Slip Gaji Massal / Email Dispatch) -->
-                @if(auth()->user() && (auth()->user()->isFinance() || auth()->user()->isDirektur()))
+                <!-- 5. Finance / Keuangan (Invoice Pembayaran & Kirim Slip Gaji Massal) -->
+                @if(auth()->user() && auth()->user()->canManageInvoices())
+                    @php
+                        $urgentInvoicesCount = \Illuminate\Support\Facades\Schema::hasTable('finance_invoices')
+                            ? \App\Models\FinanceInvoice::whereIn('status', ['issued', 'partial'])
+                                ->whereDate('due_date', '<=', now()->addDays(7)->toDateString())
+                                ->count()
+                            : 0;
+                    @endphp
+                    <a href="{{ route('finance.invoices.index') }}" 
+                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('finance.invoices.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/25 border border-emerald-400/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('finance.invoices.*') ? 'text-white' : 'text-emerald-400' }}">receipt_long</span>
+                        <div class="flex items-center justify-between flex-1">
+                            <span>Invoice & Tagihan</span>
+                            @if($urgentInvoicesCount > 0)
+                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse font-bold" title="{{ $urgentInvoicesCount }} Invoice jatuh tempo / segera jatuh tempo (<= 7 hari)">
+                                    {{ $urgentInvoicesCount }} Tempo
+                                </span>
+                            @else
+                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    Finance
+                                </span>
+                            @endif
+                        </div>
+                    </a>
+
                     <a href="{{ route('finance.dispatch.index') }}" 
                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('finance.dispatch.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/25 border border-emerald-400/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
                         <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('finance.dispatch.*') ? 'text-white' : 'text-teal-400' }}">forward_to_inbox</span>

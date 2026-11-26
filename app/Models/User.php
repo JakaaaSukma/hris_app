@@ -163,6 +163,18 @@ class User extends Authenticatable
         return $this->isDirektur() || ($this->isFinance() && $this->isManager());
     }
 
+    public function canManageInvoices(): bool
+    {
+        // Manajemen Invoice & Pembayaran: Khusus Departemen Finance (Manager & Staff) atau Direktur Utama
+        return $this->isDirektur() || $this->isFinance();
+    }
+
+    public function canDeleteInvoices(): bool
+    {
+        // Hak Hapus Invoice: Khusus Akun Manager Finance dan Direktur Utama
+        return $this->isDirektur() || ($this->isFinance() && $this->isManager());
+    }
+
     public function canApproveInventoryRequests(): bool
     {
         // Pengajuan penambahan / perbaikan inventaris GA di-approve oleh Tim Finance, Manager HR, atau Direktur Utama

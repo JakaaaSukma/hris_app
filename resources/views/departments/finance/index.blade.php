@@ -29,7 +29,14 @@
             <p class="font-mono text-xs text-slate-400">Laporan slip gaji karyawan/manager, pengelolaan payroll bulanan, dan klaim reimbursement</p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
+            @if(auth()->user()->canManageInvoices())
+                <a href="{{ route('finance.invoices.index') }}" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
+                    <span class="material-symbols-outlined text-base">receipt_long</span>
+                    <span>Invoice & Jatuh Tempo</span>
+                </a>
+            @endif
+
             @if(auth()->user()->canApproveReimbursements())
                 <button @click="openSlipModal = true" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
                     <span class="material-symbols-outlined text-base">payments</span>
@@ -44,8 +51,8 @@
         </div>
     </div>
 
-    <!-- Navigation Tabs: Slip Gaji vs Reimbursement -->
-    <div class="flex items-center gap-2 p-1 bg-[#11151f] rounded-xl border border-slate-800 w-fit">
+    <!-- Navigation Tabs: Slip Gaji vs Reimbursement vs Invoice -->
+    <div class="flex items-center gap-2 p-1 bg-[#11151f] rounded-xl border border-slate-800 w-fit flex-wrap">
         <button @click="currentTab = 'slips'" 
                 :class="currentTab === 'slips' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md' : 'text-slate-400 hover:text-white'"
                 class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all">
@@ -61,6 +68,15 @@
             <span>Klaim Reimbursement</span>
             <span class="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-black/30 font-semibold">{{ $reimbursements->total() }}</span>
         </button>
+
+        @if(auth()->user()->canManageInvoices())
+            <a href="{{ route('finance.invoices.index') }}" 
+               class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                <span class="material-symbols-outlined text-base text-amber-400">request_quote</span>
+                <span>Invoice & Tagihan Pembayaran</span>
+                <span class="material-symbols-outlined text-xs">arrow_forward</span>
+            </a>
+        @endif
     </div>
 
     <!-- TAB 1: LAPORAN SLIP GAJI KARYAWAN & MANAGER -->
