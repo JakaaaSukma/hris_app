@@ -136,9 +136,9 @@
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
                         <label class="block text-xs font-mono uppercase tracking-wider text-tertiary">Kata Sandi</label>
-                        <button type="button" @click="showForgotModal = true" class="text-[11px] font-mono text-rose-400 hover:text-rose-300 transition-colors">
+                        <a href="{{ route('password.request') }}" class="text-[11px] font-mono text-rose-400 hover:text-rose-300 transition-colors">
                             Lupa Kata Sandi?
-                        </button>
+                        </a>
                     </div>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3 top-2.5 text-tertiary text-lg">lock</span>

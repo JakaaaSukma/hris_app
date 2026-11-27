@@ -21,6 +21,17 @@
     Route::middleware('guest')->group(function () {
         Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
+
+        // Verifikasi 2 Langkah (Email OTP 2FA) saat Login
+        Route::get('/login/verify-otp', [AuthController::class, 'showOtpForm'])->name('login.otp.form');
+        Route::post('/login/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1')->name('login.otp.verify');
+        Route::post('/login/resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:5,1')->name('login.otp.resend');
+        Route::post('/login/cancel-otp', [AuthController::class, 'cancelOtp'])->name('login.otp.cancel');
+
+        // Reset Kata Sandi Mandiri via Email OTP (SMTP)
+        Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
+        Route::post('/forgot-password/send-otp', [AuthController::class, 'sendForgotPasswordOtp'])->middleware('throttle:5,1')->name('password.emailOtp');
+        Route::post('/forgot-password/reset', [AuthController::class, 'resetPasswordWithOtp'])->middleware('throttle:10,1')->name('password.resetWithOtp');
     });
 
     // Route Download Mobile App Android (.APK)
@@ -53,6 +64,7 @@
         // Pengaturan Profil Akun Sendiri (Password, Nama, Email, Foto Profil, Sesi & Log Keamanan)
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/password/send-otp', [ProfileController::class, 'sendPasswordOtp'])->middleware('throttle:5,1')->name('profile.password.sendOtp');
         Route::delete('/profile/devices/{id}', [ProfileController::class, 'terminateDevice'])->name('profile.terminateDevice');
 
         // Panduan Penggunaan & Diagram Alur Sistem (Tersedia untuk Seluruh Akun)

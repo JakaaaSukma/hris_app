@@ -165,19 +165,85 @@
             </div>
         </div>
 
-        <!-- Section 3: Keamanan & Ganti Kata Sandi -->
-        <div class="p-6 bg-surface-container-low rounded-2xl border border-[#282a2e]/70 shadow-sm space-y-4">
-            <div class="flex items-center gap-2 pb-3 border-b border-[#282a2e]/60">
-                <span class="material-symbols-outlined text-primary-container text-xl">lock_reset</span>
-                <h2 class="font-headline font-semibold text-base text-on-surface">Keamanan & Ubah Password</h2>
+        <!-- Section 3: Keamanan & Ganti Kata Sandi (Dilindungi Verifikasi 2 Langkah Email OTP) -->
+        <div class="p-6 bg-surface-container-low rounded-2xl border border-[#282a2e]/70 shadow-sm space-y-4"
+             x-data="{
+                 otpSending: false,
+                 otpStatusMsg: '',
+                 otpStatusOk: false,
+                 otpCooldown: 0,
+                 async requestPasswordOtp() {
+                     const currentPwd = document.getElementById('current_password_input')?.value || '';
+                     if (!currentPwd) {
+                         this.otpStatusOk = false;
+                         this.otpStatusMsg = 'Masukkan Password Saat Ini terlebih dahulu sebelum meminta kode OTP.';
+                         return;
+                     }
+                     this.otpSending = true;
+                     this.otpStatusMsg = '';
+                     try {
+                         const res = await fetch('{{ route('profile.password.sendOtp') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'Content-Type': 'application/json',
+                                 'Accept': 'application/json',
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                             },
+                             body: JSON.stringify({ current_password: currentPwd })
+                         });
+                         const data = await res.json();
+                         this.otpStatusOk = !!data.success;
+                         this.otpStatusMsg = data.message || (data.success ? 'Kode OTP terkirim ke email Anda.' : 'Gagal mengirim OTP.');
+                         if (data.success) {
+                             this.otpCooldown = 45;
+                             const timer = setInterval(() => {
+                                 if (this.otpCooldown > 0) this.otpCooldown--;
+                                 else clearInterval(timer);
+                             }, 1000);
+                         }
+                     } catch (e) {
+                         this.otpStatusOk = false;
+                         this.otpStatusMsg = 'Terjadi gangguan jaringan saat mengirim OTP.';
+                     } finally {
+                         this.otpSending = false;
+                     }
+                 }
+             }">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#282a2e]/60">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary-container text-xl">lock_reset</span>
+                    <h2 class="font-headline font-semibold text-base text-on-surface">Keamanan & Ubah Password (2FA Email OTP)</h2>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono text-emerald-400 font-semibold w-fit">
+                    Dilindungi Verifikasi 2 Langkah
+                </span>
             </div>
 
-            <p class="text-xs text-tertiary">Kosongkan kolom di bawah ini jika Anda tidak ingin mengubah password akun.</p>
+            <p class="text-xs text-tertiary">Kosongkan kolom di bawah ini jika Anda tidak ingin mengubah password akun. Untuk mengganti password mandiri, verifikasi kode OTP yang dikirim ke <strong class="font-mono text-on-surface">{{ $user->email }}</strong>.</p>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-mono uppercase tracking-wider text-tertiary mb-1">Password Saat Ini</label>
-                    <input type="password" name="current_password" placeholder="••••••••" class="w-full px-3 py-2 bg-surface-container border border-[#333539] rounded-lg text-xs text-on-surface focus:outline-none focus:border-primary-container"/>
+                    <div class="flex gap-2">
+                        <input type="password" id="current_password_input" name="current_password" placeholder="••••••••" class="flex-1 px-3 py-2 bg-surface-container border border-[#333539] rounded-lg text-xs text-on-surface focus:outline-none focus:border-primary-container"/>
+                        <button type="button"
+                                @click="requestPasswordOtp()"
+                                :disabled="otpSending || otpCooldown > 0"
+                                class="px-3 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg shrink-0 transition-colors flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">mark_email_unread</span>
+                            <span x-show="!otpSending && otpCooldown === 0">Kirim OTP</span>
+                            <span x-show="otpSending">Mengirim...</span>
+                            <span x-show="!otpSending && otpCooldown > 0" x-text="otpCooldown + 's'"></span>
+                        </button>
+                    </div>
+                    <template x-if="otpStatusMsg">
+                        <p class="text-[11px] font-mono mt-1.5" :class="otpStatusOk ? 'text-emerald-400' : 'text-rose-400'" x-text="otpStatusMsg"></p>
+                    </template>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-mono uppercase tracking-wider text-tertiary mb-1">Kode OTP Email (6 Digit)</label>
+                    <input type="text" name="password_otp" inputmode="numeric" maxlength="6" placeholder="Masukkan 6 digit kode OTP" class="w-full px-3 py-2 bg-surface-container border border-[#333539] rounded-lg text-xs font-mono tracking-widest text-on-surface focus:outline-none focus:border-emerald-500"/>
                 </div>
 
                 <div>

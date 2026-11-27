@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Employee;
+use App\Services\TwoFactorOtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -46,7 +47,43 @@ class ProfileController extends Controller
         ));
     }
 
-    public function update(Request $request)
+    /**
+     * Kirim Kode OTP 2FA via SMTP untuk Verifikasi Penggantian Password Mandiri.
+     */
+    public function sendPasswordOtp(Request $request, TwoFactorOtpService $otpService)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'current_password' => 'required|string',
+        ], [
+            'current_password.required' => 'Masukkan password saat ini terlebih dahulu sebelum meminta kode OTP.',
+        ]);
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Password saat ini yang Anda masukkan salah.',
+                ], 422);
+            }
+            return back()->withErrors(['current_password' => 'Password saat ini yang Anda masukkan salah.']);
+        }
+
+        $sendResult = $otpService->sendOtp($user, 'change_password', $request->ip(), $request->userAgent(), true);
+
+        if ($request->expectsJson()) {
+            return response()->json($sendResult, $sendResult['success'] ? 200 : 422);
+        }
+
+        if (!$sendResult['success']) {
+            return back()->withErrors(['password_otp' => $sendResult['message']]);
+        }
+
+        return back()->with('success', $sendResult['message']);
+    }
+
+    public function update(Request $request, TwoFactorOtpService $otpService)
     {
         $user = Auth::user();
         $employee = $user->employee;
@@ -64,11 +101,14 @@ class ProfileController extends Controller
             'avatar_url' => 'nullable|string|max:500',
             'current_password' => 'nullable|string',
             'new_password' => 'nullable|string|min:6|confirmed',
+            'password_otp' => 'nullable|digits:6',
+        ], [
+            'password_otp.digits' => 'Kode OTP verifikasi harus berupa 6 digit angka.',
         ]);
 
         $passwordChanged = false;
 
-        // Cek jika user ingin mengubah password
+        // Cek jika user ingin mengubah password -> Wajib verifikasi password lama + OTP Email 2FA
         if ($request->filled('new_password')) {
             if (!$request->filled('current_password')) {
                 return back()->withErrors(['current_password' => 'Masukkan password saat ini untuk memverifikasi penggantian password.']);
@@ -76,6 +116,15 @@ class ProfileController extends Controller
 
             if (!Hash::check($request->current_password, $user->password)) {
                 return back()->withErrors(['current_password' => 'Password saat ini yang Anda masukkan salah.']);
+            }
+
+            if (!$request->filled('password_otp')) {
+                return back()->withErrors(['password_otp' => 'Kode OTP verifikasi 2 langkah wajib diisi. Klik "Kirim Kode OTP" terlebih dahulu.']);
+            }
+
+            $verifyResult = $otpService->verifyOtp($user, 'change_password', $request->input('password_otp'));
+            if (!$verifyResult['valid']) {
+                return back()->withErrors(['password_otp' => $verifyResult['message']]);
             }
 
             $user->password = Hash::make($request->new_password);
