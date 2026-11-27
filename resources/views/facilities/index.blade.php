@@ -393,7 +393,8 @@
 
                 <!-- Form Update Progres (Khusus Tim GA atau Direktur) -->
                 @if($isGA)
-                    <form :action="selectedTicket?.update_url" method="POST" class="p-4 bg-surface-container-low rounded-xl border border-amber-500/30 space-y-3.5">
+                    <template x-if="selectedTicket">
+                    <form :action="selectedTicket.update_url" method="POST" class="p-4 bg-surface-container-low rounded-xl border border-amber-500/30 space-y-3.5">
                         @csrf
                         @method('PATCH')
                         <div class="flex items-center gap-1.5 pb-2 border-b border-[#282a2e]/60">
@@ -442,6 +443,7 @@
                             </button>
                         </div>
                     </form>
+                    </template>
                 @else
                     <!-- View Only untuk Karyawan Pelapor -->
                     <div class="p-4 bg-surface-container-low rounded-xl border border-[#282a2e]/60 space-y-3">

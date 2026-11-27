@@ -555,31 +555,33 @@
                 </div>
 
                 <!-- Update Status Form dari Modal Detail -->
-                <form :action="detailTask?.update_url" method="POST" class="p-3 bg-surface-container-highest/40 rounded-xl border border-[#333539] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    @csrf
-                    @method('PATCH')
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-tertiary text-sm">tune</span>
-                        <span class="text-xs font-mono text-on-surface">Ubah Status & Progres:</span>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <select name="status" x-model="detailTask.status" class="bg-surface-container-low border border-[#333539] text-xs text-on-surface rounded-lg px-2.5 py-1.5 focus:outline-none">
-                            <option value="todo">To Do</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="review">Review</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                        <div class="relative flex items-center">
-                            <input type="number" name="progress_percentage" x-model="detailTask.progress_percentage" min="0" max="100" step="5" class="w-16 bg-surface-container-low border border-[#333539] text-xs font-mono text-on-surface rounded-lg px-2 py-1.5 text-center focus:outline-none"/>
-                            <span class="text-[10px] text-tertiary font-mono -ml-4 pointer-events-none">%</span>
+                <template x-if="detailTask">
+                    <form :action="detailTask.update_url" method="POST" class="p-3 bg-surface-container-highest/40 rounded-xl border border-[#333539] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        @csrf
+                        @method('PATCH')
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-tertiary text-sm">tune</span>
+                            <span class="text-xs font-mono text-on-surface">Ubah Status & Progres:</span>
                         </div>
-                        <button type="submit" class="px-3 py-1.5 rounded-lg bg-primary-container hover:bg-red-700 text-on-primary-container text-xs font-semibold flex items-center gap-1 shadow-sm transition-colors">
-                            <span class="material-symbols-outlined text-sm">check</span>
-                            <span>Simpan</span>
-                        </button>
-                    </div>
-                </form>
+
+                        <div class="flex items-center gap-2">
+                            <select name="status" x-model="detailTask.status" class="bg-surface-container-low border border-[#333539] text-xs text-on-surface rounded-lg px-2.5 py-1.5 focus:outline-none">
+                                <option value="todo">To Do</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="review">Review</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                            <div class="relative flex items-center">
+                                <input type="number" name="progress_percentage" x-model="detailTask.progress_percentage" min="0" max="100" step="5" class="w-16 bg-surface-container-low border border-[#333539] text-xs font-mono text-on-surface rounded-lg px-2 py-1.5 text-center focus:outline-none"/>
+                                <span class="text-[10px] text-tertiary font-mono -ml-4 pointer-events-none">%</span>
+                            </div>
+                            <button type="submit" class="px-3 py-1.5 rounded-lg bg-primary-container hover:bg-red-700 text-on-primary-container text-xs font-semibold flex items-center gap-1 shadow-sm transition-colors">
+                                <span class="material-symbols-outlined text-sm">check</span>
+                                <span>Simpan</span>
+                            </button>
+                        </div>
+                    </form>
+                </template>
 
             </div>
 

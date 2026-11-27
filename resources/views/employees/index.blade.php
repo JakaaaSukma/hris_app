@@ -622,7 +622,8 @@
                 </button>
             </div>
 
-            <form :action="selectedAccount?.update_url" method="POST" class="mt-4 space-y-4">
+            <template x-if="selectedAccount">
+            <form :action="selectedAccount.update_url" method="POST" class="mt-4 space-y-4">
                 @csrf
                 @method('PATCH')
 
@@ -701,6 +702,7 @@
                     </button>
                 </div>
             </form>
+            </template>
         </div>
     </div>
 
@@ -722,7 +724,8 @@
                 </button>
             </div>
 
-            <form :action="selectedEmployee?.update_url" method="POST" class="mt-4 space-y-4">
+            <template x-if="selectedEmployee">
+            <form :action="selectedEmployee.update_url" method="POST" class="mt-4 space-y-4">
                 @csrf
                 @method('PUT')
 
@@ -811,6 +814,7 @@
                     </button>
                 </div>
             </form>
+            </template>
         </div>
     </div>
 

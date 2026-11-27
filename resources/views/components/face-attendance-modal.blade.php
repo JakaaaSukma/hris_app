@@ -61,7 +61,7 @@
                     </div>
                     <div class="flex justify-between items-center text-slate-300">
                         <span class="text-slate-400">Jarak ke Kantor:</span>
-                        <span class="font-semibold text-white" x-text="successData?.distance !== null ? successData.distance + ' meter' : 'Tercatat'"></span>
+                        <span class="font-semibold text-white" x-text="successData?.distance != null ? successData.distance + ' meter' : 'Tercatat'"></span>
                     </div>
                     <div class="flex justify-between items-center text-slate-300">
                         <span class="text-slate-400">Lokasi:</span>

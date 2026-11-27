@@ -730,7 +730,7 @@
                                                        name="employee_ids[]" 
                                                        value="{{ $emp->id }}" 
                                                        x-model="selectedEmpIds"
-                                                       :disabled="!isBatchMode"
+                                                       :disabled="slipMode !== 'batch'"
                                                        class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0 focus:ring-offset-0"/>
                                                 <div class="truncate">
                                                     <span class="text-white font-medium">{{ $emp->name }}</span>

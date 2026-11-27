@@ -773,6 +773,11 @@ hris_app/
   1. *Sinkronisasi Apache XAMPP:* Memperbaiki perizinan write permission folder `storage/logs/laravel.log` dan `storage/framework/cache/` untuk user `daemon` Apache XAMPP (`chmod -R 777`), serta menyesuaikan URL default mobile app ke endpoint Apache XAMPP (`/hris_app/public/api`) pada port 80.
   2. *Redesain Visual Mobile App (Red & Silver Executive):* Mengubah seluruh sistem warna aplikasi Android dari hijau-putih menjadi palet premium **Crimson/Ruby Red (`#C81E1E`, `#881337`, `#EF4444`) dan Metallic Brushed Silver (`#CBD5E1`, `#E2E8F0`, `#F8FAFC`, `#64748B`)**. Pembaruan mencakup Splash Screen, Login Screen, Hero Card Presensi Dashboard, Tab Navigation, Riwayat, Form Cuti, dan Notifikasi.
 
+- **2026-11-27 (Bug Fixes):** Perbaikan Null-Safety & Binding Alpine.js pada Modal dan Komponen Frontend:
+  1. Memperbaiki null-dereference `successData?.distance != null` pada `resources/views/components/face-attendance-modal.blade.php`.
+  2. Membungkus `<form>` modal edit/kelola dengan `<template x-if="...">` pada `resources/views/tasks/index.blade.php`, `resources/views/facilities/index.blade.php`, dan `resources/views/employees/index.blade.php` agar tidak memicu runtime error saat state modal belum terisi.
+  3. Memperbaiki binding `:disabled="slipMode !== 'batch'"` (sebelumnya mereferensikan `!isBatchMode` yang undefined) pada modal penerbitan slip gaji di `resources/views/departments/finance/index.blade.php`.
+
 - **2026-11-26 (Security):** Implementasi Verifikasi 2 Langkah (2FA Email OTP via SMTP) untuk Login hingga Pergantian Password Mandiri:
   1. *Skema & Model OTP:* Membuat migrasi `2026_11_26_150000_create_email_verification_codes_table.php` dan Model `EmailVerificationCode.php`. Kode OTP 6-digit disimpan dalam bentuk hash (`Hash::make`) dengan masa berlaku 10 menit, batas maksimal 5 percobaan salah, dan jeda kirim ulang 45 detik.
   2. *Engine & Mailable SMTP:* Membuat `App\Services\TwoFactorOtpService.php`, `App\Mail\TwoFactorOtpMail.php`, dan template email `resources/views/emails/two_factor_otp.blade.php`. Seluruh kredensial SMTP rahasia (`MAIL_HOST`, `MAIL_USERNAME`, `MAIL_PASSWORD`, dll.) disimpan eksklusif di file `.env` (terkunci di `.gitignore` & Git pre-commit hook agar tidak pernah ter-publish ke GitHub).
