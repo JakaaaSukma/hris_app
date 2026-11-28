@@ -263,10 +263,16 @@ hris_app/
 │       └── User.php                         # Akun Pengguna & Helper Permissions
 ├── database/
 │   └── migrations/                          # Migrasi skema database aplikasi
+├── DESIGN.md                                # Kontrak Sistem Desain (Carbon Obsidian & Warm Alabaster, Dials & R-31)
 ├── resources/
-│   ├── css/app.css                          # Variabel tema, override Dark/Light, Modal optim
+│   ├── css/app.css                          # Token tema Terang/Gelap, WCAG focus, Guard modal tanpa blur, Skiper motion CSS
+│   ├── js/app.js                            # Alpine.js + GSAP ScrollTrigger + Swiper 3D Coverflow Motion Engine
 │   └── views/
-│       ├── layouts/app.blade.php            # Layout Master (Sidebar, Header, Modal Presensi & Notifikasi)
+│       ├── components/                      # Komponen Blade Reusable (<x-face-attendance-modal />, <x-skiper-link />, <x-animated-icon />, <x-scroll-flow />, <x-perspective-carousel />)
+│       ├── welcome.blade.php                # Halaman Sambutan Editorial Portal Gyokai HR Enterprise
+│       ├── auth/                            # UI Login Split Architectural, 2FA OTP & Reset Password Mandiri
+│       ├── dashboard/index.blade.php        # UI Dashboard Eksekutif Asimetris, Skiper49 Carousel & KPI
+│       ├── layouts/app.blade.php            # Layout Master (Sidebar Carbon/Alabaster, Topbar + Scroll Rail, Skiper19 SVG Follow)
 │       ├── chat/                            # UI Chat Departemen
 │       │   └── index.blade.php
 │       ├── notifications/                   # UI Halaman Index Notifikasi
@@ -772,6 +778,14 @@ hris_app/
 - **2026-11-04:** Penyelarasan REST API XAMPP & Redesain UI Mobile App (Tema Merah & Silver):
   1. *Sinkronisasi Apache XAMPP:* Memperbaiki perizinan write permission folder `storage/logs/laravel.log` dan `storage/framework/cache/` untuk user `daemon` Apache XAMPP (`chmod -R 777`), serta menyesuaikan URL default mobile app ke endpoint Apache XAMPP (`/hris_app/public/api`) pada port 80.
   2. *Redesain Visual Mobile App (Red & Silver Executive):* Mengubah seluruh sistem warna aplikasi Android dari hijau-putih menjadi palet premium **Crimson/Ruby Red (`#C81E1E`, `#881337`, `#EF4444`) dan Metallic Brushed Silver (`#CBD5E1`, `#E2E8F0`, `#F8FAFC`, `#64748B`)**. Pembaruan mencakup Splash Screen, Login Screen, Hero Card Presensi Dashboard, Tab Navigation, Riwayat, Form Cuti, dan Notifikasi.
+
+- **2026-11-28 (UI Redesign & Skiper Motion System):** Redesain Menyeluruh Antarmuka Portal HRIS (Carbon Editorial & Warm Alabaster + Motion Suite):
+  1. *Kontrak Sistem Desain (`DESIGN.md`, `tailwind.config.js`, `resources/css/app.css`):* Penyelarasan palet netral Carbon Obsidian (`#0B0D11`/`#161A23`) untuk mode gelap & Warm Alabaster (`#F6F7F9`/`#FFFFFF`) untuk mode terang dengan aksen tunggal Gyokai Crimson (`#E11D48`/`#DC2626`), tipografi `Plus Jakarta Sans` + `JetBrains Mono` (`tabular-nums`), aturan `cursor: pointer`, ring `:focus-visible`, dan `prefers-reduced-motion`.
+  2. *Engine Motion (`resources/js/app.js` + `gsap` & `swiper`):* Implementasi **Skiper19 (`<x-scroll-flow>`)** SVG follow-scroll path & top hairline scroll rail berbasis GSAP ScrollTrigger, **Skiper49 (`<x-perspective-carousel>`)** Inverted 3D Coverflow Carousel interaktif berbasis Swiper (`rotate: -30`, keyboard + arrow controls), **Skiper99 (`<x-animated-icon>`)** untuk menu hamburger-to-X, ekstensi panah hover, lonceng, sinkronisasi, dan morph tema, serta **Skiper40 (`<x-skiper-link>`)** dan counter angka masuk.
+  3. *Transformasi Halaman Inti:* Pembaruan menyeluruh `welcome.blade.php`, `auth/login.blade.php` (layout split 2-kolom bebas blur orb), `auth/verify_otp.blade.php`, `auth/forgot_password.blade.php`, `layouts/app.blade.php` (skip-link aksesibilitas, shortcut `⌘K`, navigasi bebas pelangi/pulse), `dashboard/index.blade.php` (komposisi asimetris + Skiper49 carousel divisi + tabel & persetujuan), serta penyelarasan `guide/index.blade.php`, `receptionist/members/index.blade.php`, `secretary/contracts/index.blade.php`, dan `finance/invoices/`.
+
+- **2026-11-28 (UI Component):** Adaptasi Komponen Animasi Link `@skiper-ui/skiper40` ke Laravel Blade:
+  1. Membuat komponen Blade `<x-skiper-link>` (`resources/views/components/skiper-link.blade.php`) mengadaptasi seluruh 6 varian animasi link CSS/Tailwind dari Skiper40 (`000`–`005` + alias `underline`, `external`, `sweep`, `center`, `wipe-up`, `wipe-right`) tanpa ketergantungan React/Next.js/shadcn.
 
 - **2026-11-27 (Bug Fixes):** Perbaikan Null-Safety & Binding Alpine.js pada Modal dan Komponen Frontend:
   1. Memperbaiki null-dereference `successData?.distance != null` pada `resources/views/components/face-attendance-modal.blade.php`.

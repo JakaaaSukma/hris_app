@@ -6,15 +6,14 @@
 <div class="flex flex-col gap-5" x-data="invoiceManager()">
 
     <!-- Header Page -->
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 bg-[#151922] rounded-2xl border border-slate-800 shadow-sm">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 editorial-surface rounded-2xl" data-reveal>
         <div>
             <div class="flex items-center gap-2">
-                <a href="{{ route('finance.index') }}" class="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-1">
-                    <span class="material-symbols-outlined text-xs">arrow_back</span>
-                    <span>Finance Hub</span>
-                </a>
-                <span class="text-slate-600 text-[10px]">•</span>
-                <span class="font-mono text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Invoice, Piutang & Jatuh Tempo</span>
+                <x-skiper-link href="{{ route('finance.index') }}" variant="000" class="text-[11px] font-mono text-emerald-500 font-semibold">
+                    Kembali ke Finance Hub
+                </x-skiper-link>
+                <span class="text-[var(--color-text-muted)] text-[10px]">/</span>
+                <span class="font-mono text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">Invoice, Piutang &amp; Jatuh Tempo</span>
             </div>
             <h1 class="font-headline font-extrabold text-2xl text-white tracking-tight mt-1">Manajemen Invoice & Pembayaran</h1>
             <p class="font-mono text-xs text-slate-400">Penerbitan tagihan klien/vendor, pantauan jatuh tempo, cicilan & pelunasan terintegrasi</p>
@@ -94,58 +93,58 @@
     @endif
 
     <!-- 5 Summary Metric Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        <div class="bg-[#151922] p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
-            <div>
-                <span class="font-mono text-[10px] text-slate-400 uppercase font-semibold">Total Invoice Aktif</span>
-                <div class="font-headline text-xl font-extrabold text-white mt-1">{{ $totalIssuedCount }} <span class="text-xs font-normal text-slate-400">Inv</span></div>
-                <span class="font-mono text-[10px] text-slate-500">{{ $totalDraftCount }} berstatus draft</span>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+        <div class="bg-[#151922] p-4 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+                <span class="font-mono text-[10px] text-slate-400 uppercase font-semibold block truncate">Total Invoice Aktif</span>
+                <div class="font-headline text-xl font-extrabold text-white mt-1 tabular-nums">{{ $totalIssuedCount }} <span class="text-xs font-normal text-slate-400">Inv</span></div>
+                <span class="font-mono text-[10px] text-slate-500 block truncate">{{ $totalDraftCount }} berstatus draft</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700">
+            <div class="p-2.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 shrink-0">
                 <span class="material-symbols-outlined text-xl">receipt_long</span>
             </div>
         </div>
 
-        <div class="bg-[#151922] p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
-            <div>
-                <span class="font-mono text-[10px] text-slate-400 uppercase font-semibold">Sisa Tagihan (IDR)</span>
-                <div class="font-headline text-lg font-extrabold text-sky-400 mt-1">Rp {{ number_format($totalOutstandingIdr, 0, ',', '.') }}</div>
-                <span class="font-mono text-[10px] text-slate-500">Outstanding menunggu bayar</span>
+        <div class="bg-[#151922] p-4 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+                <span class="font-mono text-[10px] text-slate-400 uppercase font-semibold block truncate">Sisa Tagihan (IDR)</span>
+                <div class="font-headline text-[15px] xl:text-base font-extrabold text-sky-400 mt-1 tabular-nums whitespace-nowrap">Rp {{ number_format($totalOutstandingIdr, 0, ',', '.') }}</div>
+                <span class="font-mono text-[10px] text-slate-500 block truncate">Outstanding menunggu bayar</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+            <div class="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0">
                 <span class="material-symbols-outlined text-xl">hourglass_top</span>
             </div>
         </div>
 
-        <div class="bg-[#151922] p-4 rounded-2xl border border-rose-500/30 flex items-center justify-between">
-            <div>
-                <span class="font-mono text-[10px] text-rose-400 uppercase font-semibold">Jatuh Tempo (Overdue)</span>
-                <div class="font-headline text-lg font-extrabold text-rose-400 mt-1">{{ $totalOverdueCount }} <span class="text-xs font-normal">Inv</span></div>
-                <span class="font-mono text-[10px] text-slate-400">Rp {{ number_format($totalOverdueIdr, 0, ',', '.') }}</span>
+        <div class="bg-[#151922] p-4 rounded-2xl border border-rose-500/30 flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+                <span class="font-mono text-[10px] text-rose-400 uppercase font-semibold block truncate">Jatuh Tempo (Overdue)</span>
+                <div class="font-headline text-lg font-extrabold text-rose-400 mt-1 tabular-nums">{{ $totalOverdueCount }} <span class="text-xs font-normal">Inv</span></div>
+                <span class="font-mono text-[10px] text-slate-400 block truncate tabular-nums">Rp {{ number_format($totalOverdueIdr, 0, ',', '.') }}</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">
                 <span class="material-symbols-outlined text-xl">event_busy</span>
             </div>
         </div>
 
-        <div class="bg-[#151922] p-4 rounded-2xl border border-amber-500/30 flex items-center justify-between">
-            <div>
-                <span class="font-mono text-[10px] text-amber-400 uppercase font-semibold">Segera Tempo (&le; 7 Hr)</span>
-                <div class="font-headline text-xl font-extrabold text-amber-400 mt-1">{{ $totalDueSoonCount }} <span class="text-xs font-normal">Inv</span></div>
-                <span class="font-mono text-[10px] text-slate-500">Perlu follow-up pembayaran</span>
+        <div class="bg-[#151922] p-4 rounded-2xl border border-amber-500/30 flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+                <span class="font-mono text-[10px] text-amber-400 uppercase font-semibold block truncate">Segera Tempo (&le; 7 Hr)</span>
+                <div class="font-headline text-xl font-extrabold text-amber-400 mt-1 tabular-nums">{{ $totalDueSoonCount }} <span class="text-xs font-normal">Inv</span></div>
+                <span class="font-mono text-[10px] text-slate-500 block truncate">Perlu follow-up pembayaran</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
                 <span class="material-symbols-outlined text-xl">schedule</span>
             </div>
         </div>
 
-        <div class="bg-[#151922] p-4 rounded-2xl border border-emerald-500/30 flex items-center justify-between">
-            <div>
-                <span class="font-mono text-[10px] text-emerald-400 uppercase font-semibold">Total Terbayar (IDR)</span>
-                <div class="font-headline text-lg font-extrabold text-emerald-400 mt-1">Rp {{ number_format($totalPaidIdr, 0, ',', '.') }}</div>
-                <span class="font-mono text-[10px] text-slate-500">Cicilan & pelunasan masuk</span>
+        <div class="bg-[#151922] p-4 rounded-2xl border border-emerald-500/30 flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+                <span class="font-mono text-[10px] text-emerald-400 uppercase font-semibold block truncate">Total Terbayar (IDR)</span>
+                <div class="font-headline text-[15px] xl:text-base font-extrabold text-emerald-400 mt-1 tabular-nums whitespace-nowrap">Rp {{ number_format($totalPaidIdr, 0, ',', '.') }}</div>
+                <span class="font-mono text-[10px] text-slate-500 block truncate">Cicilan & pelunasan masuk</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
                 <span class="material-symbols-outlined text-xl">paid</span>
             </div>
         </div>
@@ -259,7 +258,7 @@
                                 @endif
                             </td>
 
-                            <td class="px-4 py-3.5 font-mono">
+                            <td class="px-4 py-3.5 font-mono min-w-[168px] whitespace-nowrap">
                                 <div class="text-[11px] text-slate-400">Terbit: <span class="text-slate-200">{{ $inv->issue_date->format('d M Y') }}</span></div>
                                 <div class="text-[11px] mt-0.5">
                                     Tempo: <strong class="{{ $compStatus === 'overdue' ? 'text-rose-400' : 'text-white' }}">{{ $inv->due_date->format('d M Y') }}</strong>
@@ -267,19 +266,19 @@
                                 @if(in_array($compStatus, ['issued', 'partial', 'overdue']))
                                     <div class="mt-1">
                                         @if($daysDue < 0)
-                                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">
+                                            <span class="inline-flex items-center whitespace-nowrap text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">
                                                 Telat {{ abs($daysDue) }} hari
                                             </span>
                                         @elseif($daysDue === 0)
-                                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">
+                                            <span class="inline-flex items-center whitespace-nowrap text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">
                                                 Jatuh tempo HARI INI
                                             </span>
                                         @elseif($daysDue <= 7)
-                                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                                            <span class="inline-flex items-center whitespace-nowrap text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
                                                 Sisa {{ $daysDue }} hari lagi
                                             </span>
                                         @else
-                                            <span class="text-[10px] text-slate-400">Sisa {{ $daysDue }} hari</span>
+                                            <span class="inline-flex items-center whitespace-nowrap text-[10px] text-slate-400">Sisa {{ $daysDue }} hari</span>
                                         @endif
                                     </div>
                                 @endif
@@ -300,7 +299,7 @@
                             </td>
 
                             <td class="px-4 py-3.5">
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold border {{ $badgeClass }}">
+                                <span class="inline-flex items-center whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-mono font-bold border {{ $badgeClass }}">
                                     {{ $statusText }}
                                 </span>
                                 @if($inv->paid_at)

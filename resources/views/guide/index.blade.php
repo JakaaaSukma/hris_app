@@ -9,33 +9,30 @@
     searchKeyword: ''
 }">
 
-    <!-- Header Hero Banner with Rich Aesthetics -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-rose-950/40 to-slate-900 border border-rose-500/30 p-6 lg:p-8 shadow-2xl">
-        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -left-10 -top-10 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        
+    <!-- Header Hero Banner -->
+    <div class="relative overflow-hidden rounded-2xl editorial-surface p-6 lg:p-8" data-reveal>
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="space-y-2 max-w-2xl">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-300 font-mono text-xs">
-                    <span class="material-symbols-outlined text-sm text-rose-400">menu_book</span>
-                    <span>Standard Operating Procedure (SOP) & Architecture Workflow</span>
+                <div class="inline-flex items-center gap-2 text-rose-500 font-mono text-xs font-semibold">
+                    <span class="material-symbols-outlined text-sm" aria-hidden="true">menu_book</span>
+                    <span>Standard Operating Procedure (SOP) &amp; Architecture Workflow</span>
                 </div>
-                <h1 class="font-headline font-extrabold text-2xl lg:text-3xl text-white tracking-tight">
-                    Panduan Penggunaan & Diagram Alur Sistem
+                <h1 class="font-headline font-extrabold text-2xl lg:text-3xl text-[var(--color-text-primary)] tracking-tight text-balance">
+                    Panduan Penggunaan &amp; Diagram Alur Sistem
                 </h1>
-                <p class="text-sm text-slate-300 leading-relaxed">
+                <p class="text-sm text-[var(--color-text-muted)] leading-relaxed">
                     Pedoman terpadu hak akses, aturan bisnis, dan diagram alur operasional per modul dalam sistem HRIS. Halaman ini dapat diakses oleh seluruh tingkatan pengguna (Direktur Utama, Para Manager, dan Seluruh Karyawan).
                 </p>
             </div>
 
             <!-- Role Indicator & Quick Profile Badge -->
             <div class="flex flex-col sm:flex-row md:flex-col items-start md:items-end gap-2.5">
-                <div class="px-3.5 py-2 rounded-xl bg-slate-800/80 border border-slate-700/70 text-right">
-                    <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Peran Akun Anda Saat Ini</div>
+                <div class="px-3.5 py-2.5 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] text-right">
+                    <div class="text-[10px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">Peran Akun Anda Saat Ini</div>
                     <div class="flex items-center gap-2 justify-end mt-0.5">
-                        <span class="w-2 h-2 rounded-full {{ auth()->user()->isDirektur() ? 'bg-amber-400' : (auth()->user()->isManager() ? 'bg-rose-400' : 'bg-emerald-400') }} animate-pulse"></span>
-                        <span class="font-headline font-bold text-sm text-white capitalize">{{ auth()->user()->name }}</span>
-                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 uppercase font-semibold">
+                        <span class="w-2 h-2 rounded-full {{ auth()->user()->isDirektur() ? 'bg-amber-500' : (auth()->user()->isManager() ? 'bg-rose-500' : 'bg-emerald-500') }}"></span>
+                        <span class="font-headline font-bold text-sm text-[var(--color-text-primary)] capitalize">{{ auth()->user()->name }}</span>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-600/15 text-rose-500 uppercase font-semibold">
                             {{ auth()->user()->role }} • {{ auth()->user()->department ?? 'All' }}
                         </span>
                     </div>
@@ -44,18 +41,18 @@
         </div>
 
         <!-- Navigation Tabs -->
-        <div class="mt-8 flex flex-wrap gap-2 border-t border-slate-800/80 pt-4">
+        <div class="mt-8 flex flex-wrap gap-2 border-t border-[var(--color-card-border)] pt-4">
             <button @click="activeTab = 'flowchart'" 
-                    :class="activeTab === 'flowchart' ? 'bg-rose-600 text-white font-bold shadow-lg shadow-rose-600/30 border-rose-500' : 'bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-700/60'"
-                    class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border">
-                <span class="material-symbols-outlined text-base">account_tree</span>
+                    :class="activeTab === 'flowchart' ? 'bg-rose-600 text-white keep-white font-bold border-rose-600' : 'bg-[var(--color-subcard-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border-[var(--color-card-border)]'"
+                    class="min-h-[42px] px-4 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 border">
+                <span class="material-symbols-outlined text-base" aria-hidden="true">account_tree</span>
                 <span>Diagram Alur (Workflow Engine)</span>
             </button>
 
             <button @click="activeTab = 'role_guide'" 
-                    :class="activeTab === 'role_guide' ? 'bg-rose-600 text-white font-bold shadow-lg shadow-rose-600/30 border-rose-500' : 'bg-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-700/60'"
-                    class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border">
-                <span class="material-symbols-outlined text-base">badge</span>
+                    :class="activeTab === 'role_guide' ? 'bg-rose-600 text-white keep-white font-bold border-rose-600' : 'bg-[var(--color-subcard-bg)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border-[var(--color-card-border)]'"
+                    class="min-h-[42px] px-4 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 border">
+                <span class="material-symbols-outlined text-base" aria-hidden="true">badge</span>
                 <span>Panduan Berdasarkan Peran (Role-Based)</span>
             </button>
 

@@ -3,539 +3,609 @@
 @section('title', 'Dashboard Operasional HR')
 
 @section('content')
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-7">
 
-    <!-- Greeting & Operational Quick Actions Bar -->
-    <div class="p-6 rounded-2xl bg-[#151922] border border-slate-800 shadow-lg">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div class="flex flex-col gap-1.5">
-                <div class="flex items-center gap-2.5">
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-mono text-[10px] font-semibold tracking-wide">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Live Realtime Sync
+    {{-- Asymmetric Executive Command Masthead --}}
+    <section class="editorial-surface rounded-2xl p-6 sm:p-7" data-reveal>
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="space-y-2.5 max-w-2xl">
+                <div class="flex flex-wrap items-center gap-2 text-xs font-mono text-[var(--color-text-muted)]">
+                    <span class="px-2 py-0.5 rounded bg-rose-600/15 text-rose-500 font-semibold uppercase">
+                        {{ auth()->user()->role ?? 'karyawan' }}
                     </span>
-                    <span class="font-mono text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/60 text-slate-300">
-                        Akses: {{ auth()->user()->role ?? 'karyawan' }}
-                    </span>
+                    <span aria-hidden="true">/</span>
+                    <span>{{ auth()->user()->department ?? 'Operasional Umum' }}</span>
+                    <span aria-hidden="true">/</span>
+                    <span>{{ now()->locale('id')->translatedFormat('l, d F Y') }}</span>
+                    <span class="font-semibold text-[var(--color-text-primary)] tabular-nums" id="live-clock">{{ now()->format('H:i:s') }} WIB</span>
                 </div>
-                <h1 class="font-headline font-extrabold text-2xl lg:text-3xl text-white tracking-tight">
-                    Halo, {{ auth()->user()->name }} 👋
+
+                <h1 class="font-headline font-extrabold text-2xl sm:text-3xl text-[var(--color-text-primary)] tracking-tight text-balance">
+                    Halo, {{ auth()->user()->name }}
                 </h1>
-                <div class="flex items-center gap-2 text-slate-400 font-mono text-xs">
-                    <span class="material-symbols-outlined text-sm text-rose-400">schedule</span>
-                    <span>{{ now()->locale('id')->translatedFormat('l, d F Y') }} • <span class="font-semibold text-slate-200" id="live-clock">{{ now()->format('H:i:s') }} WIB</span></span>
+
+                <div class="flex flex-wrap items-center gap-5 pt-1 text-xs">
+                    <x-skiper-link href="{{ route('calendar.index') }}" variant="000" class="font-medium text-[var(--color-text-secondary)] hover:text-rose-500">
+                        Buka Kalender Agenda
+                    </x-skiper-link>
+                    <x-skiper-link href="{{ route('tasks.index') }}" variant="000" class="font-medium text-[var(--color-text-secondary)] hover:text-rose-500">
+                        Daftar Tugas Aktif
+                    </x-skiper-link>
+                    @if(auth()->user()->canManageInvoices())
+                        <x-skiper-link href="{{ route('finance.invoices.index') }}" variant="001" class="font-semibold text-rose-500">
+                            Invoice &amp; Jatuh Tempo
+                        </x-skiper-link>
+                    @endif
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <a href="{{ route('leave.index') }}" class="flex items-center gap-2 px-4 py-2.5 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 rounded-xl text-xs font-semibold transition-all border border-slate-700/60 shadow-sm active:scale-95">
-                    <span class="material-symbols-outlined text-base text-rose-400">event_note</span>
+            <div class="flex flex-wrap items-center gap-3 shrink-0">
+                <a href="{{ route('leave.index') }}"
+                   class="group min-h-[44px] flex items-center gap-2 px-4 py-2.5 bg-[var(--color-subcard-bg)] hover:bg-[var(--color-card-border)] text-[var(--color-text-primary)] rounded-xl text-xs font-semibold transition-colors border border-[var(--color-card-border)]">
+                    <span class="material-symbols-outlined text-base text-rose-500" aria-hidden="true">event_note</span>
                     <span>Pengajuan Cuti</span>
                 </a>
 
                 @if(auth()->user()->canFaceClock())
                     @if($userTodayAttendance)
                         @if(!$userTodayAttendance->clock_out)
-                            <button type="button" 
+                            <button type="button"
                                     @click="$dispatch('open-face-modal', { type: 'clock_out' })"
-                                    class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-orange-500/20 active:scale-95">
-                                <span class="material-symbols-outlined text-base">face_retouching_natural</span>
+                                    class="min-h-[44px] flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white keep-white rounded-xl text-xs font-bold transition-colors active:scale-[0.98]">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">face_retouching_natural</span>
                                 <span>Clock Out Face ID (In: {{ substr($userTodayAttendance->clock_in, 0, 5) }})</span>
                             </button>
                         @else
-                            <div class="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl text-xs font-mono font-medium border border-emerald-500/25">
-                                <span class="material-symbols-outlined text-base">verified</span>
-                                <span>Presensi Lengkap: {{ substr($userTodayAttendance->clock_out, 0, 5) }}</span>
+                            <div class="min-h-[44px] flex items-center gap-2 px-4 py-2.5 bg-emerald-600/15 text-emerald-500 rounded-xl text-xs font-mono font-semibold border border-emerald-500/30">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">verified</span>
+                                <span>Presensi Lengkap: {{ substr($userTodayAttendance->clock_out, 0, 5) }} WIB</span>
                             </div>
                         @endif
                     @else
-                        <button type="button" 
-                                @click="$dispatch('open-face-modal', { type: 'clock_in' })" 
-                                class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-600/30 active:scale-95 ring-1 ring-white/20">
-                            <span class="material-symbols-outlined text-base">face_retouching_natural</span>
-                            <span>Presensi Face ID & Lokasi</span>
+                        <button type="button"
+                                @click="$dispatch('open-face-modal', { type: 'clock_in' })"
+                                class="group min-h-[44px] flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white keep-white rounded-xl text-xs font-bold transition-colors active:scale-[0.98]">
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">face_retouching_natural</span>
+                            <span>Presensi Face ID &amp; Lokasi</span>
+                            <x-animated-icon type="arrow" />
                         </button>
                     @endif
                 @endif
             </div>
         </div>
-    </div>
+    </section>
 
+    {{-- Asymmetric Metrics Deck (HR Manager & Direktur) --}}
     @if(auth()->user()->canViewCompanyMetrics())
-    <!-- 4-Grid Operational Metric Cards with Glassmorphism & Hover Lift (Khusus Manager HR & Direktur) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Total Karyawan -->
-        <div class="glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
-            <div class="flex items-center justify-between">
-                <span class="font-mono text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Total Karyawan</span>
-                <div class="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-lg">groups</span>
-                </div>
-            </div>
-            <div class="my-3">
-                <span class="font-headline text-3xl text-white font-extrabold tracking-tight">{{ number_format($totalEmployees) }}</span>
-                <span class="text-xs text-slate-400 ml-1 font-mono">Personel</span>
-            </div>
-            <div class="flex items-center gap-2 pt-2 border-t border-slate-800/80">
-                <span class="inline-flex items-center font-mono text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold">
-                    <span class="material-symbols-outlined text-[12px] mr-0.5">trending_up</span>+{{ $newEmployeesThisMonth }}
-                </span>
-                <span class="font-mono text-[10px] text-slate-400">rekrutmen bulan ini</span>
-            </div>
-        </div>
-
-        <!-- Hadir Hari Ini -->
-        <div class="glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
-            <div class="flex items-center justify-between">
-                <span class="font-mono text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Kehadiran Hari Ini</span>
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-lg">how_to_reg</span>
-                </div>
-            </div>
-            <div class="my-3 flex items-baseline gap-2">
-                <span class="font-headline text-3xl text-white font-extrabold tracking-tight">{{ number_format($presentTodayCount) }}</span>
-                <span class="font-mono text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-400 font-bold rounded-md border border-emerald-500/20">{{ $attendanceRate }}%</span>
-            </div>
-            <div class="flex items-center justify-between font-mono text-[10px] text-slate-400 pt-2 border-t border-slate-800/80">
-                <div class="flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>Tepat: <strong class="text-slate-200">{{ $onTimeCount }}</strong> @if($presentTodayCount > 0) <span class="text-emerald-400">({{ round(($onTimeCount/$presentTodayCount)*100) }}%)</span> @endif</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-                    <span>Telat: <strong class="text-rose-400">{{ $lateCount }}</strong> @if($presentTodayCount > 0) <span class="text-rose-400">({{ round(($lateCount/$presentTodayCount)*100) }}%)</span> @endif</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Karyawan Cuti / Dispensasi -->
-        <div class="glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
-            <div class="flex items-center justify-between">
-                <span class="font-mono text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Cuti & Dispensasi</span>
-                <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-                    <span class="material-symbols-outlined text-lg">beach_access</span>
-                </div>
-            </div>
-            <div class="my-3 flex items-baseline gap-2">
-                <span class="font-headline text-3xl text-white font-extrabold tracking-tight">{{ $leaveCount }}</span>
-                <span class="text-xs text-slate-400 font-mono">Karyawan</span>
-                @if($totalEmployees > 0)
-                    <span class="font-mono text-xs px-2 py-0.5 bg-amber-500/10 text-amber-300 font-bold rounded-md border border-amber-500/25">
-                        {{ round(($leaveCount / $totalEmployees) * 100, 1) }}%
-                    </span>
-                @endif
-            </div>
-            <div class="flex items-center justify-between font-mono text-[10px] text-slate-400 pt-2 border-t border-slate-800/80">
-                <span>Rasio Tidak Masuk Cuti</span>
-                <a href="{{ route('leave.index') }}" class="text-rose-400 hover:text-rose-300 flex items-center gap-0.5 font-semibold">
-                    <span>Detail</span>
-                    <span class="material-symbols-outlined text-[12px]">chevron_right</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- Pending Approvals -->
-        <div class="glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
-            <div class="flex items-center justify-between">
-                <span class="font-mono text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Perlu Persetujuan</span>
-                <span class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/25 text-rose-300 font-mono text-[9px] uppercase tracking-wider rounded-md font-bold">Review</span>
-            </div>
-            <div class="my-3">
-                <span class="font-headline text-3xl text-white font-extrabold tracking-tight">{{ $pendingApprovals->count() }}</span>
-                <span class="text-xs text-slate-400 ml-1 font-mono">Permohonan</span>
-            </div>
-            <div class="flex items-center justify-between font-mono text-[10px] text-slate-400 pt-2 border-t border-slate-800/80">
-                <span class="truncate">Tiket permohonan tertunda</span>
-                <a href="{{ route('leave.index', ['status' => 'pending']) }}" class="text-rose-400 font-semibold hover:text-rose-300">Tinjau &rarr;</a>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    <!-- ========================================================================= -->
-    <!-- SECTION 1: GRAFIK KPI INDIVIDU (PERSONAL EMPLOYEE PERFORMANCE)           -->
-    <!-- ========================================================================= -->
-    <!-- ========================================================================= -->
-    <!-- SECTION 1: GRAFIK KPI INDIVIDU (PERSONAL EMPLOYEE PERFORMANCE)           -->
-    <!-- ========================================================================= -->
-    @if(!empty($individualKpi))
-        <div class="p-6 rounded-2xl bg-[#151922] border border-slate-800 shadow-sm space-y-4" x-data="{ kpiPeriod: 'overall' }">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
-                        <span class="material-symbols-outlined text-xl">speed</span>
-                    </div>
+        <section aria-label="Ringkasan Kehadiran & Persetujuan Perusahaan" class="grid grid-cols-1 lg:grid-cols-12 gap-4" data-reveal>
+            {{-- Spotlight Attendance Hero (5 Cols) --}}
+            <div class="lg:col-span-5 editorial-surface rounded-2xl p-6 flex flex-col justify-between gap-4 border-l-4 border-l-rose-600">
+                <div class="flex items-start justify-between gap-3">
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="font-headline font-bold text-base text-white">Grafik KPI Individu Saya</h2>
-                            <!-- Skor Badge Dinamis Sesuai Tab -->
-                            <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 font-mono text-[10px] font-bold"
-                                  x-text="kpiPeriod === 'daily' ? 'Harian: {{ $individualKpi['daily']['score'] }} pts' : (kpiPeriod === 'weekly' ? 'Mingguan: {{ $individualKpi['weekly']['score'] }} pts' : 'Akumulasi: {{ $individualKpi['overallScore'] }} / 100')">
+                        <span class="font-mono text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">Kehadiran Hari Ini</span>
+                        <div class="mt-2 flex items-baseline gap-2.5">
+                            <span class="font-headline text-4xl font-extrabold text-[var(--color-text-primary)] tabular-nums"
+                                  data-count-to="{{ $presentTodayCount }}">{{ number_format($presentTodayCount) }}</span>
+                            <span class="font-mono text-xs px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 font-bold tabular-nums">
+                                {{ $attendanceRate }}% dari {{ number_format($totalEmployees) }}
                             </span>
                         </div>
-                        <p class="font-mono text-xs text-slate-400">Pencapaian target tugas individu, kedisiplinan presensi, dan evaluasi berkala</p>
+                    </div>
+                    <span class="w-10 h-10 rounded-xl bg-rose-600/10 text-rose-500 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl" aria-hidden="true">how_to_reg</span>
+                    </span>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="w-full bg-[var(--color-subcard-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-rose-600 transition-all duration-500" style="width: {{ min(100, $attendanceRate) }}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)]">
+                        <span>Tepat: <strong class="text-emerald-500 tabular-nums">{{ $onTimeCount }}</strong></span>
+                        <span>Telat: <strong class="text-rose-500 tabular-nums">{{ $lateCount }}</strong></span>
+                        <x-skiper-link href="{{ route('attendance.index') }}" variant="000" class="text-rose-500 font-semibold">
+                            Log Lengkap
+                        </x-skiper-link>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Supporting Metric Strip (7 Cols) --}}
+            <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="editorial-surface rounded-2xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">Total Karyawan</span>
+                        <span class="material-symbols-outlined text-lg text-[var(--color-text-muted)]" aria-hidden="true">groups</span>
+                    </div>
+                    <div class="my-3">
+                        <span class="font-headline text-3xl font-extrabold text-[var(--color-text-primary)] tabular-nums"
+                              data-count-to="{{ $totalEmployees }}">{{ number_format($totalEmployees) }}</span>
+                        <span class="text-xs text-[var(--color-text-muted)] font-mono ml-1">Personel</span>
+                    </div>
+                    <div class="pt-2.5 border-t border-[var(--color-card-border)] flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
+                        <span>Rekrutmen bulan ini</span>
+                        <strong class="text-emerald-500 tabular-nums">+{{ $newEmployeesThisMonth }}</strong>
                     </div>
                 </div>
 
-                <!-- Toggle Tab Periode KPI: Harian (Daily), Mingguan (Weekly), Akumulasi Bulanan -->
-                <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-mono">
-                    <button type="button" 
-                            @click="kpiPeriod = 'daily'" 
-                            :class="kpiPeriod === 'daily' ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                            class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">today</span>
+                <div class="editorial-surface rounded-2xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">Cuti &amp; Dispensasi</span>
+                        <span class="material-symbols-outlined text-lg text-[var(--color-text-muted)]" aria-hidden="true">beach_access</span>
+                    </div>
+                    <div class="my-3 flex items-baseline gap-2">
+                        <span class="font-headline text-3xl font-extrabold text-[var(--color-text-primary)] tabular-nums"
+                              data-count-to="{{ $leaveCount }}">{{ $leaveCount }}</span>
+                        <span class="text-xs text-[var(--color-text-muted)] font-mono">Karyawan</span>
+                    </div>
+                    <div class="pt-2.5 border-t border-[var(--color-card-border)] flex items-center justify-between text-[11px] font-mono">
+                        <span class="text-[var(--color-text-muted)]">{{ $totalEmployees > 0 ? round(($leaveCount / $totalEmployees) * 100, 1) : 0 }}% rasio</span>
+                        <x-skiper-link href="{{ route('leave.index') }}" variant="000" class="text-rose-500 font-semibold">
+                            Detail
+                        </x-skiper-link>
+                    </div>
+                </div>
+
+                <div class="editorial-surface rounded-2xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">Perlu Persetujuan</span>
+                        <span class="px-2 py-0.5 bg-rose-600/15 text-rose-500 font-mono text-[10px] rounded font-bold">Review</span>
+                    </div>
+                    <div class="my-3">
+                        <span class="font-headline text-3xl font-extrabold text-[var(--color-text-primary)] tabular-nums"
+                              data-count-to="{{ $pendingApprovals->count() }}">{{ $pendingApprovals->count() }}</span>
+                        <span class="text-xs text-[var(--color-text-muted)] font-mono ml-1">Antrean</span>
+                    </div>
+                    <div class="pt-2.5 border-t border-[var(--color-card-border)] flex items-center justify-between text-[11px] font-mono">
+                        <span class="text-[var(--color-text-muted)] truncate">Menunggu aksi</span>
+                        <x-skiper-link href="{{ route('leave.index', ['status' => 'pending']) }}" variant="000" class="text-rose-500 font-semibold">
+                            Tinjau
+                        </x-skiper-link>
+                    </div>
+                </div>
+            </div>
+        </section>
+    @endif
+
+    {{-- Skiper49: Inverted Perspective 3D Division & Module Carousel --}}
+    @php
+        $carouselSlides = [];
+        if (!empty($departmentKpis)) {
+            foreach ($departmentKpis as $deptCode => $deptData) {
+                $targetUrl = match(strtolower($deptCode)) {
+                    'hr' => auth()->user()->canAccessHRFeatures() ? route('employees.index') : route('tasks.index'),
+                    'finance' => auth()->user()->canManageInvoices() ? route('finance.invoices.index') : route('finance.index'),
+                    'bizdev' => auth()->user()->isBisnisDevelopment() ? route('bizdev.index') : route('tasks.index'),
+                    'ga' => (auth()->user()->canAccessGAFeatures() || auth()->user()->canApproveInventoryRequests()) ? route('ga.index') : route('facilities.index'),
+                    default => route('tasks.index'),
+                };
+                $carouselSlides[] = [
+                    'tag' => 'Divisi',
+                    'title' => $deptData['name'],
+                    'score' => $deptData['score'] . '%',
+                    'subtitle' => 'Skor Kinerja Periode',
+                    'metrics' => array_slice($deptData['metrics'], 0, 2),
+                    'url' => $targetUrl,
+                    'cta' => 'Buka Workspace Divisi',
+                    'icon' => $deptData['icon'] ?? 'monitoring',
+                ];
+            }
+        }
+        $carouselSlides[] = [
+            'tag' => 'Operasional',
+            'title' => 'Kalender & Agenda Kerja',
+            'score' => now()->format('d M'),
+            'subtitle' => 'Jadwal lintas departemen',
+            'metrics' => [
+                ['label' => 'Bulan Berjalan', 'value' => now()->locale('id')->translatedFormat('F Y')],
+                ['label' => 'Hari Ini', 'value' => now()->locale('id')->translatedFormat('l')],
+            ],
+            'url' => route('calendar.index'),
+            'cta' => 'Lihat Kalender',
+            'icon' => 'calendar_month',
+        ];
+        $carouselSlides[] = [
+            'tag' => 'Layanan Mandiri',
+            'title' => 'Keuangan & Reimbursement',
+            'score' => 'IDR',
+            'subtitle' => 'Slip gaji & klaim biaya',
+            'metrics' => [
+                ['label' => 'Akses', 'value' => auth()->user()->canManageInvoices() ? 'Penuh (Finance)' : 'Mandiri'],
+                ['label' => 'Status', 'value' => 'Aktif'],
+            ],
+            'url' => auth()->user()->canManageInvoices() ? route('finance.invoices.index') : route('finance.index'),
+            'cta' => auth()->user()->canManageInvoices() ? 'Kelola Invoice' : 'Lihat Keuangan',
+            'icon' => 'payments',
+        ];
+        if (auth()->user()->canManageClientContracts()) {
+            $carouselSlides[] = [
+                'tag' => 'Sekretariat',
+                'title' => 'Kontrak MoU & Surat Resmi',
+                'score' => 'Legal',
+                'subtitle' => 'Arsip hukum & penomoran surat',
+                'metrics' => [
+                    ['label' => 'Modul Kontrak', 'value' => 'Aktif'],
+                    ['label' => 'Otorisasi', 'value' => 'Eksekutif'],
+                ],
+                'url' => route('secretary.contracts.index'),
+                'cta' => 'Monitor Kontrak',
+                'icon' => 'handshake',
+            ];
+        }
+    @endphp
+
+    @if(count($carouselSlides) >= 2)
+        <div data-reveal>
+            <x-perspective-carousel
+                heading="Eksplorasi Divisi & Workspace Aktif"
+                subheading="Geser atau gunakan panah untuk berpindah langsung ke modul operasional berdasarkan hak akses Anda."
+                :initial-slide="count($carouselSlides) > 2 ? 1 : 0">
+                @foreach($carouselSlides as $slide)
+                    <div class="swiper-slide">
+                        <div class="rounded-2xl p-5 bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] flex flex-col justify-between gap-4 min-h-[225px]">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="w-9 h-9 rounded-xl bg-rose-600/10 text-rose-500 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg" aria-hidden="true">{{ $slide['icon'] }}</span>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <span class="font-mono text-[10px] uppercase tracking-wider text-rose-500 font-semibold block">{{ $slide['tag'] }}</span>
+                                        <h3 class="font-headline font-bold text-sm text-[var(--color-text-primary)] truncate">{{ $slide['title'] }}</h3>
+                                    </div>
+                                </div>
+                                <span class="font-headline font-extrabold text-xl text-[var(--color-text-primary)] tabular-nums shrink-0">{{ $slide['score'] }}</span>
+                            </div>
+
+                            <div class="space-y-2 pt-2 border-t border-[var(--color-card-border)] text-xs font-mono">
+                                @foreach($slide['metrics'] as $m)
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[var(--color-text-muted)] truncate">{{ $m['label'] }}</span>
+                                        <strong class="text-[var(--color-text-primary)] tabular-nums shrink-0">{{ $m['value'] }}</strong>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="pt-2 flex items-center justify-between border-t border-[var(--color-card-border)]">
+                                <span class="text-[11px] text-[var(--color-text-muted)]">{{ $slide['subtitle'] }}</span>
+                                <x-skiper-link href="{{ $slide['url'] }}" variant="001" class="text-xs font-semibold text-rose-500">
+                                    {{ $slide['cta'] }}
+                                </x-skiper-link>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </x-perspective-carousel>
+        </div>
+    @endif
+
+    {{-- SECTION 1: KPI INDIVIDU --}}
+    @if(!empty($individualKpi))
+        <section class="editorial-surface rounded-2xl p-6 space-y-5" x-data="{ kpiPeriod: 'overall' }" data-reveal>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-card-border)]">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <h2 class="font-headline font-bold text-base sm:text-lg text-[var(--color-text-primary)]">Grafik KPI Individu Saya</h2>
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-mono text-xs font-bold tabular-nums"
+                              x-text="kpiPeriod === 'daily' ? 'Harian: {{ $individualKpi['daily']['score'] }} pts' : (kpiPeriod === 'weekly' ? 'Mingguan: {{ $individualKpi['weekly']['score'] }} pts' : 'Akumulasi: {{ $individualKpi['overallScore'] }} / 100')">
+                        </span>
+                    </div>
+                    <p class="font-mono text-xs text-[var(--color-text-muted)] mt-1">Pencapaian target tugas individu, kedisiplinan presensi, dan evaluasi berkala</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-1.5 bg-[var(--color-subcard-bg)] p-1 rounded-xl border border-[var(--color-card-border)] text-xs font-mono">
+                    <button type="button"
+                            @click="kpiPeriod = 'daily'"
+                            :class="kpiPeriod === 'daily' ? 'bg-rose-600 text-white keep-white font-bold' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'"
+                            class="min-h-[38px] px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
                         <span>KPI Daily</span>
                     </button>
-                    <button type="button" 
-                            @click="kpiPeriod = 'weekly'" 
-                            :class="kpiPeriod === 'weekly' ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                            class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">date_range</span>
+                    <button type="button"
+                            @click="kpiPeriod = 'weekly'"
+                            :class="kpiPeriod === 'weekly' ? 'bg-rose-600 text-white keep-white font-bold' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'"
+                            class="min-h-[38px] px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
                         <span>KPI Weekly</span>
                     </button>
-                    <button type="button" 
-                            @click="kpiPeriod = 'overall'" 
-                            :class="kpiPeriod === 'overall' ? 'bg-slate-800 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                            class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">calendar_month</span>
+                    <button type="button"
+                            @click="kpiPeriod = 'overall'"
+                            :class="kpiPeriod === 'overall' ? 'bg-rose-600 text-white keep-white font-bold' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'"
+                            class="min-h-[38px] px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
                         <span>Bulanan (Overall)</span>
                     </button>
 
-                    <!-- Tombol Export PDF Laporan KPI -->
-                    <a href="{{ route('reports.kpi.pdf') }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 transition-all flex items-center gap-1.5 font-bold shadow-sm" title="Buka & Cetak PDF Laporan KPI Lengkap">
-                        <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                    <a href="{{ route('reports.kpi.pdf') }}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="min-h-[38px] px-3 py-1.5 rounded-lg bg-[var(--color-card-bg)] hover:bg-rose-600 hover:text-white text-[var(--color-text-primary)] border border-[var(--color-card-border)] transition-colors flex items-center gap-1.5 font-semibold"
+                       title="Buka & Cetak PDF Laporan KPI Lengkap">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">picture_as_pdf</span>
                         <span>Export PDF</span>
                     </a>
                 </div>
             </div>
 
-            <!-- TAMPILAN 1: KPI HARIAN (DAILY) -->
-            <div x-show="kpiPeriod === 'daily'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-rose-500/30 space-y-2">
+            {{-- KPI Daily --}}
+            <div x-show="kpiPeriod === 'daily'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Skor KPI Harian</span>
-                        <span class="font-mono font-bold text-rose-400">{{ $individualKpi['daily']['score'] }} pts</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Skor KPI Harian</span>
+                        <span class="font-mono font-bold text-rose-500 tabular-nums">{{ $individualKpi['daily']['score'] }} pts</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['daily']['score'] }}</span>
-                        <span class="font-mono text-[11px] {{ $individualKpi['daily']['score'] >= 80 ? 'text-emerald-400' : 'text-amber-400' }}">Target: 80</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['daily']['score'] }}</span>
+                        <span class="font-mono text-[11px] {{ $individualKpi['daily']['score'] >= 80 ? 'text-emerald-500' : 'text-amber-500' }}">Target: 80</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-rose-500 to-red-500 transition-all duration-500" style="width: {{ $individualKpi['daily']['score'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-rose-600 transition-all duration-500" style="width: {{ $individualKpi['daily']['score'] }}%"></div>
                     </div>
                 </div>
 
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Status Presensi Hari Ini</span>
-                        <span class="material-symbols-outlined text-sm {{ $individualKpi['daily']['isClockedIn'] ? 'text-emerald-400' : 'text-amber-400' }}">fingerprint</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Presensi Hari Ini</span>
+                        <span class="material-symbols-outlined text-sm {{ $individualKpi['daily']['isClockedIn'] ? 'text-emerald-500' : 'text-amber-500' }}" aria-hidden="true">fingerprint</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-xl font-bold {{ $individualKpi['daily']['isClockedIn'] ? 'text-emerald-400' : 'text-amber-400' }}">{{ $individualKpi['daily']['status'] }}</span>
-                        <span class="font-mono text-[11px] text-slate-400">Jam Masuk (WIB)</span>
+                        <span class="font-headline text-xl font-bold {{ $individualKpi['daily']['isClockedIn'] ? 'text-emerald-500' : 'text-amber-500' }}">{{ $individualKpi['daily']['status'] }}</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">WIB</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
                         <div class="h-2 rounded-full {{ $individualKpi['daily']['isClockedIn'] ? 'bg-emerald-500' : 'bg-amber-500' }}" style="width: {{ $individualKpi['daily']['isClockedIn'] ? 100 : 25 }}%"></div>
                     </div>
                 </div>
 
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Progres Tugas Hari Ini</span>
-                        <span class="font-mono font-bold text-indigo-400">{{ $individualKpi['daily']['taskProgress'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Progres Tugas Harian</span>
+                        <span class="font-mono font-bold text-rose-500 tabular-nums">{{ $individualKpi['daily']['taskProgress'] }}%</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['daily']['taskProgress'] }}%</span>
-                        <span class="font-mono text-[11px] text-slate-400">Aktivitas update</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['daily']['taskProgress'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">Aktivitas</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style="width: {{ $individualKpi['daily']['taskProgress'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-rose-500 transition-all duration-500" style="width: {{ $individualKpi['daily']['taskProgress'] }}%"></div>
                     </div>
                 </div>
 
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Fokus Harian (Daily Goal)</span>
-                        <span class="font-mono text-[10px] text-emerald-400 font-bold uppercase">Optimal</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Fokus Harian</span>
+                        <span class="font-mono text-[11px] text-emerald-500 font-bold">Terjadwal</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-base font-bold text-white">Eksekusi Harian</span>
-                        <span class="font-mono text-[10px] text-slate-400">{{ \Carbon\Carbon::now()->translatedFormat('l, d M') }}</span>
+                        <span class="font-headline text-base font-bold text-[var(--color-text-primary)]">Eksekusi Harian</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">{{ \Carbon\Carbon::now()->translatedFormat('d M') }}</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500" style="width: 90%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 90%"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAMPILAN 2: KPI MINGGUAN (WEEKLY) -->
-            <div x-show="kpiPeriod === 'weekly'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-indigo-500/30 space-y-2">
+            {{-- KPI Weekly --}}
+            <div x-show="kpiPeriod === 'weekly'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Skor KPI Mingguan</span>
-                        <span class="font-mono font-bold text-indigo-400">{{ $individualKpi['weekly']['score'] }} pts</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Skor KPI Mingguan</span>
+                        <span class="font-mono font-bold text-rose-500 tabular-nums">{{ $individualKpi['weekly']['score'] }} pts</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['weekly']['score'] }}</span>
-                        <span class="font-mono text-[11px] text-slate-400">Senin - Minggu</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['weekly']['score'] }}</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">Senin - Minggu</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style="width: {{ $individualKpi['weekly']['score'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-rose-600 transition-all duration-500" style="width: {{ $individualKpi['weekly']['score'] }}%"></div>
                     </div>
                 </div>
 
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Kehadiran Minggu Ini</span>
-                        <span class="font-mono font-bold text-emerald-400">{{ $individualKpi['weekly']['attendedDays'] }} Hari</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Kehadiran Minggu Ini</span>
+                        <span class="font-mono font-bold text-emerald-500 tabular-nums">{{ $individualKpi['weekly']['attendedDays'] }} Hari</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['weekly']['attendedDays'] }}</span>
-                        <span class="font-mono text-[11px] text-slate-400">Target: 5 hari kerja</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['weekly']['attendedDays'] }}</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">Target: 5 hari</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500" style="width: {{ min(100, ($individualKpi['weekly']['attendedDays'] / 5) * 100) }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: {{ min(100, ($individualKpi['weekly']['attendedDays'] / 5) * 100) }}%"></div>
                     </div>
                 </div>
 
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Ketepatan Presensi Mingguan</span>
-                        <span class="font-mono font-bold text-teal-400">{{ $individualKpi['weekly']['punctualRate'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Ketepatan Mingguan</span>
+                        <span class="font-mono font-bold text-emerald-500 tabular-nums">{{ $individualKpi['weekly']['punctualRate'] }}%</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['weekly']['punctualRate'] }}%</span>
-                        <span class="font-mono text-[11px] text-slate-400">On Time WIB</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['weekly']['punctualRate'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">On Time WIB</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-500" style="width: {{ $individualKpi['weekly']['punctualRate'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: {{ $individualKpi['weekly']['punctualRate'] }}%"></div>
                     </div>
                 </div>
 
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Penyelesaian Task Mingguan</span>
-                        <span class="font-mono font-bold text-rose-400">{{ $individualKpi['weekly']['taskRate'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Penyelesaian Task</span>
+                        <span class="font-mono font-bold text-rose-500 tabular-nums">{{ $individualKpi['weekly']['taskRate'] }}%</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['weekly']['taskRate'] }}%</span>
-                        <span class="font-mono text-[11px] text-slate-400">Target selesai</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['weekly']['taskRate'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">Target selesai</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500" style="width: {{ $individualKpi['weekly']['taskRate'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-rose-500 transition-all duration-500" style="width: {{ $individualKpi['weekly']['taskRate'] }}%"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAMPILAN 3: KPI BULANAN / OVERALL -->
-            <div x-show="kpiPeriod === 'overall'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-                <!-- KPI 1: Task Completion Rate -->
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+            {{-- KPI Overall --}}
+            <div x-show="kpiPeriod === 'overall'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Tugas Selesai</span>
-                        <span class="font-mono font-bold text-rose-400">{{ $individualKpi['taskRate'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Tugas Selesai</span>
+                        <span class="font-mono font-bold text-rose-500 tabular-nums">{{ $individualKpi['taskRate'] }}%</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['completedTasks'] }}</span>
-                        <span class="font-mono text-[11px] text-slate-400">dari {{ $individualKpi['totalTasks'] }} tugas</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['completedTasks'] }}</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">dari {{ $individualKpi['totalTasks'] }} tugas</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-rose-500 to-red-500 transition-all duration-500" style="width: {{ $individualKpi['taskRate'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-rose-600 transition-all duration-500" style="width: {{ $individualKpi['taskRate'] }}%"></div>
                     </div>
                 </div>
 
-                <!-- KPI 2: Rata-Rata Progress Tugas -->
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Rata Progress Tugas</span>
-                        <span class="font-mono font-bold text-indigo-400">{{ $individualKpi['avgProgress'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Rata Progress Tugas</span>
+                        <span class="font-mono font-bold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['avgProgress'] }}%</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['avgProgress'] }}%</span>
-                        <span class="font-mono text-[11px] text-slate-400">Rata-rata berjalan</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['avgProgress'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">Rata berjalan</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style="width: {{ $individualKpi['avgProgress'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-slate-500 transition-all duration-500" style="width: {{ $individualKpi['avgProgress'] }}%"></div>
                     </div>
                 </div>
 
-                <!-- KPI 3: Ketepatan Waktu Presensi -->
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Disiplin Waktu (WIB)</span>
-                        <span class="font-mono font-bold text-emerald-400">{{ $individualKpi['punctualityRate'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Disiplin Waktu (WIB)</span>
+                        <span class="font-mono font-bold text-emerald-500 tabular-nums">{{ $individualKpi['punctualityRate'] }}%</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-white">{{ $individualKpi['punctualityRate'] }}%</span>
-                        <span class="font-mono text-[11px] text-slate-400">{{ $individualKpi['attendanceCount'] }} hari hadir</span>
+                        <span class="font-headline text-2xl font-extrabold text-[var(--color-text-primary)] tabular-nums">{{ $individualKpi['punctualityRate'] }}%</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">{{ $individualKpi['attendanceCount'] }} hari hadir</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500" style="width: {{ $individualKpi['punctualityRate'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: {{ $individualKpi['punctualityRate'] }}%"></div>
                     </div>
                 </div>
 
-                <!-- KPI 4: Indeks Gabungan Evaluasi -->
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-rose-500/35 space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-mono text-[11px] text-slate-400 uppercase font-semibold">Overall KPI Score</span>
-                        <span class="font-mono font-bold text-teal-400">{{ $individualKpi['overallScore'] }} pts</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)] uppercase font-semibold">Overall KPI Score</span>
+                        <span class="font-mono font-bold text-emerald-500 tabular-nums">{{ $individualKpi['overallScore'] }} pts</span>
                     </div>
                     <div class="flex items-baseline justify-between">
-                        <span class="font-headline text-2xl font-extrabold text-teal-400">{{ $individualKpi['overallScore'] }}</span>
-                        <span class="font-mono text-[11px] text-slate-400">Target: 80.0</span>
+                        <span class="font-headline text-2xl font-extrabold text-rose-500 tabular-nums">{{ $individualKpi['overallScore'] }}</span>
+                        <span class="font-mono text-[11px] text-[var(--color-text-muted)]">Target: 80.0</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-500" style="width: {{ $individualKpi['overallScore'] }}%"></div>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: {{ $individualKpi['overallScore'] }}%"></div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     @endif
 
-    <!-- ========================================================================= -->
-    <!-- SECTION 2: GRAFIK KPI MASING-MASING DEPARTEMEN                            -->
-    <!-- ========================================================================= -->
+    {{-- SECTION 2: GRAFIK KPI DEPARTEMEN --}}
     @if(!empty($departmentKpis))
-        <div class="p-6 rounded-2xl bg-[#151922] border border-slate-800 shadow-sm space-y-5" x-data="{ deptKpiTab: 'overall' }">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center text-white shadow-md">
-                        <span class="material-symbols-outlined text-xl">monitoring</span>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="font-headline font-bold text-base text-white">
-                                @if(auth()->user()->isDirektur() || auth()->user()->isSekretaris())
-                                    Grafik Indeks KPI Departemen Perusahaan
-                                @elseif(auth()->user()->isHR() && auth()->user()->isManager())
-                                    Grafik Indeks KPI Departemen HR & Pengawasan GA
-                                @else
-                                    Grafik Indeks KPI Departemen {{ auth()->user()->department ?? 'Saya' }}
-                                @endif
-                            </h2>
-                            <span class="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[10px] font-semibold">
-                                {{ count($departmentKpis) }} Divisi
-                            </span>
-                        </div>
-                        <p class="font-mono text-xs text-slate-400">
+        <section class="editorial-surface rounded-2xl p-6 space-y-5" x-data="{ deptKpiTab: 'overall' }" data-reveal>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--color-card-border)]">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <h2 class="font-headline font-bold text-base sm:text-lg text-[var(--color-text-primary)]">
                             @if(auth()->user()->isDirektur() || auth()->user()->isSekretaris())
-                                Indikator kinerja kunci seluruh divisi: HR, Finance, Bisnis Development, dan General Affairs
+                                Indeks KPI Departemen Perusahaan
                             @elseif(auth()->user()->isHR() && auth()->user()->isManager())
-                                Indikator pencapaian kinerja Departemen HR dan pengawasan performa operasional Departemen General Affairs (GA)
+                                Indeks KPI Departemen HR &amp; Pengawasan GA
                             @else
-                                Indikator pencapaian target dan efektivitas operasional divisi Anda
+                                Indeks KPI Departemen {{ auth()->user()->department ?? 'Saya' }}
                             @endif
-                        </p>
+                        </h2>
+                        <span class="px-2 py-0.5 rounded-full bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] text-[var(--color-text-secondary)] font-mono text-[11px] font-semibold tabular-nums">
+                            {{ count($departmentKpis) }} Divisi
+                        </span>
                     </div>
+                    <p class="font-mono text-xs text-[var(--color-text-muted)] mt-1">
+                        Perbandingan pencapaian operasional lintas departemen dalam periode aktif
+                    </p>
                 </div>
 
-                <!-- Toggle Tab Periode KPI Departemen -->
-                <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-mono">
-                    <button type="button" 
-                            @click="deptKpiTab = 'daily'" 
-                            :class="deptKpiTab === 'daily' ? 'bg-gradient-to-r from-amber-600 to-rose-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                            class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">today</span>
-                        <span>KPI Daily</span>
+                <div class="flex flex-wrap items-center gap-1.5 bg-[var(--color-subcard-bg)] p-1 rounded-xl border border-[var(--color-card-border)] text-xs font-mono">
+                    <button type="button"
+                            @click="deptKpiTab = 'daily'"
+                            :class="deptKpiTab === 'daily' ? 'bg-rose-600 text-white keep-white font-bold' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'"
+                            class="min-h-[38px] px-3 py-1.5 rounded-lg transition-colors">
+                        KPI Daily
                     </button>
-                    <button type="button" 
-                            @click="deptKpiTab = 'weekly'" 
-                            :class="deptKpiTab === 'weekly' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                            class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">date_range</span>
-                        <span>KPI Weekly</span>
+                    <button type="button"
+                            @click="deptKpiTab = 'weekly'"
+                            :class="deptKpiTab === 'weekly' ? 'bg-rose-600 text-white keep-white font-bold' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'"
+                            class="min-h-[38px] px-3 py-1.5 rounded-lg transition-colors">
+                        KPI Weekly
                     </button>
-                    <button type="button" 
-                            @click="deptKpiTab = 'overall'" 
-                            :class="deptKpiTab === 'overall' ? 'bg-slate-800 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
-                            class="px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">bar_chart</span>
-                        <span>Akumulasi Divisi</span>
+                    <button type="button"
+                            @click="deptKpiTab = 'overall'"
+                            :class="deptKpiTab === 'overall' ? 'bg-rose-600 text-white keep-white font-bold' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]'"
+                            class="min-h-[38px] px-3 py-1.5 rounded-lg transition-colors">
+                        Akumulasi Divisi
                     </button>
-
-                    <!-- Tombol Export PDF Laporan Departemen -->
-                    <a href="{{ route('reports.kpi.pdf') }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 transition-all flex items-center gap-1.5 font-bold shadow-sm" title="Buka & Cetak PDF Laporan KPI Divisi">
-                        <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+                    <a href="{{ route('reports.kpi.pdf') }}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="min-h-[38px] px-3 py-1.5 rounded-lg bg-[var(--color-card-bg)] hover:bg-rose-600 hover:text-white text-[var(--color-text-primary)] border border-[var(--color-card-border)] transition-colors flex items-center gap-1.5 font-semibold">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">picture_as_pdf</span>
                         <span>Export PDF</span>
                     </a>
                 </div>
             </div>
 
-            <!-- Grid Card Grafik KPI Departemen (Responsive: 1 full-width jika akun divisi, 4 grid jika Direktur) -->
             <div class="grid grid-cols-1 {{ count($departmentKpis) > 1 ? 'md:grid-cols-2 lg:grid-cols-4' : 'max-w-xl' }} gap-4">
                 @foreach($departmentKpis as $code => $dept)
-                    @php
-                        $colorMap = [
-                            'rose' => ['border' => 'border-rose-500/30', 'bg' => 'bg-rose-500/10', 'text' => 'text-rose-400', 'bar' => 'from-rose-600 to-pink-500'],
-                            'emerald' => ['border' => 'border-emerald-500/30', 'bg' => 'bg-emerald-500/10', 'text' => 'text-emerald-400', 'bar' => 'from-emerald-600 to-teal-500'],
-                            'blue' => ['border' => 'border-blue-500/30', 'bg' => 'bg-blue-500/10', 'text' => 'text-blue-400', 'bar' => 'from-blue-600 to-cyan-500'],
-                            'amber' => ['border' => 'border-amber-500/30', 'bg' => 'bg-amber-500/10', 'text' => 'text-amber-400', 'bar' => 'from-amber-600 to-orange-500'],
-                        ];
-                        $c = $colorMap[$dept['color']] ?? $colorMap['rose'];
-                    @endphp
-                    <div class="p-4 rounded-xl bg-slate-900/60 border {{ $c['border'] }} flex flex-col justify-between space-y-4 relative overflow-hidden group hover:border-slate-600 transition-all">
+                    <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] flex flex-col justify-between space-y-4 hover:border-rose-500/45 transition-colors">
                         <div>
-                            <!-- Header Dept -->
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-lg {{ $c['bg'] }} {{ $c['text'] }} flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-base">{{ $dept['icon'] }}</span>
-                                    </div>
-                                    <span class="font-headline font-bold text-xs text-white">{{ $dept['name'] }}</span>
+                            <div class="flex items-center justify-between mb-3 gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-8 h-8 rounded-lg bg-[var(--color-card-bg)] border border-[var(--color-card-border)] text-rose-500 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-base" aria-hidden="true">{{ $dept['icon'] }}</span>
+                                    </span>
+                                    <span class="font-headline font-bold text-xs text-[var(--color-text-primary)] truncate">{{ $dept['name'] }}</span>
                                 </div>
-                                <span class="font-mono text-xs font-extrabold {{ $c['text'] }}"
+                                <span class="font-mono text-xs font-extrabold text-rose-500 tabular-nums shrink-0"
                                       x-text="deptKpiTab === 'daily' ? '{{ $dept['dailyScore'] }}%' : (deptKpiTab === 'weekly' ? '{{ $dept['weeklyScore'] }}%' : '{{ $dept['score'] }}%')">
                                     {{ $dept['score'] }}%
                                 </span>
                             </div>
 
-                            <!-- Bar Grafik Score Dinamis -->
                             <div class="space-y-1.5 mb-4">
-                                <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
-                                    <span x-text="deptKpiTab === 'daily' ? 'Skor KPI Harian Divisi' : (deptKpiTab === 'weekly' ? 'Skor KPI Mingguan Divisi' : 'Skor Pencapaian KPI Divisi')">Skor Pencapaian KPI</span>
-                                    <span class="font-bold text-slate-200"
+                                <div class="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
+                                    <span x-text="deptKpiTab === 'daily' ? 'Harian' : (deptKpiTab === 'weekly' ? 'Mingguan' : 'Akumulasi')">Skor KPI</span>
+                                    <span class="font-bold text-[var(--color-text-primary)] tabular-nums"
                                           x-text="deptKpiTab === 'daily' ? '{{ $dept['dailyScore'] }} / 100' : (deptKpiTab === 'weekly' ? '{{ $dept['weeklyScore'] }} / 100' : '{{ $dept['score'] }} / 100')">
                                         {{ $dept['score'] }} / 100
                                     </span>
                                 </div>
-                                <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                                    <!-- Dynamic Bar Width via Alpine -->
-                                    <div class="h-2.5 rounded-full bg-gradient-to-r {{ $c['bar'] }} transition-all duration-700" 
+                                <div class="w-full bg-[var(--color-card-bg)] rounded-full h-2 overflow-hidden">
+                                    <div class="h-2 rounded-full bg-rose-600 transition-all duration-500"
                                          :style="'width: ' + (deptKpiTab === 'daily' ? '{{ $dept['dailyScore'] }}%' : (deptKpiTab === 'weekly' ? '{{ $dept['weeklyScore'] }}%' : '{{ $dept['score'] }}%'))"></div>
                                 </div>
                             </div>
 
-                            <!-- Sub-Metrics List -->
-                            <div class="space-y-2 pt-2 border-t border-slate-800 text-[11px] font-mono">
+                            <div class="space-y-2 pt-2.5 border-t border-[var(--color-card-border)] text-[11px] font-mono">
                                 @foreach($dept['metrics'] as $m)
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-slate-400 truncate max-w-[140px]">{{ $m['label'] }}</span>
-                                        <strong class="text-slate-200">{{ $m['value'] }}</strong>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[var(--color-text-muted)] truncate">{{ $m['label'] }}</span>
+                                        <strong class="text-[var(--color-text-primary)] tabular-nums shrink-0">{{ $m['value'] }}</strong>
                                     </div>
                                 @endforeach
                             </div>
-
-                            <!-- Indikator Khusus Daily / Weekly -->
-                            <div class="mt-3 p-2 rounded-lg bg-slate-950/50 border border-slate-800/80 flex items-center justify-between text-[10px] font-mono">
-                                <span class="text-slate-400" x-text="deptKpiTab === 'daily' ? 'Operasional Hari Ini:' : (deptKpiTab === 'weekly' ? 'Minggu Berjalan:' : 'Target Periode:')">Status:</span>
-                                <span class="font-bold text-emerald-400 flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                    <span x-text="deptKpiTab === 'daily' ? 'Aktif & Terkendali' : (deptKpiTab === 'weekly' ? 'On Track' : 'Memenuhi Kuota')">Aktif</span>
-                                </span>
-                            </div>
                         </div>
 
-                        <!-- Footer Status Evaluasi -->
-                        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] font-mono">
-                            <span class="text-slate-500">Evaluasi</span>
+                        <div class="pt-2.5 border-t border-[var(--color-card-border)] flex items-center justify-between text-[11px] font-mono">
+                            <span class="text-[var(--color-text-muted)]">Evaluasi</span>
                             @if($dept['score'] >= 80)
-                                <span class="text-emerald-400 font-bold flex items-center gap-0.5">
-                                    <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                                <span class="text-emerald-500 font-bold flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">check_circle</span>
                                     Memenuhi Target
                                 </span>
                             @else
-                                <span class="text-amber-400 font-bold flex items-center gap-0.5">
-                                    <span class="material-symbols-outlined text-[12px]">trending_up</span>
+                                <span class="text-amber-500 font-bold flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">trending_up</span>
                                     Optimalisasi
                                 </span>
                             @endif
@@ -543,247 +613,215 @@
                     </div>
                 @endforeach
             </div>
-        </div>
+        </section>
     @endif
 
-
+    {{-- Executive Analytical Percentage Bar (Direktur & Sekretaris Direktur) --}}
     @if((auth()->user()->isDirektur() || auth()->user()->isSekretaris()) && !empty($directorMetrics))
-        <!-- EXECUTIVE ANALYTICAL PERCENTAGE BAR (DIREKTUR & SEKRETARIS DIREKTUR) -->
-        <div class="p-5 bg-gradient-to-r from-surface-container to-surface-container-high rounded-xl border border-amber-500/30 shadow-md">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-[#282a2e]/60">
-                <div class="flex items-center gap-2">
-                    <span class="p-1.5 rounded-lg bg-amber-950/60 text-amber-400 border border-amber-500/30">
-                        <span class="material-symbols-outlined text-lg">analytics</span>
-                    </span>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="font-headline font-bold text-base text-on-surface">Executive Analytical Index & KPI Persentase</h2>
-                            <span class="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-[10px] font-semibold uppercase">
-                                Prioritas Direksi
-                            </span>
-                        </div>
-                        <p class="font-mono text-xs text-tertiary">Ringkasan rasio performa operasional seluruh divisi perusahaan untuk mempermudah evaluasi cepat</p>
-                    </div>
+        <section class="editorial-surface rounded-2xl p-6 space-y-4" data-reveal>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-[var(--color-card-border)]">
+                <div>
+                    <h2 class="font-headline font-bold text-base text-[var(--color-text-primary)]">Executive Analytical Index &amp; Rasio Kinerja</h2>
+                    <p class="font-mono text-xs text-[var(--color-text-muted)] mt-0.5">Ringkasan rasio persentase operasional perusahaan untuk tinjauan cepat Direksi</p>
                 </div>
-                <a href="{{ route('tasks.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-highest hover:bg-surface-bright text-xs font-mono text-on-surface border border-[#333539] transition-all">
-                    <span>Lihat Rincian Tugas</span>
-                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                </a>
+                <x-skiper-link href="{{ route('tasks.index') }}" variant="001" class="text-xs font-mono font-semibold text-rose-500">
+                    Lihat Rincian Tugas
+                </x-skiper-link>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                <!-- KPI 1: Kehadiran & Ketepatan Waktu -->
-                <div class="p-4 rounded-xl bg-surface-container-low border border-[#282a2e]/70 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-mono uppercase text-tertiary">Disiplin Presensi</span>
-                        <span class="text-xs font-mono font-bold text-emerald-400">{{ $directorMetrics['onTimeRate'] }}%</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
+                    <div class="flex items-center justify-between text-xs font-mono">
+                        <span class="text-[var(--color-text-muted)] uppercase">Disiplin Presensi</span>
+                        <span class="font-bold text-emerald-500 tabular-nums">{{ $directorMetrics['onTimeRate'] }}%</span>
                     </div>
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold font-headline text-on-surface">{{ $directorMetrics['onTimeRate'] }}%</span>
-                        <span class="text-[10px] font-mono text-tertiary">Tepat Waktu</span>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-1.5 overflow-hidden">
+                        <div class="h-1.5 rounded-full bg-emerald-500" style="width: {{ $directorMetrics['onTimeRate'] }}%"></div>
                     </div>
-                    <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                        <div class="h-1.5 rounded-full bg-emerald-400" style="width: {{ $directorMetrics['onTimeRate'] }}%"></div>
-                    </div>
-                    <div class="flex items-center justify-between text-[10px] font-mono text-tertiary pt-1">
-                        <span>Hadir Total: <strong class="text-on-surface">{{ $attendanceRate }}%</strong></span>
-                        <span>Telat: <strong class="text-red-400">{{ $directorMetrics['lateRate'] }}%</strong></span>
+                    <div class="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
+                        <span>Hadir: <strong class="text-[var(--color-text-primary)] tabular-nums">{{ $attendanceRate }}%</strong></span>
+                        <span>Telat: <strong class="text-rose-500 tabular-nums">{{ $directorMetrics['lateRate'] }}%</strong></span>
                     </div>
                 </div>
 
-                <!-- KPI 2: Eksekusi Target Tugas -->
-                <div class="p-4 rounded-xl bg-surface-container-low border border-[#282a2e]/70 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-mono uppercase text-tertiary">Penyelesaian Tugas</span>
-                        <span class="text-xs font-mono font-bold text-blue-400">{{ $directorMetrics['tasksCompletionRate'] }}%</span>
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
+                    <div class="flex items-center justify-between text-xs font-mono">
+                        <span class="text-[var(--color-text-muted)] uppercase">Penyelesaian Tugas</span>
+                        <span class="font-bold text-rose-500 tabular-nums">{{ $directorMetrics['tasksCompletionRate'] }}%</span>
                     </div>
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold font-headline text-on-surface">{{ $directorMetrics['tasksCompletionRate'] }}%</span>
-                        <span class="text-[10px] font-mono text-tertiary">{{ $directorMetrics['completedTasks'] }}/{{ $directorMetrics['totalTasks'] }} Done</span>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-1.5 overflow-hidden">
+                        <div class="h-1.5 rounded-full bg-rose-600" style="width: {{ $directorMetrics['tasksCompletionRate'] }}%"></div>
                     </div>
-                    <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                        <div class="h-1.5 rounded-full bg-blue-400" style="width: {{ $directorMetrics['tasksCompletionRate'] }}%"></div>
-                    </div>
-                    <div class="flex items-center justify-between text-[10px] font-mono text-tertiary pt-1">
-                        <span>Rata Progres: <strong class="text-blue-300">{{ $directorMetrics['avgTaskProgress'] }}%</strong></span>
-                        <span>Jalan: <strong class="text-amber-400">{{ $directorMetrics['inProgressTasks'] }}</strong></span>
+                    <div class="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
+                        <span>Selesai: <strong class="text-[var(--color-text-primary)] tabular-nums">{{ $directorMetrics['completedTasks'] }}/{{ $directorMetrics['totalTasks'] }}</strong></span>
+                        <span>Jalan: <strong class="text-amber-500 tabular-nums">{{ $directorMetrics['inProgressTasks'] }}</strong></span>
                     </div>
                 </div>
 
-                <!-- KPI 3: Pencairan Reimbursement -->
-                <div class="p-4 rounded-xl bg-surface-container-low border border-[#282a2e]/70 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-mono uppercase text-tertiary">Realisasi Reimburse</span>
-                        <span class="text-xs font-mono font-bold text-purple-400">{{ $directorMetrics['paidReimburseRate'] }}%</span>
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
+                    <div class="flex items-center justify-between text-xs font-mono">
+                        <span class="text-[var(--color-text-muted)] uppercase">Realisasi Reimburse</span>
+                        <span class="font-bold text-emerald-500 tabular-nums">{{ $directorMetrics['paidReimburseRate'] }}%</span>
                     </div>
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold font-headline text-on-surface">{{ $directorMetrics['paidReimburseRate'] }}%</span>
-                        <span class="text-[10px] font-mono text-tertiary">Dicairkan (Paid)</span>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-1.5 overflow-hidden">
+                        <div class="h-1.5 rounded-full bg-emerald-500" style="width: {{ $directorMetrics['paidReimburseRate'] }}%"></div>
                     </div>
-                    <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                        <div class="h-1.5 rounded-full bg-purple-400" style="width: {{ $directorMetrics['paidReimburseRate'] }}%"></div>
-                    </div>
-                    <div class="flex items-center justify-between text-[10px] font-mono text-tertiary pt-1">
-                        <span>Pending: <strong class="text-amber-400">{{ $directorMetrics['pendingReimburseCount'] }} Klaim</strong></span>
-                        <span>Total: <strong class="text-on-surface">{{ $directorMetrics['totalReimburseCount'] }}</strong></span>
+                    <div class="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
+                        <span>Pending: <strong class="text-amber-500 tabular-nums">{{ $directorMetrics['pendingReimburseCount'] }}</strong></span>
+                        <span>Total: <strong class="text-[var(--color-text-primary)] tabular-nums">{{ $directorMetrics['totalReimburseCount'] }}</strong></span>
                     </div>
                 </div>
 
-                <!-- KPI 4: Resolusi Kendala GA & Fasilitas -->
-                <div class="p-4 rounded-xl bg-surface-container-low border border-[#282a2e]/70 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-mono uppercase text-tertiary">Resolusi Kendala GA</span>
-                        <span class="text-xs font-mono font-bold text-emerald-400">{{ $directorMetrics['ticketResolvedRate'] }}%</span>
+                <div class="p-4 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] space-y-2">
+                    <div class="flex items-center justify-between text-xs font-mono">
+                        <span class="text-[var(--color-text-muted)] uppercase">Resolusi Kendala GA</span>
+                        <span class="font-bold text-emerald-500 tabular-nums">{{ $directorMetrics['ticketResolvedRate'] }}%</span>
                     </div>
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-xl font-bold font-headline text-on-surface">{{ $directorMetrics['ticketResolvedRate'] }}%</span>
-                        <span class="text-[10px] font-mono text-tertiary">Tertangani</span>
+                    <div class="w-full bg-[var(--color-card-bg)] rounded-full h-1.5 overflow-hidden">
+                        <div class="h-1.5 rounded-full bg-emerald-500" style="width: {{ $directorMetrics['ticketResolvedRate'] }}%"></div>
                     </div>
-                    <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                        <div class="h-1.5 rounded-full bg-emerald-400" style="width: {{ $directorMetrics['ticketResolvedRate'] }}%"></div>
-                    </div>
-                    <div class="flex items-center justify-between text-[10px] font-mono text-tertiary pt-1">
-                        <span>Conversion Pelamar: <strong class="text-rose-400">{{ $directorMetrics['hireConversionRate'] }}%</strong></span>
-                        <span>Tiket: <strong class="text-on-surface">{{ $directorMetrics['totalTickets'] }}</strong></span>
+                    <div class="flex items-center justify-between text-[11px] font-mono text-[var(--color-text-muted)]">
+                        <span>Hired: <strong class="text-rose-500 tabular-nums">{{ $directorMetrics['hireConversionRate'] }}%</strong></span>
+                        <span>Tiket: <strong class="text-[var(--color-text-primary)] tabular-nums">{{ $directorMetrics['totalTickets'] }}</strong></span>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     @endif
 
-    <!-- Main Grid: Live Attendance Stream & Pending Approval Requests -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {{-- Main Grid: Live Attendance Stream & Pending Approval Queue --}}
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6" data-reveal>
 
-        <!-- Left 2 Cols: Live Today Attendance Log -->
-        <div class="lg:col-span-2 bg-surface-container-low rounded-xl border border-[#282a2e]/50 shadow-sm flex flex-col">
-            <div class="p-5 border-b border-[#282a2e]/50 flex items-center justify-between">
+        {{-- Left 7 Cols: Live Today Attendance Log --}}
+        <section class="lg:col-span-7 editorial-surface rounded-2xl flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-[var(--color-card-border)] flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 class="font-headline text-base font-semibold text-on-surface">Log Kehadiran Masuk Hari Ini</h2>
-                    <p class="font-mono text-xs text-tertiary">
+                    <h2 class="font-headline text-base font-bold text-[var(--color-text-primary)]">Log Kehadiran Masuk Hari Ini</h2>
+                    <p class="font-mono text-xs text-[var(--color-text-muted)]">
                         @if(auth()->user()->isDirektur())
-                            Cakupan: Seluruh Karyawan Perusahaan (Akses Direksi)
+                            Cakupan: Seluruh Karyawan Perusahaan
                         @elseif(auth()->user()->isManager())
-                            Cakupan: Tim Departemen {{ auth()->user()->department }} & Manajer
+                            Cakupan: Tim Departemen {{ auth()->user()->department }} &amp; Manajer
                         @else
                             Cakupan: Presensi Pribadi Anda
                         @endif
                     </p>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container font-mono text-xs text-secondary">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                        Live
-                    </span>
-                    <a href="{{ route('attendance.index') }}" class="text-xs text-tertiary hover:text-on-surface hover:underline flex items-center gap-1">
-                        <span>Semua log</span>
-                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                    </a>
-                </div>
+                <x-skiper-link href="{{ route('attendance.index') }}" variant="000" class="text-xs font-semibold text-rose-500">
+                    Semua Log
+                </x-skiper-link>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead>
-                        <tr class="border-b border-[#282a2e]/40 text-tertiary font-mono text-[11px] uppercase bg-surface-container-lowest/40">
+                        <tr class="border-b border-[var(--color-table-divider)] text-[var(--color-text-muted)] font-mono text-[11px] uppercase bg-[var(--color-table-header-bg)]">
                             <th class="px-5 py-3">Karyawan</th>
                             <th class="px-5 py-3">Waktu Masuk</th>
                             <th class="px-5 py-3">Status</th>
-                            <th class="px-5 py-3">Mode & Lokasi</th>
+                            <th class="px-5 py-3">Mode &amp; Lokasi</th>
                             <th class="px-5 py-3 text-right">Pulang</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#282a2e]/30 font-body">
+                    <tbody class="divide-y divide-[var(--color-table-divider)]">
                         @forelse($recentAttendances as $att)
-                            <tr class="hover:bg-surface-container transition-colors">
+                            <tr class="hover:bg-[var(--color-table-row-hover)] transition-colors">
                                 <td class="px-5 py-3.5 flex items-center gap-3">
-                                    <img src="{{ $att->employee->avatar_url ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' }}" 
-                                         alt="avatar" 
-                                         class="w-7 h-7 rounded-full object-cover"/>
-                                    <div>
-                                        <a href="{{ route('employees.show', $att->employee->id) }}" class="font-medium text-on-surface hover:text-primary transition-colors">
+                                    <img src="{{ $att->employee->avatar_url ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' }}"
+                                         alt="{{ $att->employee->name }}"
+                                         width="28"
+                                         height="28"
+                                         class="w-7 h-7 rounded-full object-cover shrink-0"/>
+                                    <div class="min-w-0">
+                                        <a href="{{ route('employees.show', $att->employee->id) }}" class="font-semibold text-[var(--color-text-primary)] hover:text-rose-500 transition-colors block truncate">
                                             {{ $att->employee->name }}
                                         </a>
-                                        <div class="font-mono text-[10px] text-tertiary">{{ $att->employee->nip }} • {{ $att->employee->department }}</div>
+                                        <div class="font-mono text-[10px] text-[var(--color-text-muted)]">{{ $att->employee->nip }} • {{ $att->employee->department }}</div>
                                     </div>
                                 </td>
-                                <td class="px-5 py-3.5 font-mono text-xs text-on-surface font-semibold">
+                                <td class="px-5 py-3.5 font-mono text-xs text-[var(--color-text-primary)] font-semibold tabular-nums whitespace-nowrap">
                                     {{ substr($att->clock_in, 0, 8) }} WIB
                                 </td>
                                 <td class="px-5 py-3.5">
                                     @if($att->status === 'on_time')
-                                        <span class="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/20 text-emerald-400 font-mono text-[10px] font-medium">
+                                        <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-500 font-mono text-[10px] font-semibold">
                                             Tepat Waktu
                                         </span>
                                     @elseif($att->status === 'late')
-                                        <span class="px-2 py-0.5 rounded bg-red-950/60 border border-red-500/20 text-red-400 font-mono text-[10px] font-medium">
+                                        <span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-500 font-mono text-[10px] font-semibold">
                                             Terlambat
                                         </span>
                                     @else
-                                        <span class="px-2 py-0.5 rounded bg-surface-container text-tertiary font-mono text-[10px]">
+                                        <span class="px-2 py-0.5 rounded bg-[var(--color-subcard-bg)] text-[var(--color-text-muted)] font-mono text-[10px]">
                                             {{ strtoupper($att->status) }}
                                         </span>
                                     @endif
                                 </td>
                                 <td class="px-5 py-3.5">
-                                    <div class="text-on-surface font-medium">{{ $att->work_mode }}</div>
-                                    <div class="font-mono text-[10px] text-tertiary truncate max-w-[140px]">{{ $att->location_name ?? 'Kantor Utama' }}</div>
+                                    <div class="text-[var(--color-text-primary)] font-medium">{{ $att->work_mode }}</div>
+                                    <div class="font-mono text-[10px] text-[var(--color-text-muted)] truncate max-w-[140px]">{{ $att->location_name ?? 'Kantor Utama' }}</div>
                                 </td>
-                                <td class="px-5 py-3.5 text-right font-mono text-xs text-tertiary">
-                                    {{ $att->clock_out ? substr($att->clock_out, 0, 5) . ' WIB' : '— Belum Pulang' }}
+                                <td class="px-5 py-3.5 text-right font-mono text-xs text-[var(--color-text-muted)] tabular-nums whitespace-nowrap">
+                                    {{ $att->clock_out ? substr($att->clock_out, 0, 5) . ' WIB' : 'Belum Pulang' }}
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-5 py-8 text-center text-tertiary font-mono">
-                                    Belum ada data presensi yang masuk untuk hari ini.
+                                <td colspan="5" class="px-5 py-10 text-center">
+                                    <p class="text-xs font-mono text-[var(--color-text-muted)] mb-2">Belum ada catatan presensi masuk untuk tanggal ini.</p>
+                                    <x-skiper-link href="{{ route('attendance.index') }}" variant="000" class="text-xs font-semibold text-rose-500">
+                                        Buka Modul Kehadiran
+                                    </x-skiper-link>
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
 
-        <!-- Right Col: Pending Approval List & Quick Action -->
-        <div class="bg-surface-container-low rounded-xl border border-[#282a2e]/50 shadow-sm flex flex-col">
-            <div class="p-5 border-b border-[#282a2e]/50 flex items-center justify-between">
+        {{-- Right 5 Cols: Pending Approval List --}}
+        <section class="lg:col-span-5 editorial-surface rounded-2xl flex flex-col">
+            <div class="p-5 border-b border-[var(--color-card-border)] flex items-center justify-between gap-2">
                 <div>
-                    <h2 class="font-headline text-base font-semibold text-on-surface">Persetujuan Menunggu</h2>
-                    <p class="font-mono text-xs text-tertiary">
+                    <h2 class="font-headline text-base font-bold text-[var(--color-text-primary)]">Persetujuan Menunggu</h2>
+                    <p class="font-mono text-xs text-[var(--color-text-muted)]">
                         @if(auth()->user()->isDirektur() || auth()->user()->isHR())
-                            Permohonan izin & cuti butuh aksi
+                            Permohonan izin &amp; cuti butuh aksi
                         @else
-                            Status pengajuan izin & cuti Anda
+                            Status pengajuan izin &amp; cuti Anda
                         @endif
                     </p>
                 </div>
-                <span class="font-mono text-xs px-2 py-0.5 bg-red-950/60 text-primary-fixed border border-red-500/20 rounded">
+                <span class="font-mono text-xs px-2.5 py-0.5 bg-rose-600/15 text-rose-500 rounded-md font-semibold tabular-nums">
                     {{ $pendingApprovals->count() }} Antrean
                 </span>
             </div>
 
             <div class="p-5 flex flex-col gap-4 flex-1">
                 @forelse($pendingApprovals->take(4) as $item)
-                    <div class="p-3.5 bg-surface-container rounded-lg border border-[#282a2e]/60 flex flex-col gap-2">
-                        <div class="flex items-start justify-between">
-                            <div class="flex items-center gap-2.5">
-                                <img src="{{ $item->employee->avatar_url ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' }}" 
-                                     alt="emp" 
-                                     class="w-7 h-7 rounded-full object-cover"/>
-                                <div>
-                                    <span class="font-semibold text-xs text-on-surface block">{{ $item->employee->name }}</span>
-                                    <span class="font-mono text-[10px] text-tertiary">{{ $item->employee->department }}</span>
+                    <div class="p-4 bg-[var(--color-subcard-bg)] rounded-xl border border-[var(--color-card-border)] flex flex-col gap-2.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <img src="{{ $item->employee->avatar_url ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' }}"
+                                     alt="{{ $item->employee->name }}"
+                                     width="28"
+                                     height="28"
+                                     class="w-7 h-7 rounded-full object-cover shrink-0"/>
+                                <div class="min-w-0">
+                                    <span class="font-semibold text-xs text-[var(--color-text-primary)] block truncate">{{ $item->employee->name }}</span>
+                                    <span class="font-mono text-[10px] text-[var(--color-text-muted)]">{{ $item->employee->department }}</span>
                                 </div>
                             </div>
-                            <span class="font-mono text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-tertiary">
+                            <span class="font-mono text-[10px] px-2 py-0.5 rounded bg-[var(--color-card-bg)] border border-[var(--color-card-border)] text-[var(--color-text-secondary)] shrink-0">
                                 {{ $item->type }}
                             </span>
                         </div>
 
-                        <p class="text-xs text-tertiary italic line-clamp-2">"{{ $item->reason }}"</p>
+                        <p class="text-xs text-[var(--color-text-muted)] line-clamp-2">"{{ $item->reason }}"</p>
 
-                        <div class="flex items-center justify-between pt-1 border-t border-[#282a2e]/40 text-xs">
-                            <span class="font-mono text-[10px] text-tertiary">
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--color-card-border)] text-xs">
+                            <span class="font-mono text-[10px] text-[var(--color-text-muted)] tabular-nums">
                                 {{ \Carbon\Carbon::parse($item->start_date)->format('d M') }} - {{ \Carbon\Carbon::parse($item->end_date)->format('d M Y') }} ({{ $item->duration_days }} hari)
                             </span>
 
@@ -793,8 +831,8 @@
                             @endphp
 
                             @if($isOwnRequest)
-                                <span class="font-mono text-[9px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-xs">lock</span>
+                                <span class="font-mono text-[10px] text-amber-500 bg-amber-500/15 px-2 py-0.5 rounded flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">lock</span>
                                     <span>Pengajuan Anda</span>
                                 </span>
                             @elseif($item->status === 'pending_manager')
@@ -813,22 +851,21 @@
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="rejected">
                                             <input type="hidden" name="rejection_note" value="">
-                                            <button type="submit" class="p-1 text-tertiary hover:text-red-400 transition-colors" title="Tolak">
-                                                <span class="material-symbols-outlined text-lg">close</span>
+                                            <button type="submit" aria-label="Tolak permohonan" class="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors" title="Tolak">
+                                                <span class="material-symbols-outlined text-lg" aria-hidden="true">close</span>
                                             </button>
                                         </form>
                                         <form action="{{ route('leave.updateStatus', $item->id) }}" method="POST">
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="status" value="approved">
-                                            <button type="submit" onclick="return confirm('Setujui permohonan ini dan teruskan ke Manager HR?')" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-[11px] font-semibold transition-all flex items-center gap-1 shadow-sm" title="Setujui Tahap Manager Dept">
-                                                <span class="material-symbols-outlined text-sm">forward</span>
-                                                <span>Setujui & Ke HR</span>
+                                            <button type="submit" onclick="return confirm('Setujui permohonan ini dan teruskan ke Manager HR?')" class="min-h-[36px] px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white keep-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1">
+                                                <span>Setujui &amp; Ke HR</span>
                                             </button>
                                         </form>
                                     </div>
                                 @else
-                                    <span class="font-mono text-[10px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/20">
+                                    <span class="font-mono text-[10px] text-amber-500 bg-amber-500/15 px-2 py-0.5 rounded">
                                         Menunggu Manager Dept
                                     </span>
                                 @endif
@@ -847,41 +884,41 @@
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="rejected">
                                         <input type="hidden" name="rejection_note" value="">
-                                        <button type="submit" class="p-1 text-tertiary hover:text-red-400 transition-colors" title="Tolak">
-                                            <span class="material-symbols-outlined text-lg">close</span>
+                                        <button type="submit" aria-label="Tolak permohonan" class="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors" title="Tolak">
+                                            <span class="material-symbols-outlined text-lg" aria-hidden="true">close</span>
                                         </button>
                                     </form>
                                     <form action="{{ route('leave.updateStatus', $item->id) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="status" value="approved">
-                                        <button type="submit" onclick="return confirm('Setujui final permohonan cuti ini?')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-semibold transition-all flex items-center gap-1 shadow-sm" title="Setujui Final HR">
-                                            <span class="material-symbols-outlined text-sm">check</span>
+                                        <button type="submit" onclick="return confirm('Setujui final permohonan cuti ini?')" class="min-h-[36px] px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white keep-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-sm" aria-hidden="true">check</span>
                                             <span>Setujui HR</span>
                                         </button>
                                     </form>
                                 </div>
                             @else
-                                <span class="font-mono text-[10px] text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-500/20">
+                                <span class="font-mono text-[10px] text-[var(--color-text-secondary)] bg-[var(--color-card-bg)] px-2 py-0.5 rounded border border-[var(--color-card-border)]">
                                     Menunggu Review HR
                                 </span>
                             @endif
                         </div>
                     </div>
                 @empty
-                    <div class="py-12 flex flex-col items-center justify-center text-center text-tertiary">
-                        <span class="material-symbols-outlined text-3xl mb-2 text-emerald-400">task_alt</span>
-                        <p class="text-xs font-mono">Semua permohonan telah ditinjau!</p>
+                    <div class="py-12 flex flex-col items-center justify-center text-center text-[var(--color-text-muted)]">
+                        <span class="material-symbols-outlined text-3xl mb-2 text-emerald-500" aria-hidden="true">task_alt</span>
+                        <p class="text-xs font-mono">Semua permohonan cuti telah ditinjau.</p>
                     </div>
                 @endforelse
 
                 @if($pendingApprovals->count() > 4)
-                    <a href="{{ route('leave.index', ['status' => 'pending']) }}" class="mt-auto block text-center py-2 bg-surface-container hover:bg-surface-container-high rounded-lg font-mono text-xs text-tertiary hover:text-on-surface transition-colors">
-                        Lihat {{ $pendingApprovals->count() - 4 }} permohonan lainnya &rarr;
-                    </a>
+                    <x-skiper-link href="{{ route('leave.index', ['status' => 'pending']) }}" variant="000" class="mt-auto justify-center py-2 font-mono text-xs text-rose-500 font-semibold">
+                        Lihat {{ $pendingApprovals->count() - 4 }} permohonan lainnya
+                    </x-skiper-link>
                 @endif
             </div>
-        </div>
+        </section>
 
     </div>
 

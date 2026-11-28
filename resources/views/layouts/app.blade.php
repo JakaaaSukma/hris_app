@@ -5,20 +5,16 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>@yield('title', 'GYOKAI HR') - Enterprise HRIS</title>
 
-    <!-- Favicon Icon Tab Browser -->
-    <link rel="icon" type="image/png" href="{{ asset('images/gyokai_logo.png') }}?v={{ time() }}"/>
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v={{ time() }}"/>
+    <link rel="icon" type="image/png" href="{{ asset('images/gyokai_logo.png') }}"/>
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"/>
 
-    <!-- Google Fonts with font-display: swap for instant rendering -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
 
-    <!-- Vite CSS & JS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- Dark/Light Theme Script (Instant Execution to prevent flash of wrong theme) -->
     <script>
         (function() {
             const savedTheme = localStorage.getItem('gyokai_theme');
@@ -38,31 +34,6 @@
             vertical-align: middle;
             line-height: 1;
         }
-
-        /* LIGHTWEIGHT MODAL OPTIMIZATION:
-           Backdrop-blur causes heavy GPU repaints and frame drops during transitions.
-           We override backdrop-blur on fixed overlay modals and use pure CSS opacity transitions */
-        .fixed.inset-0.z-50 {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            contain: layout style;
-        }
-
-        /* Hardware accelerated modal card without heavy redraw */
-        .fixed.inset-0.z-50 > div {
-            will-change: transform, opacity;
-            transform: translateZ(0);
-        }
-
-        /* Instant, snappy modal appearance without delay */
-        [x-transition] {
-            transition-duration: 75ms !important;
-        }
-
-        /* HARDWARE STICKY HEADER FIX:
-           Menggunakan sticky alih-alih fixed agar header mengambil ruang fisik dokumen,
-           sehingga konten halaman apa pun (kalender, dashboard, laporan) tidak akan pernah
-           tertutup oleh header bar saat di-scroll ke paling atas. */
         header.app-topbar {
             position: sticky !important;
             top: 0 !important;
@@ -71,321 +42,261 @@
     </style>
     @stack('styles')
 </head>
-<body class="bg-[#0f1117] font-body text-slate-200 antialiased min-h-screen flex flex-col selection:bg-rose-500 selection:text-white" x-data="{
-    mobileMenuOpen: false,
-    showClockInModal: false,
-    showLeaveModal: false,
-    showEmployeeModal: false,
-    isDarkMode: localStorage.getItem('gyokai_theme') !== 'light',
-    toggleTheme() {
-        this.isDarkMode = !this.isDarkMode;
-        if (this.isDarkMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('gyokai_theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('gyokai_theme', 'light');
-        }
-    }
-}">
+<body class="bg-[var(--color-page-bg)] font-body text-[var(--color-page-text)] antialiased min-h-screen flex flex-col selection:bg-rose-600 selection:text-white"
+      x-data="{
+          mobileMenuOpen: false,
+          showClockInModal: false,
+          showLeaveModal: false,
+          showEmployeeModal: false,
+          isDarkMode: localStorage.getItem('gyokai_theme') !== 'light',
+          toggleTheme() {
+              this.isDarkMode = !this.isDarkMode;
+              if (this.isDarkMode) {
+                  document.documentElement.classList.add('dark');
+                  localStorage.setItem('gyokai_theme', 'dark');
+              } else {
+                  document.documentElement.classList.remove('dark');
+                  localStorage.setItem('gyokai_theme', 'light');
+              }
+          }
+      }"
+      @keydown.escape.window="mobileMenuOpen = false; showClockInModal = false">
 
-    <!-- Mobile Overlay Backdrop -->
-    <div x-cloak 
-         x-show="mobileMenuOpen" 
+    {{-- Keyboard Skip Link --}}
+    <a href="#main-content"
+       class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-rose-600 focus:text-white focus:text-xs focus:font-semibold">
+        Lewati ke konten utama
+    </a>
+
+    {{-- Mobile Overlay Backdrop --}}
+    <div x-cloak
+         x-show="mobileMenuOpen"
          @click="mobileMenuOpen = false"
          x-transition:enter="transition-opacity ease-linear duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
-         x-transition:leave="transition-opacity ease-linear duration-200"
+         x-transition:leave="transition-opacity ease-linear duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-black/80 z-40 lg:hidden"></div>
-         
-    <!-- Sidebar Navigation (Desktop Fixed & Mobile Slide Drawer with Smooth Scrollable Menu) -->
-    <aside class="fixed left-0 top-0 h-full w-64 bg-[#141822] z-50 flex flex-col border-r border-slate-800 shadow-2xl transition-transform duration-200 ease-in-out lg:translate-x-0"
-           :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
-        
-        <!-- Brand / Logo & Close Mobile Button (Fixed Top) -->
-        <div class="h-16 px-4 flex items-center justify-between bg-[#161b26]/90 border-b border-slate-800/80 shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-white/5 border border-slate-700/80 p-1 flex items-center justify-center shadow-md">
-                    <img src="{{ asset('images/gyokai_logo.png') }}" alt="Gyokai Logo" class="w-full h-full object-contain"/>
-                </div>
-                <div class="flex flex-col">
-                    <span class="font-headline font-extrabold text-[15px] tracking-wide text-white flex items-center gap-1.5">
-                        GYOKAI <span class="text-rose-500 font-extrabold">HR</span>
-                    </span>
-                    <span class="font-mono text-[9px] text-slate-400 uppercase tracking-widest font-semibold">Human Resource System</span>
-                </div>
-            </div>
+         class="fixed inset-0 bg-black/75 z-40 lg:hidden"
+         aria-hidden="true"></div>
 
-            <!-- Tombol Tutup Sidebar di Mobile -->
-            <button type="button" 
-                    @click="mobileMenuOpen = false" 
-                    class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 lg:hidden transition-colors"
-                    title="Tutup Menu">
-                <span class="material-symbols-outlined text-xl">close</span>
+    {{-- Sidebar Navigation --}}
+    <aside aria-label="Navigasi Utama"
+           class="fixed left-0 top-0 h-full w-64 bg-[var(--color-sidebar-bg)] z-50 flex flex-col border-r border-[var(--color-sidebar-border)] transition-transform duration-200 ease-out lg:translate-x-0"
+           :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+
+        {{-- Brand Header --}}
+        <div class="h-16 px-4 flex items-center justify-between border-b border-[var(--color-sidebar-border)] shrink-0">
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-rose-600/10 border border-rose-500/25 p-1.5 flex items-center justify-center shrink-0">
+                    <img src="{{ asset('images/gyokai_logo.png') }}"
+                         alt="Logo Gyokai HR"
+                         width="28"
+                         height="28"
+                         class="w-full h-full object-contain"/>
+                </div>
+                <div class="flex flex-col min-w-0">
+                    <span class="font-headline font-extrabold text-sm tracking-tight text-[var(--color-text-primary)] truncate">
+                        GYOKAI <span class="text-rose-500">HR</span>
+                    </span>
+                    <span class="font-mono text-[10px] text-[var(--color-text-muted)] tracking-wider truncate">Enterprise Portal</span>
+                </div>
+            </a>
+
+            <button type="button"
+                    @click="mobileMenuOpen = false"
+                    aria-label="Tutup Menu Navigasi"
+                    class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] lg:hidden transition-colors">
+                <x-animated-icon type="menu" open-expr="true" />
             </button>
         </div>
 
-        <!-- Scrollable Navigation Items Container -->
-        <div class="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
-            <!-- Main Nav Items -->
-            <nav class="flex flex-col gap-1 px-3 py-4">
-                <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px]">grid_view</span>
-                    <span>Dashboard</span>
+        @php
+            $navBase = 'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors duration-150';
+            $navInactive = 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)]';
+            $navActive = 'nav-active keep-white bg-rose-600 text-white font-semibold shadow-sm';
+        @endphp
+
+        {{-- Scrollable Nav Items --}}
+        <div class="flex-1 overflow-y-auto min-h-0">
+            <nav class="flex flex-col gap-1 px-3 py-4" aria-label="Menu Modul">
+                <a href="{{ route('dashboard') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('dashboard') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">grid_view</span>
+                    <span class="flex-1 truncate">Dashboard</span>
+                    <x-animated-icon type="arrow" class="opacity-0 group-hover:opacity-90 transition-opacity" />
                 </a>
 
                 <div class="flex flex-col gap-1">
-                    <a href="{{ route('attendance.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('attendance.index') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px]">schedule</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Kehadiran</span>
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 bg-slate-800 text-slate-300 border border-slate-700/60 rounded-md">Log</span>
-                        </div>
+                    <a href="{{ route('attendance.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('attendance.index') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">schedule</span>
+                        <span class="flex-1 truncate">Kehadiran</span>
+                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/15 dark:bg-white/5 {{ request()->routeIs('attendance.index') ? 'text-white' : 'text-[var(--color-text-muted)]' }}">Log</span>
                     </a>
-                    <a href="{{ route('attendance.excuses.index') }}" 
-                       class="flex items-center gap-2.5 pl-9 pr-3 py-1.5 rounded-lg text-[11px] font-medium transition-all {{ request()->routeIs('attendance.excuses.*') ? 'bg-amber-500/15 text-amber-300 font-bold border border-amber-500/25' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40' }}">
-                        <span class="material-symbols-outlined text-[14px] text-amber-400">event_upcoming</span>
-                        <span>Izin & Dispensasi</span>
+                    <a href="{{ route('attendance.excuses.index') }}"
+                       class="group flex items-center gap-2.5 pl-9 pr-3 py-2 rounded-lg text-[11px] font-medium transition-colors {{ request()->routeIs('attendance.excuses.*') ? 'bg-rose-600/15 text-rose-500 font-semibold' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)]' }}">
+                        <span class="material-symbols-outlined text-[15px]" aria-hidden="true">event_upcoming</span>
+                        <span class="flex-1 truncate">Izin &amp; Dispensasi</span>
                     </a>
                 </div>
 
-                <!-- Kalender & Catatan/Jadwal: Tersedia untuk SEMUA akun -->
-                <a href="{{ route('calendar.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('calendar.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('calendar.*') ? 'text-white' : 'text-rose-400' }}">calendar_month</span>
-                    <div class="flex items-center justify-between flex-1">
-                        <span>Kalender & Jadwal</span>
-                        <span class="text-[9px] font-mono px-1.5 py-0.5 bg-rose-500/10 text-rose-300 border border-rose-500/20 rounded-md">Agenda</span>
-                    </div>
+                <a href="{{ route('calendar.index') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('calendar.*') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">calendar_month</span>
+                    <span class="flex-1 truncate">Kalender &amp; Jadwal</span>
+                    <x-animated-icon type="arrow" class="opacity-0 group-hover:opacity-90 transition-opacity" />
                 </a>
 
-                <!-- Tugas / Tasks: Skala Tim & Individu / Executive Monitoring -->
-                <a href="{{ route('tasks.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('tasks.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('tasks.*') ? 'text-white' : 'text-indigo-400' }}">task</span>
-                    <div class="flex items-center justify-between flex-1">
-                        <span>{{ auth()->user() && auth()->user()->isDirektur() ? 'Monitoring Tugas' : 'Tugas & Progres' }}</span>
-                        @if(auth()->user() && auth()->user()->isDirektur())
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-md">Direksi</span>
-                        @endif
-                    </div>
+                <a href="{{ route('tasks.index') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('tasks.*') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">task_alt</span>
+                    <span class="flex-1 truncate">{{ auth()->user() && auth()->user()->isDirektur() ? 'Monitoring Tugas' : 'Tugas &amp; Progres' }}</span>
+                    @if(auth()->user() && auth()->user()->isDirektur())
+                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/15 dark:bg-white/5 {{ request()->routeIs('tasks.*') ? 'text-white' : 'text-[var(--color-text-muted)]' }}">Direksi</span>
+                    @endif
                 </a>
 
-                <!-- Cuti & Izin: Seluruh karyawan & manager dapat mengajukan -->
-                <a href="{{ route('leave.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('leave.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('leave.*') ? 'text-white' : 'text-rose-400' }}">event_busy</span>
-                    <div class="flex items-center justify-between flex-1">
-                        <span>Cuti & Izin</span>
-                        @if(auth()->user() && auth()->user()->canApproveLeaves())
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-md">Review</span>
-                        @endif
-                    </div>
+                <a href="{{ route('leave.index') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('leave.*') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">event_busy</span>
+                    <span class="flex-1 truncate">Cuti &amp; Izin</span>
+                    @if(auth()->user() && auth()->user()->canApproveLeaves())
+                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/15 dark:bg-white/5 {{ request()->routeIs('leave.*') ? 'text-white' : 'text-rose-500' }}">Review</span>
+                    @endif
                 </a>
 
-                <!-- Chat Menu: Dropdown untuk Manager (Chat Departemen & Chat Direksi) -->
                 @if(auth()->user()->isManager())
                     <div x-data="{ chatMenuOpen: {{ request()->routeIs('chat.*') ? 'true' : 'false' }} }" class="flex flex-col">
-                        <button @click="chatMenuOpen = !chatMenuOpen" 
+                        <button @click="chatMenuOpen = !chatMenuOpen"
                                 type="button"
-                                class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('chat.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                            <div class="flex items-center gap-3">
-                                <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('chat.*') ? 'text-white' : 'text-cyan-400' }}">forum</span>
-                                <span>Menu Chat</span>
-                            </div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                                    Manager
-                                </span>
-                                <span class="material-symbols-outlined text-sm transition-transform duration-150" :class="chatMenuOpen ? 'rotate-180' : ''">expand_more</span>
-                            </div>
+                                :aria-expanded="chatMenuOpen.toString()"
+                                class="{{ $navBase }} justify-between w-full text-left {{ request()->routeIs('chat.*') ? $navActive : $navInactive }}">
+                            <span class="flex items-center gap-3 min-w-0">
+                                <span class="material-symbols-outlined text-[19px]" aria-hidden="true">forum</span>
+                                <span class="truncate">Menu Chat</span>
+                            </span>
+                            <span class="material-symbols-outlined text-base transition-transform duration-150" :class="chatMenuOpen ? 'rotate-180' : ''" aria-hidden="true">expand_more</span>
                         </button>
 
-                        <!-- Sub-menu Dropdown untuk Manager -->
-                        <div x-show="chatMenuOpen" x-cloak class="flex flex-col gap-1 pl-4 pt-1 pb-1 border-l border-slate-800 ml-5 mt-1">
-                            <!-- 1. Chat Departemen -->
-                            <a href="{{ route('chat.index') }}" 
-                               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all {{ request()->routeIs('chat.*') && request('tab') !== 'direksi' ? 'bg-rose-500/20 text-white font-semibold border border-rose-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
-                                <span class="material-symbols-outlined text-[16px] {{ request()->routeIs('chat.*') && request('tab') !== 'direksi' ? 'text-cyan-400' : 'text-slate-500' }}">groups</span>
-                                <span>Chat Departemen</span>
+                        <div x-show="chatMenuOpen" x-cloak class="flex flex-col gap-1 pl-4 pt-1 pb-1 border-l border-[var(--color-sidebar-border)] ml-5 mt-1">
+                            <a href="{{ route('chat.index') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request()->routeIs('chat.*') && request('tab') !== 'direksi' ? 'bg-rose-600/15 text-rose-500 font-semibold' : $navInactive }}">
+                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">groups</span>
+                                <span class="truncate">Chat Departemen</span>
                             </a>
-
-                            <!-- 2. Chat Sekretaris Direktur -->
-                            <a href="{{ route('chat.index', ['tab' => 'direksi']) }}" 
-                               class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all {{ request('tab') === 'direksi' ? 'bg-amber-500/20 text-white font-semibold border border-amber-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="material-symbols-outlined text-[16px] {{ request('tab') === 'direksi' ? 'text-amber-400' : 'text-slate-500' }}">support_agent</span>
-                                    <span>Sekretaris Direktur</span>
-                                </div>
-                                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                            <a href="{{ route('chat.index', ['tab' => 'direksi']) }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ request('tab') === 'direksi' ? 'bg-rose-600/15 text-rose-500 font-semibold' : $navInactive }}">
+                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">support_agent</span>
+                                <span class="truncate">Sekretaris Direktur</span>
                             </a>
                         </div>
                     </div>
                 @else
-                    <!-- Chat Departemen (Karyawan) / Chat Eksekutif (Direktur & Sekretaris) -->
-                    <a href="{{ route('chat.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('chat.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('chat.*') ? 'text-white' : ((auth()->user()->isDirektur() || auth()->user()->isSekretaris()) ? 'text-amber-400' : 'text-cyan-400') }}">
+                    <a href="{{ route('chat.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('chat.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">
                             {{ auth()->user()->isDirektur() ? 'support_agent' : (auth()->user()->isSekretaris() ? 'hub' : 'forum') }}
                         </span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>{{ auth()->user()->isDirektur() ? 'Sekretaris Direktur' : (auth()->user()->isSekretaris() ? 'Koordinasi Eksekutif' : 'Chat Departemen') }}</span>
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md {{ (auth()->user()->isDirektur() || auth()->user()->isSekretaris()) ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' : 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20' }}">
-                                {{ auth()->user()->isDirektur() ? 'Sekretaris' : (auth()->user()->isSekretaris() ? 'Direksi & Mgr' : (auth()->user()->department ?? 'Tim')) }}
-                            </span>
-                        </div>
+                        <span class="flex-1 truncate">{{ auth()->user()->isDirektur() ? 'Sekretaris Direktur' : (auth()->user()->isSekretaris() ? 'Koordinasi Eksekutif' : 'Chat Departemen') }}</span>
                     </a>
                 @endif
 
-                <!-- Keuangan & Slip Gaji: Pelaporan Slip Gaji & Reimbursement -->
-                <a href="{{ route('finance.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('finance.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/25 border border-emerald-400/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('finance.*') ? 'text-white' : 'text-emerald-400' }}">payments</span>
-                    <div class="flex items-center justify-between flex-1">
-                        <span>Keuangan & Slip Gaji</span>
-                        @if(auth()->user() && auth()->user()->canApproveReimbursements())
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md">Finance</span>
-                        @endif
-                    </div>
+                <a href="{{ route('finance.index') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('finance.index') || request()->routeIs('finance.salarySlips.*') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">payments</span>
+                    <span class="flex-1 truncate">Keuangan &amp; Slip Gaji</span>
                 </a>
 
-                <!-- Laporan Kerusakan Fasilitas GA: Bisa diakses seluruh karyawan & manager -->
-                <a href="{{ route('facilities.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('facilities.*') ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-600/25 border border-amber-400/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('facilities.*') ? 'text-white' : 'text-amber-400' }}">handyman</span>
-                    <div class="flex items-center justify-between flex-1">
-                        <span>Laporan Kendala (GA)</span>
-                        @if(auth()->user() && auth()->user()->canControlGA())
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-md">
-                                {{ auth()->user()->isAsistenManager() ? 'Asisten Mgr' : (auth()->user()->isGA() ? 'Tim GA' : (auth()->user()->isManager() ? 'Manager HR' : 'Direktur')) }}
-                            </span>
-                        @endif
-                    </div>
+                <a href="{{ route('facilities.index') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('facilities.*') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">handyman</span>
+                    <span class="flex-1 truncate">Laporan Kendala (GA)</span>
                 </a>
 
-                <!-- Notifikasi Saya: Tersedia untuk SEMUA akun -->
-                <a href="{{ route('notifications.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('notifications.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('notifications.*') ? 'text-white' : 'text-rose-400' }}">notifications</span>
-                    <div class="flex items-center justify-between flex-1">
-                        <span>Notifikasi</span>
-                        @php
-                            $sidebarUnreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0;
-                        @endphp
-                        @if($sidebarUnreadCount > 0)
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 bg-rose-500 text-white font-bold rounded-full">
-                                {{ $sidebarUnreadCount }}
-                            </span>
-                        @endif
-                    </div>
+                <a href="{{ route('notifications.index') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('notifications.*') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">notifications</span>
+                    <span class="flex-1 truncate">Notifikasi</span>
+                    @php
+                        $sidebarUnreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0;
+                    @endphp
+                    @if($sidebarUnreadCount > 0)
+                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-rose-600 text-white font-bold tabular-nums">
+                            {{ $sidebarUnreadCount }}
+                        </span>
+                    @endif
                 </a>
 
-                <!-- Pengaturan Profil Saya (Nama, Email, Password, Foto) -->
-                <a href="{{ route('profile.edit') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('profile.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('profile.*') ? 'text-white' : 'text-sky-400' }}">manage_accounts</span>
-                    <span>Pengaturan Profil</span>
+                <a href="{{ route('profile.edit') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('profile.*') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">manage_accounts</span>
+                    <span class="flex-1 truncate">Pengaturan Profil</span>
                 </a>
 
-                <!-- Panduan & Alur Sistem (Tersedia untuk SEMUA akun) -->
-                <a href="{{ route('guide.index') }}" 
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('guide.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('guide.*') ? 'text-white' : 'text-teal-400' }}">menu_book</span>
-                    <div class="flex items-center justify-between flex-1">
-                        <span>Panduan & Alur</span>
-                        <span class="text-[9px] font-mono px-1.5 py-0.5 bg-teal-500/10 text-teal-300 border border-teal-500/20 rounded-md">SOP</span>
-                    </div>
+                <a href="{{ route('guide.index') }}"
+                   class="{{ $navBase }} {{ request()->routeIs('guide.*') ? $navActive : $navInactive }}">
+                    <span class="material-symbols-outlined text-[19px]" aria-hidden="true">menu_book</span>
+                    <span class="flex-1 truncate">Panduan &amp; Alur</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/15 dark:bg-white/5 {{ request()->routeIs('guide.*') ? 'text-white' : 'text-[var(--color-text-muted)]' }}">SOP</span>
                 </a>
 
-                <!-- SECTION: MODUL KHUSUS DEPARTEMEN -->
-                <div class="pt-4 pb-1.5 px-3">
-                    <span class="text-[9px] font-mono uppercase tracking-widest text-slate-500 font-semibold">Modul Divisi</span>
+                {{-- Modul Divisi --}}
+                <div class="pt-4 pb-1 px-3">
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">Modul Divisi</span>
                 </div>
 
-                <!-- 1. Modul HR & Direktur (Direktori Pegawai, Rekrutmen, Offboarding, Paklaring) -->
                 @if(auth()->user() && auth()->user()->canAccessHRFeatures())
-                    <a href="{{ route('employees.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('employees.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('employees.*') ? 'text-white' : 'text-pink-400' }}">badge</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Direktori Pegawai</span>
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-pink-500/10 text-pink-300 border border-pink-500/20">
-                                Staff
-                            </span>
-                        </div>
+                    <a href="{{ route('employees.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('employees.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">badge</span>
+                        <span class="flex-1 truncate">Direktori Pegawai</span>
                     </a>
 
-                    <a href="{{ route('hr.recruitment.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('hr.recruitment.*') ? 'bg-gradient-to-r from-rose-800/90 to-pink-800/70 text-white shadow-md border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] text-pink-400">person_search</span>
-                        <span>Rekrutmen & Onboarding</span>
+                    <a href="{{ route('hr.recruitment.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('hr.recruitment.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">person_search</span>
+                        <span class="flex-1 truncate">Rekrutmen &amp; Onboarding</span>
                     </a>
 
-                    <a href="{{ route('hr.offboarding.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('hr.offboarding.*') ? 'bg-gradient-to-r from-purple-800/90 to-indigo-800/70 text-white shadow-md border border-purple-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] text-purple-400">exit_to_app</span>
-                        <span>Offboarding Karyawan</span>
+                    <a href="{{ route('hr.offboarding.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('hr.offboarding.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">exit_to_app</span>
+                        <span class="flex-1 truncate">Offboarding Karyawan</span>
                     </a>
 
-                    <a href="{{ route('hr.paklaring.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('hr.paklaring.*') ? 'bg-gradient-to-r from-amber-600 to-rose-600 text-white shadow-md border border-amber-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] text-amber-400">workspace_premium</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Surat Keterangan / Paklaring</span>
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">LPK</span>
-                        </div>
+                    <a href="{{ route('hr.paklaring.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('hr.paklaring.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">workspace_premium</span>
+                        <span class="flex-1 truncate">Surat Keterangan / Paklaring</span>
                     </a>
                 @endif
 
-                <!-- 2. Bisnis Development Department (Deals Pipeline) -->
                 @if(auth()->user() && auth()->user()->isBisnisDevelopment())
-                    <a href="{{ route('bizdev.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('bizdev.*') ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] text-blue-400">trending_up</span>
-                        <span>Pipeline Deals (BizDev)</span>
+                    <a href="{{ route('bizdev.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('bizdev.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">trending_up</span>
+                        <span class="flex-1 truncate">Pipeline Deals (BizDev)</span>
                     </a>
                 @endif
 
-                <!-- 3. General Affairs (Aset & Inventaris GA - Bagian dari Divisi HR & GA) -->
                 @if(auth()->user() && (auth()->user()->canAccessGAFeatures() || auth()->user()->canApproveInventoryRequests()))
-                    <a href="{{ route('ga.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('ga.*') ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-600/30 border border-amber-400/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] text-amber-400">inventory_2</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Inventaris & Aset (GA)</span>
-                            @if(auth()->user()->isHR() && auth()->user()->isManager())
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-md">Manager HR</span>
-                            @elseif(auth()->user()->isAsistenManager())
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-md">Asisten Mgr</span>
-                            @elseif(auth()->user()->isGA())
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-md">Divisi GA</span>
-                            @elseif(auth()->user()->canApproveInventoryRequests())
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md">Finance</span>
-                            @endif
-                        </div>
+                    <a href="{{ route('ga.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('ga.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">inventory_2</span>
+                        <span class="flex-1 truncate">Inventaris &amp; Aset (GA)</span>
                     </a>
                 @endif
 
-                <!-- 4. Resepsionis / Front Desk (Bank Data Member Gyokai) -->
                 @if(auth()->user() && (auth()->user()->isResepsionis() || auth()->user()->isDirektur()))
-                    <a href="{{ route('receptionist.members.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('receptionist.members.*') ? 'bg-gradient-to-r from-rose-600/90 to-rose-600/70 text-white shadow-lg shadow-rose-600/25 border border-rose-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('receptionist.members.*') ? 'text-white' : 'text-rose-400' }}">groups</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Data Member</span>
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                                Gyokai
-                            </span>
-                        </div>
+                    <a href="{{ route('receptionist.members.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('receptionist.members.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">groups</span>
+                        <span class="flex-1 truncate">Data Member</span>
                     </a>
                 @endif
 
-                <!-- 5. Finance / Keuangan (Invoice Pembayaran & Kirim Slip Gaji Massal) -->
                 @if(auth()->user() && auth()->user()->canManageInvoices())
                     @php
                         $urgentInvoicesCount = \Illuminate\Support\Facades\Schema::hasTable('finance_invoices')
@@ -394,206 +305,174 @@
                                 ->count()
                             : 0;
                     @endphp
-                    <a href="{{ route('finance.invoices.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('finance.invoices.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/25 border border-emerald-400/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('finance.invoices.*') ? 'text-white' : 'text-emerald-400' }}">receipt_long</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Invoice & Tagihan</span>
-                            @if($urgentInvoicesCount > 0)
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse font-bold" title="{{ $urgentInvoicesCount }} Invoice jatuh tempo / segera jatuh tempo (<= 7 hari)">
-                                    {{ $urgentInvoicesCount }} Tempo
-                                </span>
-                            @else
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                    Finance
-                                </span>
-                            @endif
-                        </div>
+                    <a href="{{ route('finance.invoices.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('finance.invoices.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">receipt_long</span>
+                        <span class="flex-1 truncate">Invoice &amp; Tagihan</span>
+                        @if($urgentInvoicesCount > 0)
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 font-bold tabular-nums" title="{{ $urgentInvoicesCount }} Invoice jatuh tempo / segera jatuh tempo">
+                                {{ $urgentInvoicesCount }} Tempo
+                            </span>
+                        @endif
                     </a>
 
-                    <a href="{{ route('finance.dispatch.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('finance.dispatch.*') ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/25 border border-emerald-400/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('finance.dispatch.*') ? 'text-white' : 'text-teal-400' }}">forward_to_inbox</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Kirim Slip Gaji</span>
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                                Email
-                            </span>
-                        </div>
+                    <a href="{{ route('finance.dispatch.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('finance.dispatch.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">forward_to_inbox</span>
+                        <span class="flex-1 truncate">Kirim Slip Gaji</span>
                     </a>
                 @endif
 
-                <!-- 6. Tata Persuratan Resmi (Sekretaris Direktur & Direktur Utama) -->
                 @if(auth()->user() && auth()->user()->canManageExecutiveLetters())
-                    <a href="{{ route('secretary.letters.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('secretary.letters.*') ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-600/25 border border-amber-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('secretary.letters.*') ? 'text-white' : 'text-amber-400' }}">mark_email_read</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Surat Keluar & Agenda</span>
-                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                {{ auth()->user()->isSekretaris() ? 'Sekretaris' : 'Direksi' }}
-                            </span>
-                        </div>
+                    <a href="{{ route('secretary.letters.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('secretary.letters.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">mark_email_read</span>
+                        <span class="flex-1 truncate">Surat Keluar &amp; Agenda</span>
                     </a>
                 @endif
 
-                <!-- 7. Manajemen & Pemantauan Kontrak/MoU Klien (Sekretaris Direktur & Direktur Utama) -->
                 @if(auth()->user() && auth()->user()->canManageClientContracts())
                     @php
-                        $expiringContractsCount = \Illuminate\Support\Facades\Schema::hasTable('client_contracts') 
+                        $expiringContractsCount = \Illuminate\Support\Facades\Schema::hasTable('client_contracts')
                             ? \App\Models\ClientContract::where('status', 'active')
                                 ->whereBetween('end_date', [now()->toDateString(), now()->addDays(30)->toDateString()])
                                 ->count()
                             : 0;
                     @endphp
-                    <a href="{{ route('secretary.contracts.index') }}" 
-                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-75 {{ request()->routeIs('secretary.contracts.*') ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg shadow-amber-600/25 border border-amber-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <span class="material-symbols-outlined text-[20px] {{ request()->routeIs('secretary.contracts.*') ? 'text-white' : 'text-amber-400' }}">handshake</span>
-                        <div class="flex items-center justify-between flex-1">
-                            <span>Kontrak & MoU Klien</span>
-                            @if($expiringContractsCount > 0)
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse font-bold" title="{{ $expiringContractsCount }} Kontrak/MoU akan berakhir dalam 30 hari">
-                                    {{ $expiringContractsCount }} Expiring
-                                </span>
-                            @else
-                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                    {{ auth()->user()->isSekretaris() ? 'Sekretaris' : 'Direksi' }}
-                                </span>
-                            @endif
-                        </div>
+                    <a href="{{ route('secretary.contracts.index') }}"
+                       class="{{ $navBase }} {{ request()->routeIs('secretary.contracts.*') ? $navActive : $navInactive }}">
+                        <span class="material-symbols-outlined text-[19px]" aria-hidden="true">handshake</span>
+                        <span class="flex-1 truncate">Kontrak &amp; MoU Klien</span>
+                        @if($expiringContractsCount > 0)
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 font-bold tabular-nums" title="{{ $expiringContractsCount }} Kontrak segera habis">
+                                {{ $expiringContractsCount }}
+                            </span>
+                        @endif
                     </a>
                 @endif
             </nav>
         </div>
 
-        <!-- Footer / System status -->
-        <div class="p-3 bg-[#11151f]/80 backdrop-blur-md m-3 rounded-xl border border-slate-800/80 flex flex-col gap-2 shadow-inner">
-            <div class="flex items-center justify-between">
-                <span class="font-headline text-[11px] text-white font-bold tracking-tight">Gyokai Core</span>
-                <span class="font-mono text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">Online</span>
+        {{-- Compact System Footer --}}
+        <div class="p-3 m-3 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] flex items-center justify-between gap-2">
+            <div class="min-w-0">
+                <span class="font-headline text-xs font-bold text-[var(--color-text-primary)] block truncate">Gyokai Core</span>
+                <span class="font-mono text-[10px] text-[var(--color-text-muted)] block truncate">ADMS &amp; 2FA Aktif</span>
             </div>
-            <div class="flex items-center gap-2 pt-1 border-t border-slate-800/60">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span class="font-mono text-[10px] text-slate-400">MySQL & ADMS Ready</span>
-            </div>
+            <span class="inline-flex items-center gap-1.5 font-mono text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-semibold shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Online
+            </span>
         </div>
     </aside>
 
-    <!-- Main Content wrapper (Responsive: full width on mobile, pl-64 on desktop) -->
-    <div class="w-full lg:pl-64 min-h-screen flex flex-col">
-        <!-- Top App Bar / Header (Sticky bar yang mengambil ruang fisik alami dokumen) -->
-        <header class="app-topbar sticky top-0 w-full h-16 bg-[#11151f] border-b border-slate-800 z-30 px-4 sm:px-6 flex items-center justify-between gap-3 shrink-0">
-            
-            <!-- Left: Mobile Menu Toggle & Search Bar -->
-            <div class="flex items-center gap-3 flex-1 max-w-md">
-                <!-- Hamburger Menu Button (Mobile Only) -->
-                <button type="button" 
-                        @click="mobileMenuOpen = true"
-                        class="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 lg:hidden border border-slate-700/60 shadow-sm active:scale-95 transition-all shrink-0"
-                        title="Buka Navigasi Menu">
-                    <span class="material-symbols-outlined text-2xl">menu</span>
+    {{-- Main Workspace Container --}}
+    <div class="w-full lg:pl-64 min-h-screen flex flex-col relative" data-skiper-scroll-container>
+        {{-- Sticky Topbar Header --}}
+        <header class="app-topbar sticky top-0 w-full h-16 bg-[var(--color-header-bg)] border-b border-[var(--color-header-border)] z-30 px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
+            {{-- Skiper19-style Horizontal Scroll Rail --}}
+            <div id="top-scroll-rail"
+                 aria-hidden="true"
+                 class="pointer-events-none absolute left-0 bottom-0 h-[2px] w-full bg-rose-600 origin-left scale-x-0 transition-transform duration-75"></div>
+
+            {{-- Left: Mobile Menu Morphing Toggle + Global Search --}}
+            <div class="flex items-center gap-2 sm:gap-2.5 flex-1 max-w-md min-w-0">
+                <button type="button"
+                        @click="mobileMenuOpen = !mobileMenuOpen"
+                        aria-label="Buka atau tutup navigasi menu"
+                        :aria-expanded="mobileMenuOpen.toString()"
+                        class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] lg:hidden border border-[var(--color-card-border)] transition-colors shrink-0">
+                    <x-animated-icon type="menu" open-expr="mobileMenuOpen" />
                 </button>
 
-                <!-- Search Input -->
-                <div class="w-full">
-                    <form action="{{ route('employees.index') }}" method="GET" class="relative flex items-center">
-                        <span class="material-symbols-outlined absolute left-3 text-slate-400 text-lg">search</span>
-                        <input type="text" 
-                               name="search" 
-                               value="{{ request('search') }}"
-                               placeholder="Cari karyawan, NIP, divisi..." 
-                               class="w-full pl-9 pr-3 py-1.5 sm:py-2 bg-slate-900/60 border border-slate-700/60 focus:border-rose-500/60 focus:ring-2 focus:ring-rose-500/20 rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none transition-all shadow-inner"/>
-                    </form>
-                </div>
+                <form action="{{ route('employees.index') }}" method="GET" class="relative flex items-center flex-1 min-w-0" role="search">
+                    <label for="global-nav-search" class="sr-only">Cari karyawan, NIP, atau divisi</label>
+                    <span class="material-symbols-outlined absolute left-3 text-[var(--color-text-muted)] text-[18px] pointer-events-none" aria-hidden="true">search</span>
+                    <input id="global-nav-search"
+                           type="search"
+                           name="search"
+                           autocomplete="off"
+                           value="{{ request('search') }}"
+                           placeholder="Cari pegawai…"
+                           class="w-full min-w-0 min-h-[40px] pl-9 pr-3 xl:pr-12 py-1.5 bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] focus:border-rose-500 rounded-xl text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] transition-colors"/>
+                    <kbd class="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-card-bg)] border border-[var(--color-card-border)] absolute right-2.5 pointer-events-none">⌘K</kbd>
+                </form>
             </div>
 
-            <!-- Header Right Icons & User Profile -->
-            <div class="flex items-center gap-4">
-                <div class="hidden md:flex items-center gap-2 text-slate-400 font-mono text-xs bg-slate-900/40 px-3 py-1.5 rounded-lg border border-slate-800/80">
-                    <span class="material-symbols-outlined text-sm text-rose-400">calendar_today</span>
-                    <span id="header-date">{{ now()->locale('id')->translatedFormat('l, d F Y') }}</span>
+            {{-- Right: Quick Presensi Triggers, Morph Theme Toggle, Notifications, Profile --}}
+            <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+                <div class="hidden xl:flex items-center gap-2 text-[var(--color-text-muted)] font-mono text-xs px-3 py-1.5 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] shrink-0">
+                    <span class="material-symbols-outlined text-sm text-rose-500" aria-hidden="true">calendar_today</span>
+                    <span id="header-date">{{ now()->locale('id')->translatedFormat('d M Y') }}</span>
                 </div>
 
-                <div class="h-4 w-px bg-slate-800"></div>
-
-                <!-- Presensi Biometrik Wajah (Face ID & Lokasi) untuk Seluruh Karyawan & Manager -->
                 @if(auth()->check() && auth()->user()->canFaceClock())
-                    <button @click="$dispatch('open-face-modal', { type: 'auto' })" 
-                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-emerald-600/20 hover:from-emerald-600/30 hover:to-teal-600/30 text-xs font-semibold text-emerald-300 transition-all border border-emerald-500/30 shadow-sm active:scale-95"
+                    <button type="button"
+                            @click="$dispatch('open-face-modal', { type: 'auto' })"
+                            class="group min-h-[40px] hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600 hover:text-white text-xs font-semibold text-emerald-500 border border-emerald-500/30 transition-colors active:scale-[0.98]"
                             title="Presensi Wajah & Lokasi (Face ID + GPS)">
-                        <span class="material-symbols-outlined text-base text-emerald-400">face_retouching_natural</span>
-                        <span class="hidden sm:inline">Absen Face ID</span>
+                        <span class="material-symbols-outlined text-[17px]" aria-hidden="true">face_retouching_natural</span>
+                        <span>Absen Face ID</span>
                     </button>
                 @endif
 
-                <!-- Clock in/out Quick Trigger (Hanya untuk Manager HR dan Direktur) -->
                 @if(auth()->check() && auth()->user()->canQuickClock())
-                    <button @click="showClockInModal = true" 
-                            class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600/20 to-orange-600/20 hover:from-rose-600/30 hover:to-orange-600/30 text-xs font-semibold text-rose-300 transition-all border border-rose-500/30 shadow-sm active:scale-95"
-                            title="Presensi Cepat Karyawan (Khusus Manager HR & Direktur)">
-                        <span class="material-symbols-outlined text-base text-rose-400">fingerprint</span>
+                    <button type="button"
+                            @click="showClockInModal = true"
+                            class="group min-h-[40px] hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-semibold text-white keep-white transition-colors active:scale-[0.98]"
+                            title="Presensi Cepat Karyawan">
+                        <span class="material-symbols-outlined text-[17px]" aria-hidden="true">fingerprint</span>
                         <span>Presensi Cepat</span>
                     </button>
                 @endif
 
-                <!-- Tombol Mode Terang / Gelap (Theme Toggle) -->
-                <button @click="toggleTheme()" 
+                {{-- Theme Toggle (Skiper Animated Theme SVG) --}}
+                <button @click="toggleTheme()"
                         type="button"
-                        class="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-800/80 transition-all flex items-center justify-center border border-slate-700/60 shadow-sm active:scale-95" 
-                        :title="isDarkMode ? 'Beralih ke Mode Terang (Light Mode)' : 'Beralih ke Mode Gelap (Dark Mode)'">
-                    <template x-if="isDarkMode">
-                        <span class="material-symbols-outlined text-[19px] text-amber-400">light_mode</span>
-                    </template>
-                    <template x-if="!isDarkMode">
-                        <span class="material-symbols-outlined text-[19px] text-indigo-500">dark_mode</span>
-                    </template>
+                        aria-label="Ubah tema terang atau gelap"
+                        class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] transition-colors active:scale-95"
+                        :title="isDarkMode ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'">
+                    <x-animated-icon type="theme" dark-expr="isDarkMode" />
                 </button>
 
-                <!-- NOTIFICATION BELL & QUICK DROPDOWN (Tersedia untuk SEMUA akun) -->
+                {{-- Notifications Dropdown --}}
                 @php
                     if (auth()->check()) {
-                        // Jalankan reminder otomatis saat user membuka aplikasi (idempotent, 1x per hari)
                         \App\Services\ReminderService::processReminders(auth()->id());
                     }
                     $authUserUnreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0;
                     $authUserLatestNotifs = auth()->check() ? auth()->user()->notifications()->take(5)->get() : collect();
                 @endphp
-                <div class="relative" x-data="{ openNotif: false }">
-                    <button @click="openNotif = !openNotif" 
+                <div class="relative" x-data="{ openNotif: false }" @keydown.escape.window="openNotif = false">
+                    <button @click="openNotif = !openNotif"
                             type="button"
-                            class="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all flex items-center justify-center border border-slate-700/60 shadow-sm active:scale-95"
-                            title="Notifikasi Sistem">
-                        <span class="material-symbols-outlined text-[20px] {{ $authUserUnreadCount > 0 ? 'text-rose-400' : 'text-slate-400' }}">notifications</span>
-                        
+                            aria-label="Buka Notifikasi Sistem"
+                            :aria-expanded="openNotif.toString()"
+                            class="group relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] transition-colors active:scale-95">
+                        <x-animated-icon type="bell" class="{{ $authUserUnreadCount > 0 ? 'text-rose-500' : '' }}" />
                         @if($authUserUnreadCount > 0)
-                            <span class="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[9px] font-mono font-bold text-white ring-2 ring-[#11151f] shadow-md animate-pulse">
+                            <span class="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[9px] font-mono font-bold text-white tabular-nums">
                                 {{ $authUserUnreadCount > 99 ? '99+' : $authUserUnreadCount }}
                             </span>
                         @endif
                     </button>
 
-                    <!-- Dropdown Panel (snap transition, pure CSS) -->
-                    <div x-cloak 
-                         x-show="openNotif" 
+                    <div x-cloak
+                         x-show="openNotif"
                          @click.away="openNotif = false"
-                         x-transition:enter="transition ease-out duration-75"
+                         x-transition:enter="transition ease-out duration-100"
                          x-transition:enter-start="opacity-0 scale-95"
                          x-transition:enter-end="opacity-100 scale-100"
                          x-transition:leave="transition ease-in duration-75"
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[#141822] border border-slate-700 shadow-2xl z-50 overflow-hidden">
-                        
-                        <!-- Dropdown Header -->
-                        <div class="p-3.5 bg-[#171d2a] border-b border-slate-800 flex items-center justify-between">
+                         class="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[var(--color-card-bg)] border border-[var(--color-card-border)] shadow-2xl z-50 overflow-hidden">
+
+                        <div class="p-3.5 bg-[var(--color-subcard-bg)] border-b border-[var(--color-card-border)] flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-rose-400 text-lg">notifications</span>
-                                <span class="font-headline font-bold text-xs text-white">Notifikasi</span>
+                                <span class="font-headline font-bold text-xs text-[var(--color-text-primary)]">Notifikasi</span>
                                 @if($authUserUnreadCount > 0)
-                                    <span class="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-600/15 text-rose-500 tabular-nums">
                                         {{ $authUserUnreadCount }} Baru
                                     </span>
                                 @endif
@@ -602,152 +481,120 @@
                             @if($authUserUnreadCount > 0)
                                 <form action="{{ route('notifications.markAllRead') }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="text-[10px] font-mono text-slate-400 hover:text-rose-400 transition-colors">
+                                    <button type="submit" class="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-rose-500 transition-colors">
                                         Tandai Semua Dibaca
                                     </button>
                                 </form>
                             @endif
                         </div>
 
-                        <!-- Dropdown Items -->
-                        <div class="max-h-80 overflow-y-auto divide-y divide-slate-800/60">
-                            @if($authUserLatestNotifs->isEmpty())
-                                <div class="py-8 px-4 text-center">
-                                    <span class="material-symbols-outlined text-2xl text-slate-600 block mb-1">notifications_off</span>
-                                    <p class="text-xs text-slate-400">Belum ada notifikasi</p>
-                                </div>
-                            @else
-                                @foreach($authUserLatestNotifs as $nItem)
-                                    @php
-                                        $nData = $nItem->data;
-                                        $nUnread = is_null($nItem->read_at);
-                                        $nIcon = $nData['icon'] ?? 'notifications';
-                                        $nColor = $nData['color'] ?? 'rose';
-                                        $nBg = match($nColor) {
-                                            'emerald' => 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-                                            'amber' => 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-                                            'blue' => 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-                                            'purple' => 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-                                            default => 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                                        };
-                                    @endphp
-                                    <a href="{{ route('notifications.read', $nItem->id) }}" 
-                                       class="p-3 flex items-start gap-3 transition-colors {{ $nUnread ? 'bg-[#181d2a] hover:bg-[#1f2638]' : 'hover:bg-slate-800/40' }} block text-left">
-                                        <span class="w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 {{ $nBg }}">
-                                            <span class="material-symbols-outlined text-base">{{ $nIcon }}</span>
-                                        </span>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center justify-between gap-1">
-                                                <h5 class="font-headline font-bold text-xs truncate {{ $nUnread ? 'text-white' : 'text-slate-300' }}">
-                                                    {{ $nData['title'] ?? 'Notifikasi' }}
-                                                </h5>
-                                                @if($nUnread)
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
-                                                @endif
-                                            </div>
-                                            <p class="text-[11px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">
-                                                {{ $nData['message'] ?? '-' }}
-                                            </p>
-                                            <span class="text-[10px] font-mono text-slate-500 block mt-1">
-                                                {{ $nItem->created_at->diffForHumans() }}
-                                            </span>
+                        <div class="max-h-80 overflow-y-auto divide-y divide-[var(--color-table-divider)]">
+                            @forelse($authUserLatestNotifs as $nItem)
+                                @php
+                                    $nData = $nItem->data;
+                                    $nUnread = is_null($nItem->read_at);
+                                    $nIcon = $nData['icon'] ?? 'notifications';
+                                @endphp
+                                <a href="{{ route('notifications.read', $nItem->id) }}"
+                                   class="p-3.5 flex items-start gap-3 transition-colors {{ $nUnread ? 'bg-rose-600/5 hover:bg-rose-600/10' : 'hover:bg-[var(--color-subcard-bg)]' }} block text-left">
+                                    <span class="w-8 h-8 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-subcard-bg)] text-rose-500 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-base" aria-hidden="true">{{ $nIcon }}</span>
+                                    </span>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <h5 class="font-headline font-semibold text-xs truncate text-[var(--color-text-primary)]">
+                                                {{ $nData['title'] ?? 'Notifikasi' }}
+                                            </h5>
+                                            @if($nUnread)
+                                                <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0" aria-label="Belum dibaca"></span>
+                                            @endif
                                         </div>
-                                    </a>
-                                @endforeach
-                            @endif
+                                        <p class="text-[11px] text-[var(--color-text-muted)] line-clamp-2 mt-0.5 leading-snug">
+                                            {{ $nData['message'] ?? '' }}
+                                        </p>
+                                        <span class="text-[10px] font-mono text-[var(--color-text-muted)] block mt-1">
+                                            {{ $nItem->created_at->diffForHumans() }}
+                                        </span>
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="py-8 px-4 text-center">
+                                    <p class="text-xs text-[var(--color-text-muted)]">Belum ada notifikasi baru.</p>
+                                </div>
+                            @endforelse
                         </div>
 
-                        <!-- Dropdown Footer -->
-                        <div class="p-2.5 bg-[#12151d] border-t border-slate-800 text-center">
-                            <a href="{{ route('notifications.index') }}" 
-                               class="text-xs font-semibold text-rose-400 hover:text-rose-300 transition-colors flex items-center justify-center gap-1">
-                                <span>Lihat Semua Notifikasi</span>
-                                <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                            </a>
+                        <div class="p-2.5 bg-[var(--color-subcard-bg)] border-t border-[var(--color-card-border)] text-center">
+                            <x-skiper-link href="{{ route('notifications.index') }}" variant="000" class="text-xs font-semibold text-rose-500">
+                                Lihat Semua Notifikasi
+                            </x-skiper-link>
                         </div>
                     </div>
                 </div>
 
-                <!-- User profile & role badge -->
-                <div class="flex items-center gap-3 pl-1">
-                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 group text-left transition-all" title="Klik untuk membuka Pengaturan Profil">
-                        <div class="flex flex-col text-right hidden lg:flex">
+                {{-- User Profile + Logout --}}
+                <div class="flex items-center gap-2 pl-1">
+                    <a href="{{ route('profile.edit') }}"
+                       class="flex items-center gap-2.5 group text-left p-1 rounded-xl hover:bg-[var(--color-subcard-bg)] transition-colors"
+                       title="Pengaturan Profil Saya">
+                        <div class="flex flex-col text-right hidden md:flex">
                             <div class="flex items-center justify-end gap-1.5">
-                                <span class="font-headline text-xs font-bold text-slate-200 group-hover:text-rose-400 transition-colors">{{ auth()->user()->name ?? 'Pengguna' }}</span>
+                                <span class="font-headline text-xs font-bold text-[var(--color-text-primary)] group-hover:text-rose-500 transition-colors">{{ auth()->user()->name ?? 'Pengguna' }}</span>
                                 @php
                                     $role = auth()->user()->role ?? 'karyawan';
-                                    $badgeColor = match($role) {
-                                        'direktur' => 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-                                        'sekretaris', 'sekretaris_direktur' => 'bg-amber-400/20 text-amber-300 border-amber-400/40',
-                                        'manager' => 'bg-rose-500/20 text-rose-300 border-rose-500/30',
-                                        'asisten_manager', 'asisten manager' => 'bg-violet-500/20 text-violet-300 border-violet-500/30',
-                                        default => 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-                                    };
                                     $roleLabel = match($role) {
                                         'sekretaris', 'sekretaris_direktur' => 'Sekretaris',
                                         'asisten_manager', 'asisten manager' => 'Asisten Mgr',
-                                        default => $role,
+                                        default => ucfirst($role),
                                     };
                                 @endphp
-                                <span class="font-mono text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border {{ $badgeColor }}">
+                                <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-rose-600/15 text-rose-500 font-semibold">
                                     {{ $roleLabel }}
                                 </span>
-                                @if(auth()->user()->department)
-                                    <span class="font-mono text-[9px] uppercase font-medium px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/60">
-                                        {{ auth()->user()->department }}{{ auth()->user()->sub_department ? ' • ' . auth()->user()->sub_department : '' }}
-                                    </span>
-                                @endif
                             </div>
-                            <span class="font-mono text-[10px] text-slate-400">{{ auth()->user()->employee->role_title ?? (auth()->user()->department ?? 'Staff') }}</span>
+                            <span class="font-mono text-[10px] text-[var(--color-text-muted)]">{{ auth()->user()->employee->role_title ?? (auth()->user()->department ?? 'Staff') }}</span>
                         </div>
-
-                        <div class="relative group">
-                            <img src="{{ auth()->user()->employee->avatar_url ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120' }}" 
-                                 alt="Avatar" 
-                                 class="w-9 h-9 rounded-xl ring-2 ring-slate-700 group-hover:ring-rose-500/80 transition-all object-cover shadow-md"/>
-                            <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-slate-900 rounded-full border border-slate-700 flex items-center justify-center text-[8px] text-rose-400">
-                                <span class="material-symbols-outlined text-[10px]">settings</span>
-                            </span>
-                        </div>
+                        <img src="{{ auth()->user()->employee->avatar_url ?? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120' }}"
+                             alt="{{ auth()->user()->name ?? 'Avatar Pengguna' }}"
+                             width="36"
+                             height="36"
+                             class="w-9 h-9 rounded-xl border border-[var(--color-card-border)] object-cover shrink-0"/>
                     </a>
 
-                    <!-- Tombol Pengaturan Profil -->
-                    <a href="{{ route('profile.edit') }}" 
-                       class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all {{ request()->routeIs('profile.*') ? 'text-rose-400 bg-slate-800' : '' }}" 
-                       title="Pengaturan Profil & Akun">
-                        <span class="material-symbols-outlined text-[19px]">manage_accounts</span>
-                    </a>
-
-                    <!-- Logout button -->
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all" title="Logout dari Sesi">
-                            <span class="material-symbols-outlined text-[19px]">logout</span>
+                        <button type="submit"
+                                aria-label="Logout dari sesi"
+                                title="Keluar dari Akun"
+                                class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-rose-500 hover:bg-rose-600/10 transition-colors">
+                            <span class="material-symbols-outlined text-[19px]" aria-hidden="true">logout</span>
                         </button>
                     </form>
                 </div>
             </div>
         </header>
 
-        <!-- Main Body View Area (Responsive: px-4 sm:px-6 py-6 pb-16) -->
-        <main class="w-full bg-[#111317] flex-1 px-4 sm:px-6 py-6 pb-16">
-            <!-- Flash Message Alerts -->
+        {{-- Skiper19 SVG Follow-Scroll Architectural Track --}}
+        <x-scroll-flow variant="ribbon" initial-progress="0.22" />
+
+        {{-- Main Body --}}
+        <main id="main-content" tabindex="-1" class="w-full bg-[var(--color-page-bg)] flex-1 px-4 sm:px-6 lg:pr-12 py-6 pb-16">
             @if(session('success'))
-                <div class="mb-5 flex items-center gap-3 p-3.5 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-emerald-300 text-sm">
-                    <span class="material-symbols-outlined text-emerald-400">check_circle</span>
+                <div role="status" aria-live="polite" class="mb-5 flex items-center gap-3 p-3.5 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm">
+                    <span class="material-symbols-outlined text-lg" aria-hidden="true">check_circle</span>
                     <span>{{ session('success') }}</span>
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="mb-5 flex items-center gap-3 p-3.5 bg-red-950/40 border border-red-500/30 rounded-xl text-red-300 text-sm">
-                    <span class="material-symbols-outlined text-red-400">error</span>
+                <div role="alert" aria-live="assertive" class="mb-5 flex items-center gap-3 p-3.5 bg-red-950/40 border border-red-500/30 rounded-xl text-rose-400 text-sm">
+                    <span class="material-symbols-outlined text-lg" aria-hidden="true">error</span>
                     <span>{{ session('error') }}</span>
                 </div>
             @endif
 
             @if($errors->any())
-                <div class="mb-5 p-3.5 bg-red-950/40 border border-red-500/30 rounded-xl text-red-300 text-sm">
+                <div role="alert" aria-live="assertive" class="mb-5 p-3.5 bg-red-950/40 border border-red-500/30 rounded-xl text-rose-400 text-sm">
                     <div class="font-semibold mb-1">Periksa kembali data Anda:</div>
                     <ul class="list-disc list-inside text-xs space-y-0.5">
                         @foreach($errors->all() as $err)
@@ -761,9 +608,13 @@
         </main>
     </div>
 
-    <!-- Quick Clock In / Clock Out Modal (Khusus Manager HR & Direktur) -->
+    {{-- Quick Clock In / Clock Out Modal (Manager HR & Direktur) --}}
     @if(auth()->check() && auth()->user()->canQuickClock())
-    <div x-cloak x-show="showClockInModal" 
+    <div x-cloak
+         x-show="showClockInModal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="quick-clock-title"
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75"
          x-transition:enter="transition ease-out duration-100"
          x-transition:enter-start="opacity-0"
@@ -771,28 +622,30 @@
          x-transition:leave="transition ease-in duration-75"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0">
-        
-        <div class="bg-surface-container rounded-2xl border border-[#333539] w-full max-w-md p-6 shadow-2xl relative"
+
+        <div class="bg-[var(--color-card-bg)] rounded-2xl border border-[var(--color-card-border)] w-full max-w-md p-6 shadow-2xl relative"
              @click.away="showClockInModal = false">
-            <div class="flex items-center justify-between pb-4 border-b border-[#282a2e]">
+            <div class="flex items-center justify-between pb-4 border-b border-[var(--color-card-border)]">
                 <div class="flex items-center gap-2.5">
-                    <span class="material-symbols-outlined text-primary-container text-2xl">fingerprint</span>
+                    <span class="material-symbols-outlined text-rose-500 text-2xl" aria-hidden="true">fingerprint</span>
                     <div>
-                        <h3 class="font-headline font-semibold text-base text-on-surface">Pencatatan Presensi</h3>
-                        <p class="text-xs text-tertiary">Rekam kehadiran real-time hari ini</p>
+                        <h3 id="quick-clock-title" class="font-headline font-semibold text-base text-[var(--color-text-primary)]">Pencatatan Presensi</h3>
+                        <p class="text-xs text-[var(--color-text-muted)]">Rekam kehadiran real-time hari ini</p>
                     </div>
                 </div>
-                <button @click="showClockInModal = false" class="text-tertiary hover:text-on-surface">
-                    <span class="material-symbols-outlined text-xl">close</span>
+                <button type="button"
+                        @click="showClockInModal = false"
+                        aria-label="Tutup dialog pencatatan presensi"
+                        class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+                    <span class="material-symbols-outlined text-xl" aria-hidden="true">close</span>
                 </button>
             </div>
 
-            <!-- Clock In Form -->
             <form action="{{ route('attendance.clockIn') }}" method="POST" class="mt-5 space-y-4">
                 @csrf
                 <div>
-                    <label class="block text-xs font-mono uppercase tracking-wider text-tertiary mb-1.5">Pilih Karyawan</label>
-                    <select name="employee_id" class="w-full bg-surface-container-low border border-[#333539] rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary-container">
+                    <label for="quick-clock-emp" class="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Pilih Karyawan</label>
+                    <select id="quick-clock-emp" name="employee_id" class="w-full min-h-[42px] bg-[var(--color-subcard-bg)] border border-[var(--color-input-border)] rounded-xl px-3 py-2 text-sm text-[var(--color-text-primary)]">
                         @foreach(\App\Models\Employee::select('id', 'name', 'nip', 'role_title')->orderBy('name')->limit(50)->get() as $emp)
                             <option value="{{ $emp->id }}" {{ isset($currentUser) && $currentUser->id == $emp->id ? 'selected' : '' }}>
                                 {{ $emp->name }} ({{ $emp->nip }}) - {{ $emp->role_title }}
@@ -803,42 +656,39 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-mono uppercase tracking-wider text-tertiary mb-1.5">Mode Kerja</label>
-                        <select name="work_mode" class="w-full bg-surface-container-low border border-[#333539] rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary-container">
+                        <label for="quick-clock-mode" class="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Mode Kerja</label>
+                        <select id="quick-clock-mode" name="work_mode" class="w-full min-h-[42px] bg-[var(--color-subcard-bg)] border border-[var(--color-input-border)] rounded-xl px-3 py-2 text-sm text-[var(--color-text-primary)]">
                             <option value="WFO">WFO (Office)</option>
                             <option value="WFH">WFH (Remote)</option>
                             <option value="Hybrid">Hybrid</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-mono uppercase tracking-wider text-tertiary mb-1.5">Lokasi / Lantai</label>
-                        <input type="text" name="location_name" value="HQ Jakarta - Lt. 5" class="w-full bg-surface-container-low border border-[#333539] rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary-container"/>
+                        <label for="quick-clock-loc" class="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Lokasi / Lantai</label>
+                        <input id="quick-clock-loc" type="text" name="location_name" value="HQ Jakarta - Lt. 5" class="w-full min-h-[42px] bg-[var(--color-subcard-bg)] border border-[var(--color-input-border)] rounded-xl px-3 py-2 text-sm text-[var(--color-text-primary)]"/>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-mono uppercase tracking-wider text-tertiary mb-1.5">Catatan (Opsional)</label>
-                    <textarea name="notes" rows="2" placeholder="Catatan tugas harian atau kendala..." class="w-full bg-surface-container-low border border-[#333539] rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary-container"></textarea>
+                    <label for="quick-clock-notes" class="block text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5">Catatan (Opsional)</label>
+                    <textarea id="quick-clock-notes" name="notes" rows="2" placeholder="Catatan tugas harian atau kendala…" class="w-full bg-[var(--color-subcard-bg)] border border-[var(--color-input-border)] rounded-xl px-3 py-2 text-sm text-[var(--color-text-primary)]"></textarea>
                 </div>
 
-                <div class="flex items-center gap-3 pt-2">
-                    <button type="submit" class="flex-1 py-2.5 px-4 bg-primary-container hover:bg-red-700 text-on-primary-container rounded-lg font-semibold text-sm transition-all shadow-md flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-lg">login</span>
-                        <span>Clock In Masuk</span>
-                    </button>
-                </div>
+                <button type="submit" class="w-full min-h-[44px] py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white keep-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-lg" aria-hidden="true">login</span>
+                    <span>Clock In Masuk</span>
+                </button>
             </form>
 
-            <!-- Separator for Clock Out -->
-            <div class="mt-5 pt-4 border-t border-[#282a2e]">
+            <div class="mt-5 pt-4 border-t border-[var(--color-card-border)]">
                 <form action="{{ route('attendance.clockOut') }}" method="POST" class="flex items-center justify-between gap-3">
                     @csrf
                     <input type="hidden" name="employee_id" value="{{ $currentUser->id ?? 1 }}">
-                    <div class="text-xs text-tertiary">
-                        Selesai jam kantor untuk <span class="text-on-surface font-semibold">{{ $currentUser->name ?? (auth()->user()->name ?? 'Karyawan') }}</span>?
+                    <div class="text-xs text-[var(--color-text-muted)]">
+                        Selesai jam kantor untuk <span class="text-[var(--color-text-primary)] font-semibold">{{ $currentUser->name ?? (auth()->user()->name ?? 'Karyawan') }}</span>?
                     </div>
-                    <button type="submit" class="py-1.5 px-3 bg-surface-container-high hover:bg-surface-bright text-xs text-on-surface rounded-lg border border-[#333539] transition-all flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm text-amber-400">logout</span>
+                    <button type="submit" class="min-h-[40px] py-1.5 px-3 bg-[var(--color-subcard-bg)] hover:bg-rose-600 hover:text-white text-xs text-[var(--color-text-primary)] rounded-xl border border-[var(--color-card-border)] transition-colors flex items-center gap-1.5 shrink-0">
+                        <span class="material-symbols-outlined text-sm text-amber-500" aria-hidden="true">logout</span>
                         <span>Clock Out</span>
                     </button>
                 </form>
@@ -847,10 +697,8 @@
     </div>
     @endif
 
-    <!-- Biometric Face ID & Location Modal Component -->
     <x-face-attendance-modal />
 
-    <!-- Real-time Clock Javascript -->
     <script>
         function updateClock() {
             const clockEl = document.getElementById('live-clock');

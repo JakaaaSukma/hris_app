@@ -4,17 +4,17 @@
 <div class="space-y-6">
 
     <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-900/60 p-6 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 editorial-surface p-6 rounded-2xl">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg shadow-rose-500/20 text-white">
-                <span class="material-symbols-outlined text-2xl">groups</span>
+            <div class="w-12 h-12 rounded-xl bg-rose-600 flex items-center justify-center text-white keep-white">
+                <span class="material-symbols-outlined text-2xl" aria-hidden="true">groups</span>
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="text-xl font-bold text-white tracking-tight">Bank Data Member LPK Gyokai</h1>
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Live Sync Gyokai02
+                    <h1 class="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">Bank Data Member LPK Gyokai</h1>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-500 border border-emerald-500/25">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Sync Gyokai02
                     </span>
                 </div>
                 <p class="text-xs text-slate-400 mt-1">

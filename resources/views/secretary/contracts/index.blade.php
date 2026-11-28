@@ -32,7 +32,7 @@
         <div class="p-4 bg-rose-950/60 border border-rose-500/40 rounded-xl flex items-start sm:items-center justify-between gap-3 shadow-lg">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-rose-900/80 rounded-lg text-rose-300">
-                    <span class="material-symbols-outlined text-2xl animate-pulse">warning</span>
+                    <span class="material-symbols-outlined text-2xl" aria-hidden="true">warning</span>
                 </div>
                 <div>
                     <h3 class="text-rose-200 font-bold text-sm">Peringatan Kritis: {{ $totalCritical }} Kontrak/MoU Berakhir dalam &le; 14 Hari!</h3>
@@ -276,7 +276,7 @@
                                         Aktif Berjalan
                                     </span>
                                 @elseif($computed === 'expiring_soon')
-                                    <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-semibold inline-flex items-center gap-1 animate-pulse">
+                                    <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-semibold inline-flex items-center gap-1">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                                         Segera Habis
                                     </span>
@@ -315,7 +315,7 @@
                                         </span>
                                     @elseif($urgency === 'critical')
                                         <span class="text-[10px] font-mono font-bold text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-500/30 flex items-center gap-1 w-max">
-                                            <span class="material-symbols-outlined text-[12px] animate-pulse">priority_high</span>
+                                            <span class="material-symbols-outlined text-[12px]" aria-hidden="true">priority_high</span>
                                             <span>Sisa {{ $days }} Hari Lagi!</span>
                                         </span>
                                     @elseif($urgency === 'warning')

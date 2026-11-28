@@ -28,11 +28,10 @@
 <div class="flex flex-col gap-5 max-w-4xl mx-auto" x-data="{ showPayModal: false, payAmount: {{ $invoice->remaining_amount }} }">
 
     <!-- Action Bar (Print Hidden) -->
-    <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-[#151922] rounded-xl border border-slate-800 print:hidden">
-        <a href="{{ route('finance.invoices.index') }}" class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors">
-            <span class="material-symbols-outlined text-sm">arrow_back</span>
-            <span>Kembali ke Daftar Invoice</span>
-        </a>
+    <div class="flex flex-wrap items-center justify-between gap-3 p-4 editorial-surface rounded-xl print:hidden" data-reveal>
+        <x-skiper-link href="{{ route('finance.invoices.index') }}" variant="000" class="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+            Kembali ke Daftar Invoice
+        </x-skiper-link>
 
         <div class="flex items-center gap-2 flex-wrap">
             @if($invoice->attachment_path)
