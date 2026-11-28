@@ -27,6 +27,48 @@
     </script>
 
     <style>
+        :root {
+            --color-page-bg: #f6f7f9;
+            --color-page-text: #0f172a;
+            --color-sidebar-bg: #ffffff;
+            --color-sidebar-border: #dfe4ee;
+            --color-header-bg: #ffffff;
+            --color-header-border: #dfe4ee;
+            --color-card-bg: #ffffff;
+            --color-card-border: #dfe4ee;
+            --color-subcard-bg: #eef1f6;
+            --color-subcard-border: #cbd5e1;
+            --color-input-bg: #ffffff;
+            --color-input-border: #cbd5e1;
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #334155;
+            --color-text-muted: #475569;
+            --color-table-header-bg: #f1f5f9;
+            --color-table-row-hover: #f8fafc;
+            --color-table-divider: #e2e8f0;
+            --accent-primary: #dc2626;
+        }
+        html.dark {
+            --color-page-bg: #0B0D11;
+            --color-page-text: #f1f5f9;
+            --color-sidebar-bg: #121620;
+            --color-sidebar-border: #252B38;
+            --color-header-bg: #121620;
+            --color-header-border: #252B38;
+            --color-card-bg: #161A23;
+            --color-card-border: #252B38;
+            --color-subcard-bg: #1C212C;
+            --color-subcard-border: #2E3647;
+            --color-input-bg: #0F131B;
+            --color-input-border: #2E3647;
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #cbd5e1;
+            --color-text-muted: #94a3b8;
+            --color-table-header-bg: #121620;
+            --color-table-row-hover: #1D222E;
+            --color-table-divider: #252B38;
+            --accent-primary: #e11d48;
+        }
         [x-cloak] { display: none !important; }
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -34,10 +76,48 @@
             vertical-align: middle;
             line-height: 1;
         }
+        aside[aria-label="Navigasi Utama"] {
+            background-color: var(--color-sidebar-bg);
+            border-color: var(--color-sidebar-border);
+        }
         header.app-topbar {
             position: sticky !important;
             top: 0 !important;
-            z-index: 30 !important;
+            z-index: 40 !important;
+            background-color: var(--color-header-bg);
+            border-bottom: 1px solid var(--color-header-border);
+        }
+        main#main-content {
+            background-color: var(--color-page-bg);
+        }
+        #global-nav-search {
+            background-color: var(--color-subcard-bg);
+            border-color: var(--color-card-border);
+            color: var(--color-text-primary);
+        }
+        .app-notif-dropdown {
+            background-color: var(--color-card-bg);
+            border-color: var(--color-card-border);
+        }
+        .app-notif-chrome,
+        .app-notif-icon {
+            background-color: var(--color-subcard-bg);
+            border-color: var(--color-card-border);
+        }
+        .app-notif-list > * + * {
+            border-color: var(--color-table-divider);
+        }
+        .app-topbar-pill {
+            background-color: var(--color-subcard-bg);
+            border-color: var(--color-card-border);
+        }
+        .app-topbar-btn {
+            border-color: var(--color-card-border);
+        }
+        .editorial-surface,
+        .glass-card {
+            background-color: var(--color-card-bg);
+            border: 1px solid var(--color-card-border);
         }
     </style>
     @stack('styles')
@@ -369,7 +449,7 @@
     {{-- Main Workspace Container --}}
     <div class="w-full lg:pl-64 min-h-screen flex flex-col relative" data-skiper-scroll-container>
         {{-- Sticky Topbar Header --}}
-        <header class="app-topbar sticky top-0 w-full h-16 bg-[var(--color-header-bg)] border-b border-[var(--color-header-border)] z-30 px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
+        <header class="app-topbar sticky top-0 w-full h-16 bg-[var(--color-header-bg)] border-b border-[var(--color-header-border)] z-40 px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 shrink-0">
             {{-- Skiper19-style Horizontal Scroll Rail --}}
             <div id="top-scroll-rail"
                  aria-hidden="true"
@@ -381,7 +461,7 @@
                         @click="mobileMenuOpen = !mobileMenuOpen"
                         aria-label="Buka atau tutup navigasi menu"
                         :aria-expanded="mobileMenuOpen.toString()"
-                        class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] lg:hidden border border-[var(--color-card-border)] transition-colors shrink-0">
+                        class="app-topbar-btn min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] lg:hidden border border-[var(--color-card-border)] transition-colors shrink-0">
                     <x-animated-icon type="menu" open-expr="mobileMenuOpen" />
                 </button>
 
@@ -395,13 +475,13 @@
                            value="{{ request('search') }}"
                            placeholder="Cari pegawai…"
                            class="w-full min-w-0 min-h-[40px] pl-9 pr-3 xl:pr-12 py-1.5 bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] focus:border-rose-500 rounded-xl text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] transition-colors"/>
-                    <kbd class="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-card-bg)] border border-[var(--color-card-border)] absolute right-2.5 pointer-events-none">⌘K</kbd>
+                    <kbd class="app-topbar-pill hidden xl:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-card-bg)] border border-[var(--color-card-border)] absolute right-2.5 pointer-events-none">⌘K</kbd>
                 </form>
             </div>
 
             {{-- Right: Quick Presensi Triggers, Morph Theme Toggle, Notifications, Profile --}}
             <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
-                <div class="hidden xl:flex items-center gap-2 text-[var(--color-text-muted)] font-mono text-xs px-3 py-1.5 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] shrink-0">
+                <div class="app-topbar-pill hidden xl:flex items-center gap-2 text-[var(--color-text-muted)] font-mono text-xs px-3 py-1.5 rounded-xl bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] shrink-0">
                     <span class="material-symbols-outlined text-sm text-rose-500" aria-hidden="true">calendar_today</span>
                     <span id="header-date">{{ now()->locale('id')->translatedFormat('d M Y') }}</span>
                 </div>
@@ -430,7 +510,7 @@
                 <button @click="toggleTheme()"
                         type="button"
                         aria-label="Ubah tema terang atau gelap"
-                        class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] transition-colors active:scale-95"
+                        class="app-topbar-btn min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] transition-colors active:scale-95"
                         :title="isDarkMode ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'">
                     <x-animated-icon type="theme" dark-expr="isDarkMode" />
                 </button>
@@ -448,7 +528,7 @@
                             type="button"
                             aria-label="Buka Notifikasi Sistem"
                             :aria-expanded="openNotif.toString()"
-                            class="group relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] transition-colors active:scale-95">
+                            class="app-topbar-btn group relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-subcard-bg)] border border-[var(--color-card-border)] transition-colors active:scale-95">
                         <x-animated-icon type="bell" class="{{ $authUserUnreadCount > 0 ? 'text-rose-500' : '' }}" />
                         @if($authUserUnreadCount > 0)
                             <span class="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[9px] font-mono font-bold text-white tabular-nums">
@@ -466,9 +546,9 @@
                          x-transition:leave="transition ease-in duration-75"
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[var(--color-card-bg)] border border-[var(--color-card-border)] shadow-2xl z-50 overflow-hidden">
+                         class="app-notif-dropdown absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[var(--color-card-bg)] border border-[var(--color-card-border)] shadow-2xl z-50 overflow-hidden">
 
-                        <div class="p-3.5 bg-[var(--color-subcard-bg)] border-b border-[var(--color-card-border)] flex items-center justify-between gap-2">
+                        <div class="app-notif-chrome p-3.5 bg-[var(--color-subcard-bg)] border-b border-[var(--color-card-border)] flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
                                 <span class="font-headline font-bold text-xs text-[var(--color-text-primary)]">Notifikasi</span>
                                 @if($authUserUnreadCount > 0)
@@ -488,7 +568,7 @@
                             @endif
                         </div>
 
-                        <div class="max-h-80 overflow-y-auto divide-y divide-[var(--color-table-divider)]">
+                        <div class="app-notif-list max-h-80 overflow-y-auto divide-y divide-[var(--color-table-divider)]">
                             @forelse($authUserLatestNotifs as $nItem)
                                 @php
                                     $nData = $nItem->data;
@@ -497,7 +577,7 @@
                                 @endphp
                                 <a href="{{ route('notifications.read', $nItem->id) }}"
                                    class="p-3.5 flex items-start gap-3 transition-colors {{ $nUnread ? 'bg-rose-600/5 hover:bg-rose-600/10' : 'hover:bg-[var(--color-subcard-bg)]' }} block text-left">
-                                    <span class="w-8 h-8 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-subcard-bg)] text-rose-500 flex items-center justify-center shrink-0">
+                                    <span class="app-notif-icon w-8 h-8 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-subcard-bg)] text-rose-500 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-base" aria-hidden="true">{{ $nIcon }}</span>
                                     </span>
                                     <div class="flex-1 min-w-0">
@@ -524,7 +604,7 @@
                             @endforelse
                         </div>
 
-                        <div class="p-2.5 bg-[var(--color-subcard-bg)] border-t border-[var(--color-card-border)] text-center">
+                        <div class="app-notif-chrome p-2.5 bg-[var(--color-subcard-bg)] border-t border-[var(--color-card-border)] text-center">
                             <x-skiper-link href="{{ route('notifications.index') }}" variant="000" class="text-xs font-semibold text-rose-500">
                                 Lihat Semua Notifikasi
                             </x-skiper-link>
